@@ -20,8 +20,8 @@
                     return (T)this.Values[i];
                 }
             }
-            
-            throw new Exception($"Column {name} not found in table {this.Table.Name}")
+
+            throw new Exception($"Column {name} not found in table {this.Table.Name}");
         }
     }
 }

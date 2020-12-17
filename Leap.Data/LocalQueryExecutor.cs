@@ -4,7 +4,7 @@
 
     class LocalQueryExecutor {
         public bool CanExecute(IQuery query) {
-            throw new NotImplementedException();
+            return false; // TODO implement
         }
 
         public async ValueTask<Maybe> ExecuteAsync(IQuery query) {

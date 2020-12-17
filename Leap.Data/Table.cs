@@ -15,7 +15,7 @@ namespace Leap.Data
         
         public Type KeyType { get; init; }
 
-        public IList<Column> Columns { get; }
+        public IList<Column> Columns { get; init; }
         
         protected bool Equals(Table other) {
             return this.Name == other.Name && this.Schema == other.Schema;

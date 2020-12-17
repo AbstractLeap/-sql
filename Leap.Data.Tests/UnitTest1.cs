@@ -8,7 +8,41 @@ namespace Leap.Data.Tests
 {
     using System.Linq;
 
+    using Microsoft.Data.SqlClient;
+
     using Moq;
+
+    using Newtonsoft.Json;
+
+    public class Playground {
+        [Fact]
+        public async Task ItWorks() {
+            var connectionFactory = new Mock<IConnectionFactory>();
+            var connection = new SqlConnection("Server=.;Database=ase;Trusted_Connection=True;");
+            connectionFactory.Setup(c => c.Get()).Returns(connection);
+
+            var mockSchema = new Mock<ISchema>();
+            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table {
+                Name = "Blogs", 
+                Schema = "dbo", 
+                KeyType = typeof(BlogId),
+                Columns = new List<Column>() {
+                    new Column { Type = typeof(Guid), Name = "id"},
+                    new Column { Type = typeof(string), Name = SpecialColumns.Document },
+                    new Column { Type = typeof(string), Name = SpecialColumns.DocumentType }
+                }
+            });
+            var identityMap = new IdentityMap(mockSchema.Object);
+
+            var mockSerializer = new Mock<ISerializer>();
+            mockSerializer.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<string>())).Returns((Type type, string json) => JsonConvert.DeserializeObject(json, type));
+            mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns((object obj) => JsonConvert.SerializeObject(obj));
+            var name = typeof(Blog).AssemblyQualifiedName;
+            var session = new Session(connectionFactory.Object, mockSchema.Object, mockSerializer.Object);
+            var blog = await session.Get<Blog>().ByKeyAsync(new BlogId());
+            Assert.Equal("Foo", blog.Title);
+        }
+    }
 
     public class IdentityMapTests
     {
@@ -18,7 +52,7 @@ namespace Leap.Data.Tests
             mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table { Name = "Blogs", Schema = "dbo", KeyType = typeof(BlogId) });
             var identityMap = new IdentityMap(mockSchema.Object);
 
-            var blog = new Blog(new BlogId("f"), "Title");
+            var blog = new Blog(new BlogId(), "Title");
             identityMap.Add(blog.BlogId, blog);
             
             Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlog));
@@ -36,22 +70,22 @@ namespace Leap.Data.Tests
         [Fact]
         public async Task Test1() {
             var session = this.GetSession();
-            var entity = await session.Get<Blog>().ByKeyAsync(new BlogId(""));
-            var entitiesEnumerable = session.Get<Blog>().ByKeyAsync(new BlogId(""), new BlogId(""));
+            var entity = await session.Get<Blog>().ByKeyAsync(new BlogId());
+            var entitiesEnumerable = session.Get<Blog>().ByKeyAsync(new BlogId(), new BlogId());
             await foreach (var asyncEntity in entitiesEnumerable) {
                 
             }
 
             var entities = await entitiesEnumerable.ToListAsync();
 
-            var futureEntityFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId(""));
+            var futureEntityFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId());
             var futureEntity = await futureEntityFuture.SingleAsync();
 
-            var futureEntitiesFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId(""), new BlogId(""));
+            var futureEntitiesFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId(), new BlogId());
             var futureEntities = await futureEntitiesFuture.ToListAsync();
             
-            session.Add(new Blog(new BlogId(""), "Title"));
-            session.Delete(new Blog(new BlogId(""), "Title"));
+            session.Add(new Blog(new BlogId(), "Title"));
+            session.Delete(new Blog(new BlogId(), "Title"));
 
             var queryEntitiesFuture = session.Get<Blog>().Where(string.Empty).Limit(10).InTheFuture();
             var queryEntitiesFromFuture = await queryEntitiesFuture.ToListAsync();
@@ -69,14 +103,11 @@ namespace Leap.Data.Tests
 
     public record BlogId
     {
-        public BlogId(string prefix)
+        public BlogId()
     {
-        this.Prefix = prefix;
         this.Id = Guid.NewGuid();
     }
-
-        public string Prefix { get; init; }
-
+        
         public Guid Id { get; init; }
     }
 
