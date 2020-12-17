@@ -1,4 +1,4 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Internal {
     using System;
     using System.Collections.Generic;
     using System.Data;
@@ -8,7 +8,10 @@
     using System.Threading.Tasks;
 
     using Fasterflect;
-
+    using Leap.Data.IdentityMap;
+    using Leap.Data.Queries;
+    using Leap.Data.Schema;
+    
     class QueryEngine : IAsyncDisposable {
         private readonly IConnectionFactory connectionFactory;
 
@@ -78,6 +81,7 @@
             var sqlQueryWriter = new SqlQueryWriter();
             foreach (var nonCompletedQuery in this.nonCompletedQueries) {
                 sqlQueryWriter.Write(nonCompletedQuery, this.command);
+                this.command.CommandText += ";";
             }
 
             this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -106,6 +110,8 @@
                     foreach (var entity in resultList) {
                         yield return entity;
                     }
+                    
+                    yield break;
                 }
 
                 throw new Exception($"Tried to get result of type {typeof(T)} but actual type was {result.GetType()}");
@@ -120,6 +126,7 @@
                 this.resultBag.TryAdd(nonCompleteQuery.Identifier, queryResultsTask.GetPropertyValue("Result"));
                 this.nonCompleteQueryReaderIndex++;
                 nonCompleteQuery = this.nonCompletedQueries[this.nonCompleteQueryReaderIndex];
+                await this.dataReader.NextResultAsync();
             }
 
             // read the result we've been asked for
@@ -148,6 +155,7 @@
                 // check ID map for instance
                 if (this.identityMap.TryGetValue(table.KeyType, id, out T mappedEntity)) {
                     yield return mappedEntity;
+                    continue;
                 }
 
                 var json = row.GetValue<string>(SpecialColumns.Document);
@@ -157,7 +165,7 @@
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(id, entity);
+                this.identityMap.Add(table.KeyType, id, entity);
                 yield return entity;
 
                 // TODO second level cache

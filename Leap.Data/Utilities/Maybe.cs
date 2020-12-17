@@ -1,4 +1,4 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Utilities {
     internal class Maybe {
         public bool WasSuccessful { get; init; }
 

@@ -4,8 +4,8 @@
     using System.Threading.Tasks;
 
     public interface IEntityQuery<TEntity> {
-        ValueTask<TEntity> ByKeyAsync<TKey>(TKey key, CancellationToken cancellationToken = default);
+        ValueTask<TEntity> SingleAsync<TKey>(TKey key, CancellationToken cancellationToken = default);
 
-        IAsyncEnumerable<TEntity> ByKeyAsync<TKey>(params TKey[] keys);
+        IAsyncEnumerable<TEntity> MultipleAsync<TKey>(params TKey[] keys);
     }
 }

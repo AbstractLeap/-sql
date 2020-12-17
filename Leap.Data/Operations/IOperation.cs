@@ -1,3 +1,3 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Operations {
     internal interface IOperation { }
 }

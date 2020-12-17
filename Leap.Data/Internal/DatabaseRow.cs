@@ -1,5 +1,7 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Internal {
     using System;
+
+    using Leap.Data.Schema;
 
     /// <summary>
     /// store database rows in the second level cache

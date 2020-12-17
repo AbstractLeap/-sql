@@ -1,4 +1,4 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Operations {
     internal class AddOperation : IOperation {
         private readonly object entity;
 

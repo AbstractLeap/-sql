@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace Leap.Data
+﻿namespace Leap.Data.Schema
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -25,7 +23,7 @@ namespace Leap.Data
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((Table)obj);
+            return this.Equals((Table)obj);
         }
 
         public override int GetHashCode() {

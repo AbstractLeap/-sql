@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Leap.Data.Tests
 {
-    using System.Linq;
+    using Leap.Data.Schema;
 
     using Microsoft.Data.SqlClient;
 
@@ -17,87 +17,44 @@ namespace Leap.Data.Tests
     public class Playground {
         [Fact]
         public async Task ItWorks() {
+            var session = MakeTarget();
+            var blog = await session.Get<Blog>().SingleAsync(new BlogId());
+            Assert.Equal("Foo", blog.Title);
+        }
+
+        [Fact]
+        public async Task FutureKeyWorks() {
+            var session = MakeTarget();
+            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId());
+            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId());
+            var blogFromFuture = await blogFuture.SingleAsync();
+            Assert.Same(blogNow, blogFromFuture);
+        }
+
+        private static Session MakeTarget() {
             var connectionFactory = new Mock<IConnectionFactory>();
             var connection = new SqlConnection("Server=.;Database=ase;Trusted_Connection=True;");
             connectionFactory.Setup(c => c.Get()).Returns(connection);
 
             var mockSchema = new Mock<ISchema>();
-            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table {
-                Name = "Blogs", 
-                Schema = "dbo", 
-                KeyType = typeof(BlogId),
-                Columns = new List<Column>() {
-                    new Column { Type = typeof(Guid), Name = "id"},
-                    new Column { Type = typeof(string), Name = SpecialColumns.Document },
-                    new Column { Type = typeof(string), Name = SpecialColumns.DocumentType }
-                }
-            });
-            var identityMap = new IdentityMap(mockSchema.Object);
+            mockSchema.Setup(s => s.GetTable<Blog>())
+                      .Returns(
+                          new Table {
+                              Name    = "Blogs",
+                              Schema  = "dbo",
+                              KeyType = typeof(BlogId),
+                              Columns = new List<Column>() {
+                                  new Column { Type = typeof(Guid), Name   = "id" },
+                                  new Column { Type = typeof(string), Name = SpecialColumns.Document },
+                                  new Column { Type = typeof(string), Name = SpecialColumns.DocumentType }
+                              }
+                          });
 
             var mockSerializer = new Mock<ISerializer>();
             mockSerializer.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<string>())).Returns((Type type, string json) => JsonConvert.DeserializeObject(json, type));
             mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns((object obj) => JsonConvert.SerializeObject(obj));
-            var name = typeof(Blog).AssemblyQualifiedName;
             var session = new Session(connectionFactory.Object, mockSchema.Object, mockSerializer.Object);
-            var blog = await session.Get<Blog>().ByKeyAsync(new BlogId());
-            Assert.Equal("Foo", blog.Title);
-        }
-    }
-
-    public class IdentityMapTests
-    {
-        [Fact]
-        public void ItWorks() {
-            var mockSchema = new Mock<ISchema>();
-            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table { Name = "Blogs", Schema = "dbo", KeyType = typeof(BlogId) });
-            var identityMap = new IdentityMap(mockSchema.Object);
-
-            var blog = new Blog(new BlogId(), "Title");
-            identityMap.Add(blog.BlogId, blog);
-            
-            Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlog));
-            Assert.NotNull(mappedBlog);
-            Assert.Same(blog, mappedBlog);
-            
-            Assert.True(identityMap.TryGetValue(typeof(BlogId), blog.BlogId, out Blog weakBlog));
-            Assert.NotNull(weakBlog);
-            Assert.Same(blog, weakBlog);
-        }
-    }
-
-    public class UnitTest1
-    {
-        [Fact]
-        public async Task Test1() {
-            var session = this.GetSession();
-            var entity = await session.Get<Blog>().ByKeyAsync(new BlogId());
-            var entitiesEnumerable = session.Get<Blog>().ByKeyAsync(new BlogId(), new BlogId());
-            await foreach (var asyncEntity in entitiesEnumerable) {
-                
-            }
-
-            var entities = await entitiesEnumerable.ToListAsync();
-
-            var futureEntityFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId());
-            var futureEntity = await futureEntityFuture.SingleAsync();
-
-            var futureEntitiesFuture = session.Get<Blog>().ByKeyInTheFuture(new BlogId(), new BlogId());
-            var futureEntities = await futureEntitiesFuture.ToListAsync();
-            
-            session.Add(new Blog(new BlogId(), "Title"));
-            session.Delete(new Blog(new BlogId(), "Title"));
-
-            var queryEntitiesFuture = session.Get<Blog>().Where(string.Empty).Limit(10).InTheFuture();
-            var queryEntitiesFromFuture = await queryEntitiesFuture.ToListAsync();
-
-            var queryEntities = await session.Get<Blog>().Where(string.Empty).ToListAsync();
-
-            entity.Title = "Foo";
-            await session.SaveChangesAsync();
-        }
-
-        ISession GetSession() {
-            throw new NotImplementedException();
+            return session;
         }
     }
 
@@ -112,12 +69,12 @@ namespace Leap.Data.Tests
     }
 
     public class Blog {
-        public Blog(BlogId blogId, string title) {
-            BlogId = blogId;
-            Title = title;
+        public Blog(string title) {
+            this.BlogId = new BlogId();
+            this.Title  = title;
         }
-
-        public BlogId BlogId { get; }
+        
+        public BlogId BlogId { get; init; }
 
         public string Title { get; set; }
     }

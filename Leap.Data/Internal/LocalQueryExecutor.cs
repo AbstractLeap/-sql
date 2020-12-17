@@ -1,6 +1,9 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Internal {
     using System;
     using System.Threading.Tasks;
+
+    using Leap.Data.Queries;
+    using Leap.Data.Utilities;
 
     class LocalQueryExecutor {
         public bool CanExecute(IQuery query) {

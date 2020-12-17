@@ -1,5 +1,7 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.IdentityMap {
     using System.Collections.Generic;
+
+    using Leap.Data.Schema;
 
     class IdentityMap {
         private readonly ISchema schema;

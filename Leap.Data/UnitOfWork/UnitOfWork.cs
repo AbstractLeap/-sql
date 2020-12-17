@@ -1,5 +1,7 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.UnitOfWork {
     using System.Collections.Generic;
+
+    using Leap.Data.Operations;
 
     class UnitOfWork {
         private IList<IOperation> operations = new List<IOperation>();

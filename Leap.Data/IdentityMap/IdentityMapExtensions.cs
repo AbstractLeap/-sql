@@ -1,15 +1,12 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.IdentityMap {
     using System;
-    using System.Collections.Concurrent;
 
     using Fasterflect;
 
     static class IdentityMapExtensions {
-        private static ConcurrentDictionary<(Type entityType, Type keyType), MethodInvoker> identityInvokers = new ConcurrentDictionary<(Type entityType, Type keyType), MethodInvoker>();
-        
         public static bool TryGetValue<TEntity>(this IdentityMap identityMap, Type keyType, object key, out TEntity entity)
             where TEntity : class {
-            var arguments = new object[] { key, null };
+            var arguments = new[] { key, null };
             var result = (bool)identityMap.CallMethod(
                 new[] { typeof(TEntity), keyType },
                 nameof(IdentityMap.TryGetValue),
@@ -18,6 +15,10 @@
                 arguments);
             entity = result ? (TEntity)arguments[1] : null;
             return result;
+        }
+
+        public static void Add<TEntity>(this IdentityMap identityMap, Type keyType, object key, TEntity entity) {
+            identityMap.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IdentityMap.Add), key, entity);
         }
     }
 }

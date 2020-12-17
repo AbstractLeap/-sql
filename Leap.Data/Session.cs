@@ -3,6 +3,10 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Leap.Data.Internal;
+    using Leap.Data.Operations;
+    using Leap.Data.Schema;
+
     class Session : ISession {
         private readonly IConnectionFactory connectionFactory;
 
@@ -10,9 +14,9 @@
 
         private readonly ISerializer serializer;
 
-        private UnitOfWork unitOfWork;
+        private UnitOfWork.UnitOfWork unitOfWork;
 
-        private IdentityMap identityMap;
+        private IdentityMap.IdentityMap identityMap;
 
         private QueryEngine queryEngine;
 
@@ -22,7 +26,7 @@
             this.connectionFactory = connectionFactory;
             this.schema            = schema;
             this.serializer        = serializer;
-            this.identityMap       = new IdentityMap(this.schema);
+            this.identityMap       = new IdentityMap.IdentityMap(this.schema);
             this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, serializer);
         }
 
@@ -51,7 +55,7 @@
 
         void EnsureUnitOfWork() {
             if (this.unitOfWork == null) {
-                this.unitOfWork = new UnitOfWork();
+                this.unitOfWork = new UnitOfWork.UnitOfWork();
             }
         }
         

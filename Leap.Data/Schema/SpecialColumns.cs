@@ -1,4 +1,4 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Schema {
     public static class SpecialColumns {
         public const string Document = "document";
 
