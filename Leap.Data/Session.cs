@@ -4,30 +4,59 @@
     using System.Threading.Tasks;
 
     class Session : ISession {
-        public IQueryBuilder<TEntity> Get<TEntity>() {
-            return new QueryBuilder<TEntity>();
+        private readonly IConnectionFactory connectionFactory;
+
+        private readonly ISchema schema;
+
+        private readonly ISerializer serializer;
+
+        private UnitOfWork unitOfWork;
+
+        private IdentityMap identityMap;
+
+        private QueryEngine queryEngine;
+
+        public Session(IConnectionFactory connectionFactory,
+                       ISchema schema,
+                       ISerializer serializer) {
+            this.connectionFactory = connectionFactory;
+            this.schema            = schema;
+            this.serializer        = serializer;
+            this.identityMap       = new IdentityMap(this.schema);
+            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, serializer);
+        }
+
+        public IQueryBuilder<TEntity> Get<TEntity>()
+            where TEntity : class {
+            return new QueryBuilder<TEntity>(this);
         }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default) {
             throw new NotImplementedException();
         }
 
-        public void Delete<TEntity>(TEntity entity) {
+        public void Delete<TEntity>(TEntity entity)
+            where TEntity : class {
             this.EnsureUnitOfWork();
             this.unitOfWork.Add(new DeleteOperation(entity));
+            // TODO remove from identity map
         }
 
-        public void Add<TEntity>(TEntity entity) {
+        public void Add<TEntity>(TEntity entity)
+            where TEntity : class {
             this.EnsureUnitOfWork();
             this.unitOfWork.Add(new AddOperation(entity));
+            // TODO add to identity map
         }
-
-        private UnitOfWork unitOfWork;
 
         void EnsureUnitOfWork() {
             if (this.unitOfWork == null) {
                 this.unitOfWork = new UnitOfWork();
             }
+        }
+        
+        public QueryEngine GetEngine() {
+            return this.queryEngine;
         }
     }
 }
