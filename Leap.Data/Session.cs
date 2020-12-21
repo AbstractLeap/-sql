@@ -41,14 +41,22 @@
         }
 
         public Task SaveChangesAsync(CancellationToken cancellationToken = default) {
-            throw new NotImplementedException();
+            // find changed entities, add those operations to the unit of work
+            
+            
+            // get sql to execute
+            
+            
+            // instantiate new unit of work
         }
 
         public void Delete<TEntity>(TEntity entity)
             where TEntity : class {
             this.EnsureUnitOfWork();
             this.unitOfWork.Add(new DeleteOperation(entity));
-            // TODO remove from identity map
+            var keyType = this.schema.GetTable<TEntity>().KeyType;
+            var key = this.keyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(KeyExtractor.Extract), entity);
+            this.identityMap.Remove<TEntity>(keyType, key);
         }
 
         public void Add<TEntity>(TEntity entity)

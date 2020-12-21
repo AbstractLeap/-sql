@@ -34,5 +34,12 @@
                 this.map.Add(table, typedMap);
             }
         }
+
+        public void Remove<TEntity, TKey>(TKey key) {
+            var table = this.schema.GetTable<TEntity>();
+            if (this.map.TryGetValue(table, out var entityMap)) {
+                ((IDictionary<TKey, TEntity>)entityMap).Remove(key);
+            }
+        }
     }
 }
