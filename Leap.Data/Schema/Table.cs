@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data.Schema {
     using System;
     using System.Collections.Generic;
+    using System.Reflection;
 
     /// <summary>
     ///     metadata
@@ -11,6 +12,8 @@
         public string Schema { get; init; }
 
         public Type KeyType { get; init; }
+        
+        public MemberInfo KeyMember { get; init; }
 
         public IList<Column> Columns { get; init; }
 

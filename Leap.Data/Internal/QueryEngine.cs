@@ -29,7 +29,7 @@
 
         private readonly IList<IQuery> nonCompletedQueries = new List<IQuery>();
 
-        private readonly LocalQueryExecutor localQueryExecutor = new LocalQueryExecutor();
+        private readonly LocalQueryExecutor localQueryExecutor;
 
         private readonly IDictionary<Guid, object> resultBag = new Dictionary<Guid, object>();
 
@@ -44,11 +44,12 @@
         private bool isExecuted;
 
         public QueryEngine(IConnectionFactory connectionFactory, ISchema schema, IdentityMap identityMap, ISerializer serializer, ISqlQueryWriter sqlQueryWriter) {
-            this.connectionFactory = connectionFactory;
-            this.schema            = schema;
-            this.identityMap       = identityMap;
-            this.serializer        = serializer;
-            this.sqlQueryWriter    = sqlQueryWriter;
+            this.connectionFactory  = connectionFactory;
+            this.schema             = schema;
+            this.identityMap        = identityMap;
+            this.serializer         = serializer;
+            this.localQueryExecutor = new LocalQueryExecutor(this.identityMap);
+            this.sqlQueryWriter     = sqlQueryWriter;
         }
 
         public void Add(IQuery query) {
@@ -73,6 +74,7 @@
 
             if (!this.nonCompletedQueries.Any()) {
                 this.IsComplete = true;
+                this.isExecuted = true;
                 return;
             }
 
@@ -120,13 +122,12 @@
                 this.Add(query);
             }
 
-            var wasExecuted = this.isExecuted;
             if (!this.isExecuted) {
                 await this.ExecuteAsync();
             }
 
             // do we have the result already?
-            if (wasExecuted && this.resultBag.TryGetValue(query.Identifier, out var result)) {
+            if (this.resultBag.TryGetValue(query.Identifier, out var result)) {
                 if (result is List<T> resultList) {
                     foreach (var entity in resultList) {
                         yield return entity;
@@ -135,7 +136,7 @@
                     yield break;
                 }
 
-                throw new Exception($"Tried to get result of type {typeof(T)} but actual type was {result.GetType()}");
+                throw new Exception($"Tried to get result of type List<{typeof(T)}> but actual type was {result.GetType()}");
             }
 
             // we don't have the result, so we must go through the reader until we do.

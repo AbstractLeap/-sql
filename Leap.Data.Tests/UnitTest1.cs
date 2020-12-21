@@ -2,57 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
 
 namespace Leap.Data.Tests
 {
+    using Fasterflect;
+
     using Leap.Data.Internal;
-    using Leap.Data.Internal.QueryWriter.SqlServer;
     using Leap.Data.Schema;
 
-    using Microsoft.Data.SqlClient;
-
     using Moq;
-
-    using Newtonsoft.Json;
-
-    public class Playground {
-        [Fact]
-        public async Task ItWorks() {
-            var session = MakeTarget();
-            var blog = await session.Get<Blog>().SingleAsync(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
-            Assert.Equal("Foo", blog.Title);
-        }
-
-        [Fact]
-        public async Task FutureKeyWorks() {
-            var session = MakeTarget();
-            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId());
-            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId());
-            var blogFromFuture = await blogFuture.SingleAsync();
-            Assert.Same(blogNow, blogFromFuture);
-        }
-
-        private static Session MakeTarget() {
-            var connectionFactory = new Mock<IConnectionFactory>();
-            var connection = new SqlConnection("Server=.;Database=leap-data;Trusted_Connection=True;");
-            connectionFactory.Setup(c => c.Get()).Returns(connection);
-
-            var mockSerializer = new Mock<ISerializer>();
-            mockSerializer.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<string>())).Returns((Type type, string json) => JsonConvert.DeserializeObject(json, type));
-            mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns((object obj) => JsonConvert.SerializeObject(obj));
-
-            var mockSchema = MockSchema.GetMockSchema();
-            
-            var session = new Session(connectionFactory.Object, mockSchema, mockSerializer.Object, new SqlServerSqlQueryWriter(mockSchema));
-            return session;
-        }
-    }
 
     class MockSchema {
         public static ISchema GetMockSchema() {
             var mockSchema = new Mock<ISchema>();
-            var idColumn = new Column { Type = typeof(Guid), Name = "id" };
+            var idColumn = new Column { Type = typeof(Guid), Name = "Id" };
             mockSchema.Setup(s => s.GetTable<Blog>())
                       .Returns(
                           new Table
@@ -60,6 +23,7 @@ namespace Leap.Data.Tests
                               Name    = "Blogs",
                               Schema  = "dbo",
                               KeyType = typeof(BlogId),
+                              KeyMember = typeof(Blog).Member(nameof(Blog.BlogId)),
                               Columns = new List<Column>() {
                                   idColumn,
                                   new Column { Type = typeof(string), Name = SpecialColumns.Document },

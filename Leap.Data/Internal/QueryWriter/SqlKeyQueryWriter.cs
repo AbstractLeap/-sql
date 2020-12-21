@@ -11,8 +11,11 @@
     internal abstract class SqlKeyQueryWriter : ISqlQueryWriter {
         private readonly ISchema schema;
 
+        private readonly KeyColumnValueExtractor keyColumnValueExtractor;
+
         public SqlKeyQueryWriter(ISchema schema) {
-            this.schema = schema;
+            this.schema                  = schema;
+            this.keyColumnValueExtractor = new KeyColumnValueExtractor(schema);
         }
 
         public void Write(IQuery query, Command command) {
@@ -42,11 +45,11 @@
             this.AppendName(builder, table.Name);
             builder.Append(" as t");
             builder.Append(" where ");
-            foreach (var column in table.KeyColumns) {
+            foreach (var keyColumnEntry in this.keyColumnValueExtractor.Extract<TEntity, TKey>(query.Key)) {
                 builder.Append("t.");
-                this.AppendName(builder, column.Name);
+                this.AppendName(builder, keyColumnEntry.Key.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146"));
+                var paramName = command.AddParameter(keyColumnEntry.Value);
                 this.AddParameter(builder, paramName);
             }
 
