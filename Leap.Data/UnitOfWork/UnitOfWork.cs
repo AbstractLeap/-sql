@@ -4,8 +4,8 @@
     using Leap.Data.Operations;
 
     class UnitOfWork {
-        private IList<IOperation> operations = new List<IOperation>();
-        
+        private readonly IList<IOperation> operations = new List<IOperation>();
+
         public void Add(IOperation operation) {
             this.operations.Add(operation);
         }

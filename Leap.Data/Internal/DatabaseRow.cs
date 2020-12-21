@@ -4,16 +4,16 @@
     using Leap.Data.Schema;
 
     /// <summary>
-    /// store database rows in the second level cache
+    ///     store database rows in the second level cache
     /// </summary>
     class DatabaseRow {
         public DatabaseRow(Table table, object[] values) {
             this.Table  = table;
             this.Values = values;
         }
-        
+
         public Table Table { get; }
-        
+
         public object[] Values { get; }
 
         public T GetValue<T>(string name) {

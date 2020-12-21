@@ -4,6 +4,7 @@
     using System.Threading.Tasks;
 
     using Leap.Data.Internal;
+    using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
 
@@ -16,18 +17,16 @@
 
         private UnitOfWork.UnitOfWork unitOfWork;
 
-        private IdentityMap.IdentityMap identityMap;
+        private readonly IdentityMap.IdentityMap identityMap;
 
-        private QueryEngine queryEngine;
+        private readonly QueryEngine queryEngine;
 
-        public Session(IConnectionFactory connectionFactory,
-                       ISchema schema,
-                       ISerializer serializer) {
+        public Session(IConnectionFactory connectionFactory, ISchema schema, ISerializer serializer, ISqlQueryWriter sqlQueryWriter) {
             this.connectionFactory = connectionFactory;
             this.schema            = schema;
             this.serializer        = serializer;
             this.identityMap       = new IdentityMap.IdentityMap(this.schema);
-            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, serializer);
+            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, serializer, sqlQueryWriter);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
@@ -58,7 +57,7 @@
                 this.unitOfWork = new UnitOfWork.UnitOfWork();
             }
         }
-        
+
         public QueryEngine GetEngine() {
             return this.queryEngine;
         }

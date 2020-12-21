@@ -8,10 +8,12 @@
     using System.Threading.Tasks;
 
     using Fasterflect;
+
     using Leap.Data.IdentityMap;
+    using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
-    
+
     class QueryEngine : IAsyncDisposable {
         private readonly IConnectionFactory connectionFactory;
 
@@ -20,6 +22,8 @@
         private readonly IdentityMap identityMap;
 
         private readonly ISerializer serializer;
+
+        private readonly ISqlQueryWriter sqlQueryWriter;
 
         private readonly IList<IQuery> queries = new List<IQuery>();
 
@@ -33,17 +37,18 @@
 
         private DbDataReader dataReader;
 
-        private int nonCompleteQueryReaderIndex = 0;
-        
+        private int nonCompleteQueryReaderIndex;
+
         public bool IsComplete { get; private set; }
 
-        private bool isExecuted = false;
+        private bool isExecuted;
 
-        public QueryEngine(IConnectionFactory connectionFactory, ISchema schema, IdentityMap identityMap, ISerializer serializer) {
+        public QueryEngine(IConnectionFactory connectionFactory, ISchema schema, IdentityMap identityMap, ISerializer serializer, ISqlQueryWriter sqlQueryWriter) {
             this.connectionFactory = connectionFactory;
             this.schema            = schema;
             this.identityMap       = identityMap;
             this.serializer        = serializer;
+            this.sqlQueryWriter    = sqlQueryWriter;
         }
 
         public void Add(IQuery query) {
@@ -65,29 +70,45 @@
                     this.nonCompletedQueries.Add(query);
                 }
             }
-            
+
             if (!this.nonCompletedQueries.Any()) {
                 this.IsComplete = true;
                 return;
             }
-            
+
             var connection = this.connectionFactory.Get();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }
-            
+
             // TODO figure out connection/transaction lifecycle
             this.command = connection.CreateCommand();
-            var sqlQueryWriter = new SqlQueryWriter();
+            var queryCommand = new Command();
             foreach (var nonCompletedQuery in this.nonCompletedQueries) {
-                sqlQueryWriter.Write(nonCompletedQuery, this.command);
-                this.command.CommandText += ";";
+                sqlQueryWriter.Write(nonCompletedQuery, queryCommand);
+            }
+
+            this.command.CommandText = string.Join(";", queryCommand.Queries);
+            foreach (var (name, value, parameterDirection, dbType, size) in queryCommand.Parameters) {
+                var parameter = this.command.CreateParameter();
+                parameter.ParameterName = name;
+                parameter.Value         = value;
+                parameter.Direction     = parameterDirection;
+                if (dbType.HasValue) {
+                    parameter.DbType = dbType.Value;
+                }
+
+                if (size.HasValue) {
+                    parameter.Size = size.Value;
+                }
+
+                this.command.Parameters.Add(parameter);
             }
 
             this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             this.isExecuted = true;
         }
-        
+
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
             // add query if necessary
@@ -95,7 +116,7 @@
                 if (this.isExecuted) {
                     throw new Exception("These queries have already been executed");
                 }
-                
+
                 this.Add(query);
             }
 
@@ -103,20 +124,20 @@
             if (!this.isExecuted) {
                 await this.ExecuteAsync();
             }
-            
+
             // do we have the result already?
             if (wasExecuted && this.resultBag.TryGetValue(query.Identifier, out var result)) {
                 if (result is List<T> resultList) {
                     foreach (var entity in resultList) {
                         yield return entity;
                     }
-                    
+
                     yield break;
                 }
 
                 throw new Exception($"Tried to get result of type {typeof(T)} but actual type was {result.GetType()}");
             }
-            
+
             // we don't have the result, so we must go through the reader until we do.
             var nonCompleteQuery = this.nonCompletedQueries[this.nonCompleteQueryReaderIndex];
             while (nonCompleteQuery.Identifier != query.Identifier) {
@@ -177,7 +198,7 @@
             if (this.dataReader != null) {
                 await this.dataReader.DisposeAsync().ConfigureAwait(false);
             }
-            
+
             if (this.command != null) {
                 await this.command.DisposeAsync().ConfigureAwait(false);
             }

@@ -14,13 +14,13 @@
         public QueryBuilder(Session session) {
             this.session = session;
         }
-        
+
         public ValueTask<TEntity> SingleAsync<TKey>(TKey key, CancellationToken cancellationToken = default) {
             var query = new KeyQuery<TEntity, TKey>(key);
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query).SingleOrDefaultAsync(cancellationToken);
         }
-        
+
         public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key) {
             var query = new KeyQuery<TEntity, TKey>(key);
             var queryEngine = this.session.GetEngine();

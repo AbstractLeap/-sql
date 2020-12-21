@@ -6,8 +6,8 @@
     class IdentityMap {
         private readonly ISchema schema;
 
-        private IDictionary<Table, object> map = new Dictionary<Table, object>();
-        
+        private readonly IDictionary<Table, object> map = new Dictionary<Table, object>();
+
         public IdentityMap(ISchema schema) {
             this.schema = schema;
         }

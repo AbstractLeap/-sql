@@ -1,13 +1,10 @@
 ﻿namespace Leap.Data.Queries {
-    using System;
-
-    class KeyQuery<TEntity, TKey> : QueryBase {
+    class KeyQuery<TEntity, TKey> : QueryBase<TEntity>
+        where TEntity : class {
         public KeyQuery(TKey key) {
             this.Key = key;
         }
-        
-        public TKey Key { get; }
 
-        public override Type EntityType => typeof(TEntity);
+        public TKey Key { get; }
     }
 }

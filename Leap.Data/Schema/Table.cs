@@ -1,5 +1,4 @@
-﻿namespace Leap.Data.Schema
-{
+﻿namespace Leap.Data.Schema {
     using System;
     using System.Collections.Generic;
 
@@ -10,11 +9,13 @@
         public string Name { get; init; }
 
         public string Schema { get; init; }
-        
+
         public Type KeyType { get; init; }
 
         public IList<Column> Columns { get; init; }
-        
+
+        public IList<Column> KeyColumns { get; init; }
+
         protected bool Equals(Table other) {
             return this.Name == other.Name && this.Schema == other.Schema;
         }

@@ -11,13 +11,16 @@
 
         //void AddFutureQuery<TEntity>(Query<TEntity> query);
 
-        IQueryBuilder<TEntity> Get<TEntity>() where TEntity : class;
+        IQueryBuilder<TEntity> Get<TEntity>()
+            where TEntity : class;
 
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
-        void Delete<TEntity>(TEntity entity) where TEntity : class;
+        void Delete<TEntity>(TEntity entity)
+            where TEntity : class;
 
-        void Add<TEntity>(TEntity entity) where TEntity : class;
+        void Add<TEntity>(TEntity entity)
+            where TEntity : class;
     }
 
     //public class QueryBuilder<T> : IQueryBuilder<T> {
