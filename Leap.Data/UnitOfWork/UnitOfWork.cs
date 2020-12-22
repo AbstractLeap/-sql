@@ -9,5 +9,7 @@
         public void Add(IOperation operation) {
             this.operations.Add(operation);
         }
+
+        public IEnumerable<IOperation> Operations => this.operations;
     }
 }

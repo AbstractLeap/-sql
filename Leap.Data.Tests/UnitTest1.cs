@@ -15,7 +15,7 @@ namespace Leap.Data.Tests
     class MockSchema {
         public static ISchema GetMockSchema() {
             var mockSchema = new Mock<ISchema>();
-            var idColumn = new Column { Type = typeof(Guid), Name = "Id" };
+            var idColumn = new Column(typeof(Guid), "Id");
             mockSchema.Setup(s => s.GetTable<Blog>())
                       .Returns(
                           new Table
@@ -26,8 +26,8 @@ namespace Leap.Data.Tests
                               KeyMember = typeof(Blog).Member(nameof(Blog.BlogId)),
                               Columns = new List<Column>() {
                                   idColumn,
-                                  new Column { Type = typeof(string), Name = SpecialColumns.Document },
-                                  new Column { Type = typeof(string), Name = SpecialColumns.DocumentType }
+                                  new Column(typeof(string), SpecialColumns.Document),
+                                  new Column(typeof(string), SpecialColumns.DocumentType)
                               },
                               KeyColumns = new List<Column> {
                                   idColumn

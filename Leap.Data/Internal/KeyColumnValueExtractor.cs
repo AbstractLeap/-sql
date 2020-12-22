@@ -7,7 +7,7 @@
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    class KeyColumnValueExtractor {
+    class KeyColumnValueExtractor : IKeyColumnValueExtractor {
         private readonly ISchema schema;
 
         public KeyColumnValueExtractor(ISchema schema) {
@@ -15,6 +15,7 @@
         }
 
         public IDictionary<Column, object> Extract<TEntity, TKey>(TKey key) {
+            // TODO caching, move somewhere or make singleton
             var table = this.schema.GetTable<TEntity>();
             var result = new Dictionary<Column, object>(table.KeyColumns.Count);
             foreach (var columnEntry in table.KeyColumns.AsSmartEnumerable()) {

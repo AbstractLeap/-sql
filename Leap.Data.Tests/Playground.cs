@@ -3,6 +3,7 @@ namespace Leap.Data.Tests {
     using System.Threading.Tasks;
 
     using Leap.Data.Internal.QueryWriter.SqlServer;
+    using Leap.Data.Internal.UpdateWriter.SqlServer;
 
     using Microsoft.Data.SqlClient;
 
@@ -32,18 +33,53 @@ namespace Leap.Data.Tests {
         
         [Fact]
         public async Task ItWorks() {
-            var session = MakeTarget();
-            var blog = await session.Get<Blog>().SingleAsync(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
-            Assert.Equal("Foo", blog.Title);
+            var insertSession = MakeTarget();
+            var blogTitle = $"Blog from {DateTime.UtcNow}";
+            var newBlog = new Blog(blogTitle);
+            insertSession.Add(newBlog);
+            await insertSession.SaveChangesAsync();
+
+            var fetchSession = MakeTarget();
+            var blog = await fetchSession.Get<Blog>().SingleAsync(newBlog.BlogId);
+            Assert.Equal(blogTitle, blog.Title);
         }
 
         [Fact]
         public async Task FutureKeyWorks() {
             var session = MakeTarget();
-            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId());
-            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId());
+            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
+            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
             var blogFromFuture = await blogFuture.SingleAsync();
             Assert.Same(blogNow, blogFromFuture);
+        }
+        
+        [Fact]
+        public async Task AllTheOperationsInOne()
+        {
+            var session = MakeTarget();
+            var firstBlog = new Blog("My first blog");
+            session.Add(firstBlog);
+            var secondBlog = new Blog("My second blog");
+            session.Add(secondBlog);
+            await session.SaveChangesAsync();
+            
+            var secondSession = MakeTarget();
+            var firstBlogAgain = await secondSession.Get<Blog>().SingleAsync(firstBlog.BlogId);
+            var secondBlogAgain = await secondSession.Get<Blog>().SingleAsync(secondBlog.BlogId);
+            var thirdBlog = new Blog("My third blog");
+            secondSession.Add(thirdBlog);
+            secondSession.Delete(firstBlogAgain);
+            secondBlogAgain.Title = "My updated second blog";
+            await secondSession.SaveChangesAsync();
+
+            var thirdSession = MakeTarget();
+            var firstBlogAgainAgain = await thirdSession.Get<Blog>().SingleAsync(firstBlog.BlogId);
+            var secondBlogAgainAgain = await thirdSession.Get<Blog>().SingleAsync(secondBlog.BlogId);
+            var thirdBlogAgainAgain = await thirdSession.Get<Blog>().SingleAsync(thirdBlog.BlogId);
+            Assert.Null(firstBlogAgainAgain);
+            Assert.NotNull(secondBlogAgainAgain);
+            Assert.Equal(secondBlogAgain.Title, secondBlogAgainAgain.Title);
+            Assert.NotNull(thirdBlogAgainAgain);
         }
 
         private static Session MakeTarget() {
@@ -57,7 +93,7 @@ namespace Leap.Data.Tests {
 
             var mockSchema = MockSchema.GetMockSchema();
             
-            var session = new Session(connectionFactory.Object, mockSchema, mockSerializer.Object, new SqlServerSqlQueryWriter(mockSchema));
+            var session = new Session(connectionFactory.Object, mockSchema, mockSerializer.Object, new SqlServerSqlQueryWriter(mockSchema), new SqlServerSqlUpdateWriter(mockSchema, mockSerializer.Object));
             return session;
         }
     }

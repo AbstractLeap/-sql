@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data.Schema {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Reflection;
 
     /// <summary>
@@ -18,6 +19,10 @@
         public IList<Column> Columns { get; init; }
 
         public IList<Column> KeyColumns { get; init; }
+
+        public IEnumerable<Column> NonKeyColumns() {
+            return this.Columns.Except(this.KeyColumns);
+        }
 
         protected bool Equals(Table other) {
             return this.Name == other.Name && this.Schema == other.Schema;

@@ -1,9 +1,9 @@
 ﻿namespace Leap.Data.Operations {
-    internal class AddOperation : IOperation {
-        private readonly object entity;
+    internal class AddOperation<TEntity> : IOperation {
+        public TEntity Entity { get; }
 
-        public AddOperation(object entity) {
-            this.entity = entity;
+        public AddOperation(TEntity entity) {
+            this.Entity = entity;
         }
     }
 }

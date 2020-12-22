@@ -1,5 +1,7 @@
-﻿namespace Leap.Data.Internal.QueryWriter.SqlServer {
+﻿namespace Leap.Data.Internal.Common.SqlServer {
     using System.Text;
+
+    using Leap.Data.Internal.QueryWriter;
 
     internal class SqlServerDialect : ISqlDialect {
         public void AppendName(StringBuilder builder, string name) {

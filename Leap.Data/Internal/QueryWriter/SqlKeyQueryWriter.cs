@@ -4,18 +4,20 @@
 
     using Fasterflect;
 
+    using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    internal abstract class SqlKeyQueryWriter : ISqlQueryWriter {
+    internal abstract class SqlKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
 
-        private readonly KeyColumnValueExtractor keyColumnValueExtractor;
+        private readonly ISqlDialect sqlDialect;
 
-        public SqlKeyQueryWriter(ISchema schema) {
-            this.schema                  = schema;
-            this.keyColumnValueExtractor = new KeyColumnValueExtractor(schema);
+        protected SqlKeyQueryWriter(ISchema schema, ISqlDialect sqlDialect)
+            : base(sqlDialect, new KeyColumnValueExtractor(schema)) {
+            this.schema     = schema;
+            this.sqlDialect = sqlDialect;
         }
 
         public void Write(IQuery query, Command command) {
@@ -33,7 +35,7 @@
             var builder = new StringBuilder("select ");
             foreach (var columnEntry in table.Columns.AsSmartEnumerable()) {
                 builder.Append("t.");
-                this.AppendName(builder, columnEntry.Value.Name);
+                this.sqlDialect.AppendName(builder, columnEntry.Value.Name);
                 if (!columnEntry.IsLast) {
                     builder.Append(",");
                 }
@@ -42,22 +44,12 @@
             }
 
             builder.Append("from ");
-            this.AppendName(builder, table.Name);
+            this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" as t");
             builder.Append(" where ");
-            foreach (var keyColumnEntry in this.keyColumnValueExtractor.Extract<TEntity, TKey>(query.Key)) {
-                builder.Append("t.");
-                this.AppendName(builder, keyColumnEntry.Key.Name);
-                builder.Append(" = ");
-                var paramName = command.AddParameter(keyColumnEntry.Value);
-                this.AddParameter(builder, paramName);
-            }
+            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(query.Key, command, builder, true);
 
             command.AddQuery(builder.ToString());
         }
-
-        protected abstract void AppendName(StringBuilder builder, string name);
-
-        protected abstract void AddParameter(StringBuilder builder, string name);
     }
 }

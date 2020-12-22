@@ -15,15 +15,15 @@ namespace Leap.Data.Tests {
             var identityMap = new IdentityMap(mockSchema.Object);
 
             var blog = new Blog("Title");
-            identityMap.Add(blog.BlogId, blog);
+            identityMap.Add(blog.BlogId, new Document<Blog>() { Entity = blog });
             
             Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlog));
             Assert.NotNull(mappedBlog);
             Assert.Same(blog, mappedBlog);
             
-            Assert.True(identityMap.TryGetValue(typeof(BlogId), blog.BlogId, out Blog weakBlog));
+            Assert.True(identityMap.TryGetValue(typeof(BlogId), blog.BlogId, out Document<Blog> weakBlog));
             Assert.NotNull(weakBlog);
-            Assert.Same(blog, weakBlog);
+            Assert.Same(blog, weakBlog.Entity);
         }
     }
 }

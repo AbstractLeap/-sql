@@ -1,5 +1,6 @@
 ﻿namespace Leap.Data.Internal {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
@@ -25,56 +26,127 @@
 
         private readonly ISqlQueryWriter sqlQueryWriter;
 
-        private readonly IList<IQuery> queries = new List<IQuery>();
+        /// <summary>
+        /// where to store the results of queries not yet enumerated by the user
+        /// </summary>
+        private readonly ResultCache resultCache;
 
-        private readonly IList<IQuery> nonCompletedQueries = new List<IQuery>();
+        /// <summary>
+        /// queries to be executed
+        /// </summary>
+        private readonly Queue<IQuery> queriesToExecute = new Queue<IQuery>();
 
+        /// <summary>
+        /// queries that have not been read yet from the db reader
+        /// </summary>
+        private Queue<IQuery> notReadQueries = new Queue<IQuery>();
+        
         private readonly LocalQueryExecutor localQueryExecutor;
-
-        private readonly IDictionary<Guid, object> resultBag = new Dictionary<Guid, object>();
 
         private DbCommand command;
 
         private DbDataReader dataReader;
 
-        private int nonCompleteQueryReaderIndex;
-
-        public bool IsComplete { get; private set; }
-
-        private bool isExecuted;
-
-        public QueryEngine(IConnectionFactory connectionFactory, ISchema schema, IdentityMap identityMap, ISerializer serializer, ISqlQueryWriter sqlQueryWriter) {
+        public QueryEngine(
+            IConnectionFactory connectionFactory,
+            ISchema schema,
+            IdentityMap identityMap,
+            ISerializer serializer,
+            ISqlQueryWriter sqlQueryWriter) {
             this.connectionFactory  = connectionFactory;
             this.schema             = schema;
             this.identityMap        = identityMap;
             this.serializer         = serializer;
             this.localQueryExecutor = new LocalQueryExecutor(this.identityMap);
             this.sqlQueryWriter     = sqlQueryWriter;
+            this.resultCache        = new ResultCache();
         }
 
         public void Add(IQuery query) {
-            this.queries.Add(query);
+            this.queriesToExecute.Enqueue(query);
         }
 
-        public async Task ExecuteAsync(CancellationToken cancellationToken = default) {
-            foreach (var query in this.queries) {
+        public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
+            where T : class {
+            // add query if necessary
+            if (this.queriesToExecute.All(q => q.Identifier != query.Identifier)) {
+                await this.FlushAsync(); // ensure existing command has been fully read
+                this.Add(query);
+            }
+
+            if (this.queriesToExecute.Any()) {
+                await this.ExecuteAsync();
+            }
+
+            // do we have the result already?
+            if (this.resultCache.TryGetValue<T>(query, out var result)) {
+                foreach (var entity in result) {
+                    yield return entity;
+                }
+
+                yield break;
+            }
+
+            // we don't have the result, so we must go through the reader until we do.
+            var nonCompleteQuery = this.notReadQueries.Dequeue();
+            while (nonCompleteQuery != null && nonCompleteQuery.Identifier != query.Identifier) {
+                await this.ReadResultIntoCacheAsync(nonCompleteQuery);
+                await this.dataReader.NextResultAsync();
+                nonCompleteQuery = this.notReadQueries.Dequeue();
+            }
+
+            // read the result we've been asked for
+            await foreach (var p in this.ReadResultAsync<T>()) {
+                yield return p;
+            }
+
+            if (this.notReadQueries.Count == 0) {
+                await this.CleanUpCommandAsync();
+            }
+        }
+
+        private async Task ReadResultIntoCacheAsync(IQuery nonCompleteQuery) {
+            var queryResultsTask = (Task)this.CallMethod(new[] { nonCompleteQuery.EntityType }, nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
+            await queryResultsTask;
+            this.resultCache.Add(nonCompleteQuery, (IList)queryResultsTask.GetPropertyValue("Result"));
+        }
+
+        private async Task FlushAsync() {
+            while (this.notReadQueries.TryDequeue(out var query)) {
+                await this.ReadResultIntoCacheAsync(query);
+                await this.dataReader.NextResultAsync();
+            }
+
+            if (this.dataReader != null) {
+                await this.CleanUpCommandAsync();
+            }
+        }
+
+        private async Task CleanUpCommandAsync() {
+            await this.dataReader.CloseAsync();
+            await this.dataReader.DisposeAsync();
+            await this.command.DisposeAsync();
+        }
+
+        private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
+            var nonCompletedQueries = new Queue<IQuery>();
+            while (this.queriesToExecute.TryDequeue(out var query)) {
                 if (this.localQueryExecutor.CanExecute(query)) {
                     var attemptedResult = await this.localQueryExecutor.ExecuteAsync(query);
                     if (attemptedResult.WasSuccessful) {
-                        this.resultBag.Add(query.Identifier, attemptedResult.Result);
+                        this.resultCache.Add(query, (IList)attemptedResult.Result);
                     }
                     else {
-                        this.nonCompletedQueries.Add(query);
+                        nonCompletedQueries.Enqueue(query);
                     }
                 }
                 else {
-                    this.nonCompletedQueries.Add(query);
+                    nonCompletedQueries.Enqueue(query);
                 }
             }
 
-            if (!this.nonCompletedQueries.Any()) {
-                this.IsComplete = true;
-                this.isExecuted = true;
+            if (!nonCompletedQueries.Any()) {
+                // we've executed all the current queries
                 return;
             }
 
@@ -86,75 +158,13 @@
             // TODO figure out connection/transaction lifecycle
             this.command = connection.CreateCommand();
             var queryCommand = new Command();
-            foreach (var nonCompletedQuery in this.nonCompletedQueries) {
+            foreach (var nonCompletedQuery in nonCompletedQueries) {
                 sqlQueryWriter.Write(nonCompletedQuery, queryCommand);
             }
 
-            this.command.CommandText = string.Join(";", queryCommand.Queries);
-            foreach (var (name, value, parameterDirection, dbType, size) in queryCommand.Parameters) {
-                var parameter = this.command.CreateParameter();
-                parameter.ParameterName = name;
-                parameter.Value         = value;
-                parameter.Direction     = parameterDirection;
-                if (dbType.HasValue) {
-                    parameter.DbType = dbType.Value;
-                }
-
-                if (size.HasValue) {
-                    parameter.Size = size.Value;
-                }
-
-                this.command.Parameters.Add(parameter);
-            }
-
-            this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-            this.isExecuted = true;
-        }
-
-        public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
-            where T : class {
-            // add query if necessary
-            if (!this.queries.Any(q => q.Identifier == query.Identifier)) {
-                if (this.isExecuted) {
-                    throw new Exception("These queries have already been executed");
-                }
-
-                this.Add(query);
-            }
-
-            if (!this.isExecuted) {
-                await this.ExecuteAsync();
-            }
-
-            // do we have the result already?
-            if (this.resultBag.TryGetValue(query.Identifier, out var result)) {
-                if (result is List<T> resultList) {
-                    foreach (var entity in resultList) {
-                        yield return entity;
-                    }
-
-                    yield break;
-                }
-
-                throw new Exception($"Tried to get result of type List<{typeof(T)}> but actual type was {result.GetType()}");
-            }
-
-            // we don't have the result, so we must go through the reader until we do.
-            var nonCompleteQuery = this.nonCompletedQueries[this.nonCompleteQueryReaderIndex];
-            while (nonCompleteQuery.Identifier != query.Identifier) {
-                // TODO handle queries without result sets
-                var queryResultsTask = (Task)this.CallMethod(new[] { query.EntityType }, nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
-                await queryResultsTask;
-                this.resultBag.TryAdd(nonCompleteQuery.Identifier, queryResultsTask.GetPropertyValue("Result"));
-                this.nonCompleteQueryReaderIndex++;
-                nonCompleteQuery = this.nonCompletedQueries[this.nonCompleteQueryReaderIndex];
-                await this.dataReader.NextResultAsync();
-            }
-
-            // read the result we've been asked for
-            await foreach (var p in this.ReadResultAsync<T>()) {
-                yield return p;
-            }
+            queryCommand.WriteToDbCommand(this.command);
+            this.dataReader     = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            this.notReadQueries = nonCompletedQueries;
         }
 
         private async Task<List<T>> ReadResultIntoListAsync<T>()
@@ -175,8 +185,8 @@
 
                 // TODO invalidate old versions
                 // check ID map for instance
-                if (this.identityMap.TryGetValue(table.KeyType, id, out T mappedEntity)) {
-                    yield return mappedEntity;
+                if (this.identityMap.TryGetValue(table.KeyType, id, out Document<T> document)) {
+                    yield return document.Entity;
                     continue;
                 }
 
@@ -187,11 +197,10 @@
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(table.KeyType, id, entity);
+                this.identityMap.Add(table.KeyType, id, new Document<T> { Row = row, Entity = entity, State = DocumentState.Persisted });
                 yield return entity;
 
                 // TODO second level cache
-                // TODO store database row somewhere for dirty tracking
             }
         }
 
