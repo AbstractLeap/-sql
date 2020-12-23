@@ -175,7 +175,6 @@
         private async IAsyncEnumerable<T> ReadResultAsync<T>()
             where T : class {
             while (await this.dataReader.ReadAsync().ConfigureAwait(false)) {
-                // NOTE TO SELF you've done the wrong thing. this should be put in the resultBag, not yielded, that should be done later
                 // hydrate database row
                 var table = this.schema.GetTable<T>();
                 var values = new object[table.Columns.Count];

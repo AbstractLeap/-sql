@@ -14,6 +14,7 @@
 
         public bool TryGetValue<T>(IQuery query, out List<T> result) {
             if (this.entries.TryGetValue(query.Identifier, out var list) && list is List<T> typedList) {
+                this.entries.Remove(query.Identifier);
                 result = typedList;
                 return true;
             }
