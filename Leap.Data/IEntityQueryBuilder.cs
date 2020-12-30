@@ -10,6 +10,6 @@
 
         IEntityQueryBuilder<TEntity> Limit(int limit);
 
-        IFutureEntityQuery<TEntity> Future();
+        IFutureEntityQueryResult<TEntity> Future();
     }
 }

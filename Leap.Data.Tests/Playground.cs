@@ -16,6 +16,19 @@ namespace Leap.Data.Tests {
 
     public class Playground {
         [Fact]
+        public async Task QueryWorks() {
+            var insertSession = MakeTarget();
+            var blogTitle = $"Query Blog from {DateTime.UtcNow}";
+            var newBlog = new Blog(blogTitle);
+            insertSession.Add(newBlog);
+            await insertSession.SaveChangesAsync();
+
+            var session = MakeTarget();
+            var blogs = await session.Get<Blog>().ToArrayAsync();
+            Assert.True(blogs.Length > 0);
+        }
+        
+        [Fact]
         public async Task MultipleWorks() {
             var insertSession = MakeTarget();
             var blogTitle = $"Blog from {DateTime.UtcNow}";

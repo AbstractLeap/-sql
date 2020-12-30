@@ -5,5 +5,7 @@
         void AppendName(StringBuilder builder, string name);
 
         void AddParameter(StringBuilder builder, string name);
+
+        void AppendPaging(StringBuilder builder, int? queryOffset, int? queryLimit);
     }
 }

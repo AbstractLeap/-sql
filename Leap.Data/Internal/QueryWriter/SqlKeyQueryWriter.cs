@@ -7,7 +7,6 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
-    using Leap.Data.Utilities;
 
     internal abstract class SqlKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
@@ -32,7 +31,7 @@
         private void Write<TEntity, TKey>(KeyQuery<TEntity, TKey> query, Command command)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
-            
+
             var builder = new StringBuilder("select ");
             this.WriteColumns<TEntity>(builder);
 

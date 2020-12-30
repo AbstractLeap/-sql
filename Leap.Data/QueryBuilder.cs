@@ -1,5 +1,4 @@
 ﻿namespace Leap.Data {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -42,27 +41,40 @@
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {
-            throw new NotImplementedException();
+            var query = new EntityQuery<TEntity>();
+            var queryEngine = this.session.GetEngine();
+            return queryEngine.GetResult<TEntity>(query).GetAsyncEnumerator(cancellationToken);
         }
 
         public IEntityQueryBuilder<TEntity> Where(string whereClause) {
-            throw new NotImplementedException();
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session);
+            entityQueryBuilder.Where(whereClause);
+            return entityQueryBuilder;
         }
 
         public IEntityQueryBuilder<TEntity> OrderBy(string orderByClause) {
-            throw new NotImplementedException();
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session);
+            entityQueryBuilder.OrderBy(orderByClause);
+            return entityQueryBuilder;
         }
 
         public IEntityQueryBuilder<TEntity> Offset(int offset) {
-            throw new NotImplementedException();
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session);
+            entityQueryBuilder.Offset(offset);
+            return entityQueryBuilder;
         }
 
         public IEntityQueryBuilder<TEntity> Limit(int limit) {
-            throw new NotImplementedException();
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session);
+            entityQueryBuilder.Limit(limit);
+            return entityQueryBuilder;
         }
 
-        public IFutureEntityQuery<TEntity> Future() {
-            throw new NotImplementedException();
+        public IFutureEntityQueryResult<TEntity> Future() {
+            var query = new EntityQuery<TEntity>();
+            var queryEngine = this.session.GetEngine();
+            queryEngine.Add(query);
+            return new FutureEntityQueryResult<TEntity>(query, this.session);
         }
     }
 }
