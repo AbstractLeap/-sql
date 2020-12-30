@@ -17,9 +17,9 @@ namespace Leap.Data.Tests {
             var blog = new Blog("Title");
             identityMap.Add(blog.BlogId, new Document<Blog>() { Entity = blog });
             
-            Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlog));
-            Assert.NotNull(mappedBlog);
-            Assert.Same(blog, mappedBlog);
+            Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlogDocument));
+            Assert.NotNull(mappedBlogDocument);
+            Assert.Same(blog, mappedBlogDocument.Entity);
             
             Assert.True(identityMap.TryGetValue(typeof(BlogId), blog.BlogId, out Document<Blog> weakBlog));
             Assert.NotNull(weakBlog);
