@@ -3,20 +3,18 @@ namespace Leap.Data.Tests {
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Xunit;
-
-    public class Api
-    {
-        [Fact]
-        public async Task Test1() {
+    public class Api {
+        /// <summary>
+        ///     This method simply gives a "feeling" of how to use the api
+        /// </summary>
+        /// <returns></returns>
+        public async Task AestheticTest() {
             var blogId1 = new BlogId();
             var blogId2 = new BlogId();
             var session = this.GetSession();
             var entity = await session.Get<Blog>().SingleAsync(blogId1);
             var entitiesEnumerable = session.Get<Blog>().MultipleAsync(blogId1, blogId2);
-            await foreach (var asyncEntity in entitiesEnumerable) {
-                
-            }
+            await foreach (var asyncEntity in entitiesEnumerable) { }
 
             var entities = await entitiesEnumerable.ToListAsync();
 
