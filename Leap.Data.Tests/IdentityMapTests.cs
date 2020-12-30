@@ -15,7 +15,7 @@ namespace Leap.Data.Tests {
             var identityMap = new IdentityMap(mockSchema.Object);
 
             var blog = new Blog("Title");
-            identityMap.Add(blog.BlogId, new Document<Blog>() { Entity = blog });
+            identityMap.Add(blog.BlogId, new Document<Blog>(null, blog));
             
             Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlogDocument));
             Assert.NotNull(mappedBlogDocument);

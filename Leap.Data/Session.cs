@@ -37,7 +37,7 @@
             this.schema            = schema;
             this.serializer        = serializer;
             this.identityMap       = new IdentityMap.IdentityMap(this.schema);
-            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, serializer, sqlQueryWriter);
+            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, sqlQueryWriter, serializer);
             this.updateEngine      = new UpdateEngine(connectionFactory, schema, serializer, sqlUpdateWriter);
             this.keyExtractor      = new KeyExtractor(schema);
             this.changeTracker     = new ChangeTracker(serializer);
@@ -86,8 +86,7 @@
             this.unitOfWork.Add(new AddOperation<TEntity>(entity));
             var keyType = this.schema.GetTable<TEntity>().KeyType;
             var key = this.keyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(KeyExtractor.Extract), entity);
-            this.identityMap.Add(keyType, key, new Document<TEntity>() {
-                Entity = entity,
+            this.identityMap.Add(keyType, key, new Document<TEntity>(null, entity) {
                 State = DocumentState.New
             });
         }

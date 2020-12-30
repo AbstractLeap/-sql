@@ -2,10 +2,19 @@
     using Leap.Data.Internal;
 
     class Document<TEntity> {
-        public TEntity Entity { get; init; }
-        
-        public DatabaseRow Row { get; set; }
-        
+        public Document(DatabaseRow row) {
+            this.Row = row;
+        }
+
+        public Document(DatabaseRow row, TEntity entity) {
+            this.Row    = row;
+            this.Entity = entity;
+        }
+
+        public TEntity Entity { get; }
+
+        public DatabaseRow Row { get; }
+
         public DocumentState State { get; set; }
     }
 }
