@@ -8,8 +8,8 @@
         private readonly SqlServerSqlMultipleKeyQueryWriter sqlMultipleKeyQueryWriter;
 
         public SqlServerSqlQueryWriter(ISchema schema) {
-            this.sqlKeyQueryWriter = new SqlServerSqlKeyQueryWriter(schema);
-            this.sqlMultiKeyQueryWriter = new SqlServerSqlMultipleKeyQueryWriter(schema);
+            this.sqlKeyQueryWriter         = new SqlServerSqlKeyQueryWriter(schema);
+            this.sqlMultipleKeyQueryWriter = new SqlServerSqlMultipleKeyQueryWriter(schema);
         }
 
         public void Write(IQuery query, Command command) {

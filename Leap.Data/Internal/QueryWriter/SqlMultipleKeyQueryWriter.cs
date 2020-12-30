@@ -7,15 +7,14 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
-    using Leap.Data.Utilities;
 
     internal abstract class SqlMultipleKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;
 
-        protected SqlKeyQueryWriter(ISchema schema, ISqlDialect sqlDialect)
-            : base(sqlDialect, new KeyColumnValueExtractor(schema)) {
+        protected SqlMultipleKeyQueryWriter(ISchema schema, ISqlDialect sqlDialect)
+            : base(sqlDialect, new KeyColumnValueExtractor(schema), schema) {
             this.schema     = schema;
             this.sqlDialect = sqlDialect;
         }
@@ -32,7 +31,7 @@
         private void Write<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> query, Command command)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
-            
+
             var builder = new StringBuilder("select ");
             this.WriteColumns<TEntity>(builder);
 

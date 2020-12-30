@@ -15,7 +15,7 @@
         private readonly ISqlDialect sqlDialect;
 
         protected SqlKeyQueryWriter(ISchema schema, ISqlDialect sqlDialect)
-            : base(sqlDialect, new KeyColumnValueExtractor(schema)) {
+            : base(sqlDialect, new KeyColumnValueExtractor(schema), schema) {
             this.schema     = schema;
             this.sqlDialect = sqlDialect;
         }

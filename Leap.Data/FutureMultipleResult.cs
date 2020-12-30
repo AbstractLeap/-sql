@@ -1,6 +1,6 @@
 ﻿namespace Leap.Data {
-    using System.Linq;
-    using System.Threading.Tasks;
+    using System.Collections.Generic;
+    using System.Threading;
 
     using Leap.Data.Queries;
 
@@ -10,9 +10,13 @@
 
         private readonly Session session;
 
-        public FutureSingleResult(MultipleKeyQuery<TEntity, TKey> query, Session session) {
+        public FutureMultipleResult(MultipleKeyQuery<TEntity, TKey> query, Session session) {
             this.query   = query;
             this.session = session;
+        }
+
+        public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {
+            return this.session.GetEngine().GetResult<TEntity>(this.query).GetAsyncEnumerator(cancellationToken);
         }
     }
 }

@@ -1,5 +1,6 @@
 namespace Leap.Data.Tests {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     using Leap.Data.Internal.QueryWriter.SqlServer;
@@ -14,6 +15,32 @@ namespace Leap.Data.Tests {
     using Xunit;
 
     public class Playground {
+        [Fact]
+        public async Task MultipleWorks() {
+            var insertSession = MakeTarget();
+            var blogTitle = $"Blog from {DateTime.UtcNow}";
+            var newBlog = new Blog(blogTitle);
+            insertSession.Add(newBlog);
+            var blog2Title = $"Blog 2 from {DateTime.UtcNow}";
+            var newBlog2 = new Blog(blog2Title);
+            insertSession.Add(newBlog2);
+            await insertSession.SaveChangesAsync();
+
+            var fetchSession = MakeTarget();
+            var blogsFuture = fetchSession.Get<Blog>().MultipleFuture(newBlog.BlogId, newBlog2.BlogId);
+            var blogsNow = await fetchSession.Get<Blog>().MultipleAsync(newBlog.BlogId, newBlog2.BlogId).ToArrayAsync();
+            var blogsFromFuture = await blogsFuture.ToArrayAsync();
+            Assert.Equal(2, blogsNow.Length);
+            Assert.Equal(2, blogsFromFuture.Length);
+
+            var blogNow1 = blogsNow.Single(b => b.BlogId == newBlog.BlogId);
+            var blogNow2 = blogsNow.Single(b => b.BlogId == newBlog2.BlogId);
+            var blogFuture1 = blogsFromFuture.Single(b => b.BlogId == newBlog.BlogId);
+            var blogFuture2 = blogsFromFuture.Single(b => b.BlogId == newBlog2.BlogId);
+            Assert.Same(blogNow1, blogFuture1);
+            Assert.Same(blogNow2, blogFuture2);
+        }
+        
         [Fact]
         public async Task ItRoundTrips() {
             var session = MakeTarget();

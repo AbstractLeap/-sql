@@ -2,6 +2,7 @@
     using System.Text;
 
     using Leap.Data.Internal.QueryWriter;
+    using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
     abstract class SqlBaseWriter {
@@ -9,9 +10,12 @@
 
         private readonly IKeyColumnValueExtractor keyColumnValueExtractor;
 
-        protected SqlBaseWriter(ISqlDialect sqlDialect, IKeyColumnValueExtractor keyColumnValueExtractor) {
+        private readonly ISchema schema;
+
+        protected SqlBaseWriter(ISqlDialect sqlDialect, IKeyColumnValueExtractor keyColumnValueExtractor, ISchema schema) {
             this.sqlDialect              = sqlDialect;
             this.keyColumnValueExtractor = keyColumnValueExtractor;
+            this.schema                  = schema;
         }
 
         protected void WriteColumns<TEntity>(StringBuilder builder) {
