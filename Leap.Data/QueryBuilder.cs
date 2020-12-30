@@ -29,11 +29,16 @@
         }
 
         public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(params TKey[] keys) {
-            throw new NotImplementedException();
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys);
+            var queryEngine = this.session.GetEngine();
+            return queryEngine.GetResult<TEntity>(query);
         }
 
         public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(params TKey[] keys) {
-            throw new NotImplementedException();
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys);
+            var queryEngine = this.session.GetEngine();
+            queryEngine.Add(query);
+            return new FutureMultipleResult<TEntity, TKey>(query, this.session);
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {

@@ -9,7 +9,7 @@
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    internal abstract class SqlKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
+    internal abstract class SqlMultipleKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;
@@ -21,15 +21,15 @@
         }
 
         public void Write(IQuery query, Command command) {
-            if (query.GetType().Name != typeof(KeyQuery<,>).Name) {
-                throw new Exception($"{query.GetType()} is not KeyQuery<>");
+            if (query.GetType().Name != typeof(MultipleKeyQuery<,>).Name) {
+                throw new Exception($"{query.GetType()} is not MultipleKeyQuery<>");
             }
 
             var genericTypeParameters = query.GetType().GetGenericArguments();
             this.CallMethod(genericTypeParameters, nameof(Write), new[] { query.GetType(), typeof(Command) }, Flags.InstancePrivate | Flags.ExactBinding, query, command);
         }
 
-        private void Write<TEntity, TKey>(KeyQuery<TEntity, TKey> query, Command command)
+        private void Write<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> query, Command command)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
             
@@ -40,7 +40,7 @@
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" as t");
             builder.Append(" where ");
-            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(query.Key, command, builder, true);
+            this.WriteWhereClauseForMultipleEntities<TEntity, TKey>(query.Keys, command, builder, true);
 
             command.AddQuery(builder.ToString());
         }
