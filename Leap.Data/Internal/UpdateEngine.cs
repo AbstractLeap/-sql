@@ -1,4 +1,5 @@
-﻿namespace Leap.Data.Internal {
+﻿namespace Leap.Data.Internal
+{
     using System;
     using System.Data;
     using System.Linq;
@@ -9,44 +10,24 @@
     using Leap.Data.Schema;
     using Leap.Data.UnitOfWork;
 
-    class UpdateEngine : IAsyncDisposable {
-        private readonly IConnectionFactory connectionFactory;
-
+    class UpdateEngine {
+        
         private readonly ISchema schema;
 
         private readonly ISerializer serializer;
 
-        private readonly ISqlUpdateWriter updateWriter;
+        private readonly SqlUpdateExecutor queryExecutor;
 
         public UpdateEngine(IConnectionFactory connectionFactory, ISchema schema, ISerializer serializer, ISqlUpdateWriter updateWriter) {
-            this.connectionFactory = connectionFactory;
-            this.schema            = schema;
-            this.serializer        = serializer;
-            this.updateWriter      = updateWriter;
+            this.queryExecutor = new SqlUpdateExecutor(connectionFactory, updateWriter);
         }
 
-        public async Task ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
+        public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
             if (!unitOfWork.Operations.Any()) {
                 return;
             }
 
-            var connection = this.connectionFactory.Get();
-            if (connection.State != ConnectionState.Open) {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            var dbCommand = connection.CreateCommand();
-            var command = new Command();
-            foreach (var operation in unitOfWork.Operations) {
-                this.updateWriter.Write(operation, command);
-            }
-
-            command.WriteToDbCommand(dbCommand);
-            await dbCommand.ExecuteNonQueryAsync(cancellationToken);
-        }
-
-        public ValueTask DisposeAsync() {
-            throw new NotImplementedException();
+            await this.queryExecutor.ExecuteAsync(unitOfWork, cancellationToken);
         }
     }
 }
