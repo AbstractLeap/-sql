@@ -2,6 +2,7 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -58,8 +59,12 @@
             return new ExecuteResult(executedQueries, nonExecutedQueries);
         }
 
-        public async IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)
+        public IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)
             where TEntity : class {
+            return Get<TEntity>(query).ToAsyncEnumerable();
+        }
+
+        private IEnumerable<Document<TEntity>> Get<TEntity>(IQuery query) where TEntity : class {
             if (this.resultCache.TryGetValue<Document<TEntity>>(query, out var result)) {
                 foreach (var document in result) {
                     yield return document;
