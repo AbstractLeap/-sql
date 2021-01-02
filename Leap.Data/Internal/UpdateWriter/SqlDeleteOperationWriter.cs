@@ -16,14 +16,11 @@
 
         private readonly ISerializer serializer;
 
-        private readonly KeyExtractor keyExtractor;
-
         protected SqlDeleteOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer)
             : base(sqlDialect, schema) {
             this.schema       = schema;
             this.sqlDialect   = sqlDialect;
             this.serializer   = serializer;
-            this.keyExtractor = new KeyExtractor(schema);
         }
 
         public void Write(IOperation operation, Command command) {
@@ -41,7 +38,7 @@
             var builder = new StringBuilder("delete from ");
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" where ");
-            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(this.keyExtractor.Extract<TEntity, TKey>(entity), command, builder);
+            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(table.KeyExtractor.Extract<TEntity, TKey>(entity), command, builder);
             command.AddQuery(builder.ToString());
         }
     }

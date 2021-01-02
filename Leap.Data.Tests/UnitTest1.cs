@@ -23,7 +23,6 @@ namespace Leap.Data.Tests
                               Name    = "Blogs",
                               Schema  = "dbo",
                               KeyType = typeof(BlogId),
-                              KeyMember = typeof(Blog).Member(nameof(Blog.BlogId)),
                               Columns = new List<Column>() {
                                   idColumn,
                                   new Column(typeof(string), SpecialColumns.Document),

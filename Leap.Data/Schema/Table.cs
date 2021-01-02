@@ -16,16 +16,17 @@
 
         public Type KeyType { get; init; }
         
-        public MemberInfo KeyMember { get; init; }
-
         public IList<Column> Columns { get; init; }
 
         public IList<Column> KeyColumns { get; init; }
         
         public IKeyColumnValueExtractor KeyColumnValueExtractor { get; set; }
+        
+        public IKeyExtractor KeyExtractor { get; set; }
 
         public Table(ISchema schema) {
             this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(schema);
+            this.KeyExtractor            = new DefaultKeyExtractor(schema);
         }
 
         public IEnumerable<Column> NonKeyColumns() {

@@ -16,13 +16,10 @@
 
         private readonly ISerializer serializer;
 
-        private KeyExtractor keyExtractor;
-
         protected SqlAddOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer) {
             this.schema                  = schema;
             this.sqlDialect              = sqlDialect;
             this.serializer              = serializer;
-            this.keyExtractor            = new KeyExtractor(schema);
         }
 
         public void Write(IOperation operation, Command command) {
@@ -52,7 +49,7 @@
             }
 
             builder.Append(") values (");
-            var key = this.keyExtractor.Extract<TEntity, TKey>(entity);
+            var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
             foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key))
             {
                 var paramName = command.AddParameter(keyColumnEntry.Value);

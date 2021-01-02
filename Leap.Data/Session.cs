@@ -28,8 +28,6 @@
 
         private UpdateEngine updateEngine;
 
-        private KeyExtractor keyExtractor;
-
         private ChangeTracker changeTracker;
 
         public Session(IConnectionFactory connectionFactory, ISchema schema, ISerializer serializer, ISqlQueryWriter sqlQueryWriter, ISqlUpdateWriter sqlUpdateWriter) {
@@ -39,7 +37,6 @@
             this.identityMap       = new IdentityMap.IdentityMap(this.schema);
             this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, sqlQueryWriter, serializer);
             this.updateEngine      = new UpdateEngine(connectionFactory, schema, serializer, sqlUpdateWriter);
-            this.keyExtractor      = new KeyExtractor(schema);
             this.changeTracker     = new ChangeTracker(serializer);
         }
 
@@ -73,8 +70,9 @@
             where TEntity : class {
             this.EnsureUnitOfWork();
             this.unitOfWork.Add(new DeleteOperation<TEntity>(entity));
-            var keyType = this.schema.GetTable<TEntity>().KeyType;
-            var key = this.keyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(KeyExtractor.Extract), entity);
+            var table = this.schema.GetTable<TEntity>();
+            var keyType = table.KeyType;
+            var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
             if (this.identityMap.TryGetValue<TEntity>(keyType, key, out var document)) {
                 document.State = DocumentState.Deleted;
             }
@@ -84,8 +82,9 @@
             where TEntity : class {
             this.EnsureUnitOfWork();
             this.unitOfWork.Add(new AddOperation<TEntity>(entity));
-            var keyType = this.schema.GetTable<TEntity>().KeyType;
-            var key = this.keyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(KeyExtractor.Extract), entity);
+            var table = this.schema.GetTable<TEntity>();
+            var keyType = table.KeyType;
+            var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
             this.identityMap.Add(keyType, key, new Document<TEntity>(null, entity) {
                 State = DocumentState.New
             });
