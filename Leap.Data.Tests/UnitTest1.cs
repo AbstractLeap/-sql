@@ -18,7 +18,7 @@ namespace Leap.Data.Tests
             var idColumn = new Column(typeof(Guid), "Id");
             mockSchema.Setup(s => s.GetTable<Blog>())
                       .Returns(
-                          new Table
+                          new Table (mockSchema.Object)
                           {
                               Name    = "Blogs",
                               Schema  = "dbo",

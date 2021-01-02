@@ -7,10 +7,10 @@
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    class KeyColumnValueExtractor : IKeyColumnValueExtractor {
+    class DefaultKeyColumnValueExtractor : IKeyColumnValueExtractor {
         private readonly ISchema schema;
 
-        public KeyColumnValueExtractor(ISchema schema) {
+        public DefaultKeyColumnValueExtractor(ISchema schema) {
             this.schema = schema;
         }
 

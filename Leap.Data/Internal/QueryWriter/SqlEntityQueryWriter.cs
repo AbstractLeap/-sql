@@ -14,7 +14,7 @@
         private readonly ISqlDialect sqlDialect;
 
         protected SqlEntityQueryWriter(ISchema schema, ISqlDialect sqlDialect)
-            : base(sqlDialect, new KeyColumnValueExtractor(schema), schema) {
+            : base(sqlDialect, schema) {
             this.schema     = schema;
             this.sqlDialect = sqlDialect;
         }

@@ -8,13 +8,10 @@
     abstract class SqlBaseWriter {
         private readonly ISqlDialect sqlDialect;
 
-        private readonly IKeyColumnValueExtractor keyColumnValueExtractor;
-
         private readonly ISchema schema;
 
-        protected SqlBaseWriter(ISqlDialect sqlDialect, IKeyColumnValueExtractor keyColumnValueExtractor, ISchema schema) {
+        protected SqlBaseWriter(ISqlDialect sqlDialect, ISchema schema) {
             this.sqlDialect              = sqlDialect;
-            this.keyColumnValueExtractor = keyColumnValueExtractor;
             this.schema                  = schema;
         }
 
@@ -33,7 +30,8 @@
 
         protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
-            foreach (var keyColumnEntry in this.keyColumnValueExtractor.Extract<TEntity, TKey>(key).AsSmartEnumerable()) {
+            var table = this.schema.GetTable<TEntity>();
+            foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key).AsSmartEnumerable()) {
                 if (useAlias) {
                     builder.Append("t.");
                 }
@@ -50,9 +48,10 @@
 
         protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
+            var table = this.schema.GetTable<TEntity>();
             foreach (var keyEntry in keys.AsSmartEnumerable()) {
                 builder.Append("(");
-                foreach (var keyColumnEntry in this.keyColumnValueExtractor.Extract<TEntity, TKey>(keyEntry.Value).AsSmartEnumerable()) {
+                foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(keyEntry.Value).AsSmartEnumerable()) {
                     if (useAlias) {
                         builder.Append("t.");
                     }

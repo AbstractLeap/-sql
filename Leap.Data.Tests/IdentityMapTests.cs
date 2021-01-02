@@ -11,7 +11,7 @@ namespace Leap.Data.Tests {
         [Fact]
         public void ItWorks() {
             var mockSchema = new Mock<ISchema>();
-            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table { Name = "Blogs", Schema = "dbo", KeyType = typeof(BlogId) });
+            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table (mockSchema.Object) { Name = "Blogs", Schema = "dbo", KeyType = typeof(BlogId) });
             var identityMap = new IdentityMap(mockSchema.Object);
 
             var blog = new Blog("Title");

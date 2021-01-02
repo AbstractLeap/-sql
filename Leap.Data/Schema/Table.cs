@@ -4,6 +4,8 @@
     using System.Linq;
     using System.Reflection;
 
+    using Leap.Data.Internal;
+
     /// <summary>
     ///     metadata
     /// </summary>
@@ -19,6 +21,12 @@
         public IList<Column> Columns { get; init; }
 
         public IList<Column> KeyColumns { get; init; }
+        
+        public IKeyColumnValueExtractor KeyColumnValueExtractor { get; set; }
+
+        public Table(ISchema schema) {
+            this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(schema);
+        }
 
         public IEnumerable<Column> NonKeyColumns() {
             return this.Columns.Except(this.KeyColumns);

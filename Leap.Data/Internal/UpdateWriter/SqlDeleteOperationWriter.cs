@@ -19,7 +19,7 @@
         private readonly KeyExtractor keyExtractor;
 
         protected SqlDeleteOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer)
-            : base(sqlDialect, new KeyColumnValueExtractor(schema), schema) {
+            : base(sqlDialect, schema) {
             this.schema       = schema;
             this.sqlDialect   = sqlDialect;
             this.serializer   = serializer;
