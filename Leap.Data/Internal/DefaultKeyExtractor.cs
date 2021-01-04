@@ -2,20 +2,12 @@
     using System;
     using System.Collections.Concurrent;
 
-    using Leap.Data.Schema;
-
     class DefaultKeyExtractor : IKeyExtractor {
-        private readonly ISchema schema;
-
         private Type matchingEntityType;
 
         private object typedKeyExtractor;
 
         private ConcurrentDictionary<Type, object> extractorLookup;
-
-        public DefaultKeyExtractor(ISchema schema) {
-            this.schema = schema;
-        }
 
         public TKey Extract<TEntity, TKey>(TEntity entity) {
             var entityType = typeof(TEntity);

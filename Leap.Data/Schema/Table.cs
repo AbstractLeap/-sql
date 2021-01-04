@@ -24,8 +24,8 @@
         public IKeyExtractor KeyExtractor { get; set; }
 
         public Table(ISchema schema) {
-            this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(schema);
-            this.KeyExtractor            = new DefaultKeyExtractor(schema);
+            this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(this);
+            this.KeyExtractor            = new DefaultKeyExtractor();
         }
 
         public IEnumerable<Column> NonKeyColumns() {
