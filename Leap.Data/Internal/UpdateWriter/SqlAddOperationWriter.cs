@@ -41,7 +41,7 @@
                 builder.Append(", ");
             }
 
-            foreach (var columnEntry in table.NonKeyColumns().AsSmartEnumerable()) {
+            foreach (var columnEntry in table.NonKeyColumns.AsSmartEnumerable()) {
                 this.sqlDialect.AppendName(builder, columnEntry.Value.Name);
                 if (!columnEntry.IsLast) {
                     builder.Append(", ");

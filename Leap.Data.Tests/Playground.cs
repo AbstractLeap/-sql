@@ -132,7 +132,7 @@ namespace Leap.Data.Tests {
             mockSerializer.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<string>())).Returns((Type type, string json) => JsonConvert.DeserializeObject(json, type));
             mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns((object obj) => JsonConvert.SerializeObject(obj));
 
-            var mockSchema = MockSchema.GetMockSchema();
+            var mockSchema = TestSchema.GetSchema();
             
             var session = new Session(mockSchema, mockSerializer.Object, new SqlQueryExecutor(connectionFactory.Object, new SqlServerSqlQueryWriter(mockSchema), mockSchema), new SqlUpdateExecutor(connectionFactory.Object, new SqlServerSqlUpdateWriter(mockSchema, mockSerializer.Object)));
             return session;

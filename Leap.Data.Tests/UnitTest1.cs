@@ -8,33 +8,6 @@ namespace Leap.Data.Tests
     using Fasterflect;
 
     using Leap.Data.Internal;
-    using Leap.Data.Schema;
-
-    using Moq;
-
-    class MockSchema {
-        public static ISchema GetMockSchema() {
-            var mockSchema = new Mock<ISchema>();
-            var idColumn = new Column(typeof(Guid), "Id");
-            mockSchema.Setup(s => s.GetTable<Blog>())
-                      .Returns(
-                          new Table (mockSchema.Object)
-                          {
-                              Name    = "Blogs",
-                              Schema  = "dbo",
-                              KeyType = typeof(BlogId),
-                              Columns = new List<Column>() {
-                                  idColumn,
-                                  new Column(typeof(string), SpecialColumns.Document),
-                                  new Column(typeof(string), SpecialColumns.DocumentType)
-                              },
-                              KeyColumns = new List<Column> {
-                                  idColumn
-                              }
-                          });
-            return mockSchema.Object;
-        }
-    }
 
     public record BlogId
     {

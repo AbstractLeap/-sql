@@ -1,5 +1,5 @@
 ﻿namespace Leap.Data.Schema {
-    internal interface ISchema {
+    public interface ISchema {
         Table GetTable<TEntity>();
     }
 }

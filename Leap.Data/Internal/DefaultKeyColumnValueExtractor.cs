@@ -16,7 +16,7 @@
 
         public IDictionary<Column, object> Extract<TEntity, TKey>(TKey key) {
             // TODO caching, move somewhere or make singleton
-            var result = new Dictionary<Column, object>(this.table.KeyColumns.Count);
+            var result = new Dictionary<Column, object>();
             foreach (var columnEntry in this.table.KeyColumns.AsSmartEnumerable()) {
                 var fieldInfo = typeof(TKey).Field(columnEntry.Value.Name);
                 if (fieldInfo != null) {

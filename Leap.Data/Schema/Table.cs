@@ -8,28 +8,44 @@
     /// <summary>
     ///     metadata
     /// </summary>
-    class Table {
-        public string Name { get; init; }
+    public class Table {
+        private Column[] allColumns;
 
-        public string Schema { get; init; }
+        private Column[] nonKeyColumns;
+        
+        private Column[] keyColumns;
 
-        public Type KeyType { get; init; }
+        public string Name { get; }
 
-        public IList<Column> Columns { get; init; }
+        public string Schema { get; }
 
-        public IList<Column> KeyColumns { get; init; }
+        public Type KeyType { get; }
+        
+        public DocumentColumn DocumentColumn { get; }
+        
+        public DocumentTypeColumn DocumentTypeColumn { get; }
+
+        public IList<Column> Columns => this.allColumns;
+
+        public IEnumerable<Column> KeyColumns => this.keyColumns;
+
+        public IEnumerable<Column> NonKeyColumns => this.nonKeyColumns;
 
         public IKeyColumnValueExtractor KeyColumnValueExtractor { get; set; }
 
         public IKeyExtractor KeyExtractor { get; set; }
 
-        public Table(ISchema schema) {
+        public Table(string tableName, string schemaName, Type keyType, IEnumerable<Column> keyColumns) {
+            this.Name                    = tableName;
+            this.Schema                  = schemaName;
+            this.KeyType                 = keyType;
+            this.keyColumns              = keyColumns.ToArray();
+            this.DocumentColumn          = new DocumentColumn();
+            this.DocumentTypeColumn      = new DocumentTypeColumn();
             this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(this);
             this.KeyExtractor            = new DefaultKeyExtractor();
-        }
-
-        public IEnumerable<Column> NonKeyColumns() {
-            return this.Columns.Except(this.KeyColumns);
+            this.nonKeyColumns           = new Column[] { this.DocumentColumn, this.DocumentTypeColumn };
+            this.allColumns              = this.keyColumns.Union(this.nonKeyColumns).ToArray();
         }
 
         protected bool Equals(Table other) {

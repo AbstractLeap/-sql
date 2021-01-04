@@ -1,5 +1,5 @@
 ﻿namespace Leap.Data.Internal {
-    interface IKeyExtractor {
+    public interface IKeyExtractor {
         TKey Extract<TEntity, TKey>(TEntity entity);
     }
 }

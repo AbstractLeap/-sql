@@ -3,7 +3,7 @@
 
     using Leap.Data.Schema;
 
-    interface IKeyColumnValueExtractor {
+    public interface IKeyColumnValueExtractor {
         IDictionary<Column, object> Extract<TEntity, TKey>(TKey key);
     }
 }
