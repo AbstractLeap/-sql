@@ -13,8 +13,6 @@
     class Session : ISession {
         private readonly ISchema schema;
 
-        private readonly ISerializer serializer;
-
         private UnitOfWork.UnitOfWork unitOfWork;
 
         private readonly IdentityMap.IdentityMap identityMap;
@@ -27,7 +25,6 @@
 
         public Session(ISchema schema, ISerializer serializer, IQueryExecutor queryExecutor, IUpdateExecutor updateExecutor) {
             this.schema        = schema;
-            this.serializer    = serializer;
             this.identityMap   = new IdentityMap.IdentityMap(this.schema);
             this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer);
             this.updateEngine  = new UpdateEngine(updateExecutor);
