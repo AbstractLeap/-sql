@@ -3,6 +3,7 @@ namespace Leap.Data.Tests {
     using System.Linq;
     using System.Threading.Tasks;
 
+    using Leap.Data.Internal;
     using Leap.Data.Internal.QueryWriter.SqlServer;
     using Leap.Data.Internal.UpdateWriter.SqlServer;
 
@@ -133,7 +134,7 @@ namespace Leap.Data.Tests {
 
             var mockSchema = MockSchema.GetMockSchema();
             
-            var session = new Session(connectionFactory.Object, mockSchema, mockSerializer.Object, new SqlServerSqlQueryWriter(mockSchema), new SqlServerSqlUpdateWriter(mockSchema, mockSerializer.Object));
+            var session = new Session(mockSchema, mockSerializer.Object, new SqlQueryExecutor(connectionFactory.Object, new SqlServerSqlQueryWriter(mockSchema), mockSchema), new SqlUpdateExecutor(connectionFactory.Object, new SqlServerSqlUpdateWriter(mockSchema, mockSerializer.Object)));
             return session;
         }
     }

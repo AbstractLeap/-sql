@@ -1,5 +1,4 @@
 ﻿namespace Leap.Data {
-    using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -8,14 +7,10 @@
 
     using Leap.Data.IdentityMap;
     using Leap.Data.Internal;
-    using Leap.Data.Internal.QueryWriter;
-    using Leap.Data.Internal.UpdateWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
 
     class Session : ISession {
-        private readonly IConnectionFactory connectionFactory;
-
         private readonly ISchema schema;
 
         private readonly ISerializer serializer;
@@ -26,18 +21,17 @@
 
         private readonly QueryEngine queryEngine;
 
-        private UpdateEngine updateEngine;
+        private readonly UpdateEngine updateEngine;
 
-        private ChangeTracker changeTracker;
+        private readonly ChangeTracker changeTracker;
 
-        public Session(IConnectionFactory connectionFactory, ISchema schema, ISerializer serializer, ISqlQueryWriter sqlQueryWriter, ISqlUpdateWriter sqlUpdateWriter) {
-            this.connectionFactory = connectionFactory;
-            this.schema            = schema;
-            this.serializer        = serializer;
-            this.identityMap       = new IdentityMap.IdentityMap(this.schema);
-            this.queryEngine       = new QueryEngine(connectionFactory, schema, this.identityMap, sqlQueryWriter, serializer);
-            this.updateEngine      = new UpdateEngine(connectionFactory, schema, serializer, sqlUpdateWriter);
-            this.changeTracker     = new ChangeTracker(serializer);
+        public Session(ISchema schema, ISerializer serializer, IQueryExecutor queryExecutor, IUpdateExecutor updateExecutor) {
+            this.schema        = schema;
+            this.serializer    = serializer;
+            this.identityMap   = new IdentityMap.IdentityMap(this.schema);
+            this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer);
+            this.updateEngine  = new UpdateEngine(updateExecutor);
+            this.changeTracker = new ChangeTracker(serializer);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
@@ -50,14 +44,14 @@
             foreach (var tuple in this.identityMap.GetAll()) {
                 if ((bool)this.changeTracker.CallMethod(new[] { tuple.Document.GetType().GetGenericArguments().First() }, nameof(ChangeTracker.HasEntityChanged), tuple.Document)) {
                     var updateOperation = (IOperation)typeof(UpdateOperation<,>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First(), tuple.Key.GetType())
-                                                                    .CreateInstance(tuple.Document, tuple.Key);
+                                                                                .CreateInstance(tuple.Document, tuple.Key);
                     this.unitOfWork.Add(updateOperation);
                 }
             }
-            
+
             // get sql to execute
             await this.updateEngine.ExecuteAsync(this.unitOfWork);
-            
+
             // TODO reset states in identity map
             // TODO flush queryEngine
             // TODO reset queryEngine
@@ -85,9 +79,7 @@
             var table = this.schema.GetTable<TEntity>();
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
-            this.identityMap.Add(keyType, key, new Document<TEntity>(null, entity) {
-                State = DocumentState.New
-            });
+            this.identityMap.Add(keyType, key, new Document<TEntity>(null, entity) { State = DocumentState.New });
         }
 
         void EnsureUnitOfWork() {

@@ -1,25 +1,15 @@
-﻿namespace Leap.Data.Internal
-{
-    using System;
-    using System.Data;
+﻿namespace Leap.Data.Internal {
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Leap.Data.Internal.UpdateWriter;
-    using Leap.Data.Schema;
     using Leap.Data.UnitOfWork;
 
     class UpdateEngine {
-        
-        private readonly ISchema schema;
+        private readonly IUpdateExecutor persistenceUpdateExecutor;
 
-        private readonly ISerializer serializer;
-
-        private readonly SqlUpdateExecutor queryExecutor;
-
-        public UpdateEngine(IConnectionFactory connectionFactory, ISchema schema, ISerializer serializer, ISqlUpdateWriter updateWriter) {
-            this.queryExecutor = new SqlUpdateExecutor(connectionFactory, updateWriter);
+        public UpdateEngine(IUpdateExecutor persistenceUpdateExecutor) {
+            this.persistenceUpdateExecutor = persistenceUpdateExecutor;
         }
 
         public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
@@ -27,7 +17,7 @@
                 return;
             }
 
-            await this.queryExecutor.ExecuteAsync(unitOfWork, cancellationToken);
+            await this.persistenceUpdateExecutor.ExecuteAsync(unitOfWork, cancellationToken);
         }
     }
 }

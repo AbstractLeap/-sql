@@ -8,7 +8,6 @@
     using Fasterflect;
 
     using Leap.Data.IdentityMap;
-    using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
@@ -28,11 +27,11 @@
 
         private readonly IQueryExecutor[] executors;
 
-        public QueryEngine(IConnectionFactory connectionFactory, ISchema schema, IdentityMap identityMap, ISqlQueryWriter sqlQueryWriter, ISerializer serializer) {
+        public QueryEngine(ISchema schema, IdentityMap identityMap, IQueryExecutor persistenceQueryExecutor, ISerializer serializer) {
             this.schema      = schema;
             this.identityMap = identityMap;
             this.serializer  = serializer;
-            this.executors   = new IQueryExecutor[] { new LocalQueryExecutor(this.identityMap), new SqlQueryExecutor(connectionFactory, sqlQueryWriter, schema) };
+            this.executors   = new[] { new LocalQueryExecutor(this.identityMap), persistenceQueryExecutor };
         }
 
         public void Add(IQuery query) {
@@ -46,7 +45,7 @@
                 await this.FlushAsync();
                 this.Add(query);
             }
-            
+
             if (this.queriesToExecute.Any()) {
                 await this.ExecuteAsync();
             }
