@@ -4,9 +4,9 @@
             this.WasSuccessful = true;
             this.Result        = result;
         }
-        
+
         private Maybe() { }
-        
+
         public bool WasSuccessful { get; private init; }
 
         public object Result { get; }

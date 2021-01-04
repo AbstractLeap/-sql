@@ -18,9 +18,9 @@
 
         protected SqlDeleteOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer)
             : base(sqlDialect, schema) {
-            this.schema       = schema;
-            this.sqlDialect   = sqlDialect;
-            this.serializer   = serializer;
+            this.schema     = schema;
+            this.sqlDialect = sqlDialect;
+            this.serializer = serializer;
         }
 
         public void Write(IOperation operation, Command command) {

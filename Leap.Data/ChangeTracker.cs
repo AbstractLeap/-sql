@@ -13,7 +13,7 @@
             if (document.State != DocumentState.Persisted) {
                 return false;
             }
-            
+
             var json = document.Row.GetValue<string>(SpecialColumns.Document);
             return !string.Equals(this.serializer.Serialize(document.Entity), json);
         }

@@ -22,14 +22,14 @@
         public void AddParameter(string name, object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
             this.parameters[Clean(name)] = new ParameterInfo(name, value, direction ?? ParameterDirection.Input, dbType, size);
         }
-        
+
         /// <remarks>
-        ///For unit testing
+        ///     For unit testing
         /// </remarks>
         internal IEnumerable<string> Queries => this.queries.AsReadOnly();
 
         /// <remarks>
-        ///For unit testing
+        ///     For unit testing
         /// </remarks>
         internal IEnumerable<ParameterInfo> Parameters => this.parameters.Values.AsEnumerable();
 
@@ -48,19 +48,16 @@
 
         public void WriteToDbCommand(DbCommand dbCommand) {
             dbCommand.CommandText = string.Join(";", this.queries);
-            foreach (var (name, value, parameterDirection, dbType, size) in this.Parameters)
-            {
+            foreach (var (name, value, parameterDirection, dbType, size) in this.Parameters) {
                 var parameter = dbCommand.CreateParameter();
                 parameter.ParameterName = name;
                 parameter.Value         = value;
                 parameter.Direction     = parameterDirection;
-                if (dbType.HasValue)
-                {
+                if (dbType.HasValue) {
                     parameter.DbType = dbType.Value;
                 }
 
-                if (size.HasValue)
-                {
+                if (size.HasValue) {
                     parameter.Size = size.Value;
                 }
 

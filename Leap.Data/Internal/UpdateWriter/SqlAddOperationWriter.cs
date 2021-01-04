@@ -17,15 +17,15 @@
         private readonly ISerializer serializer;
 
         protected SqlAddOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer) {
-            this.schema                  = schema;
-            this.sqlDialect              = sqlDialect;
-            this.serializer              = serializer;
+            this.schema     = schema;
+            this.sqlDialect = sqlDialect;
+            this.serializer = serializer;
         }
 
         public void Write(IOperation operation, Command command) {
             var entityType = operation.GetType().GetGenericArguments().First();
             var table = this.schema.GetTable(entityType);
-            this.CallMethod(new[] { entityType, table.KeyType }, nameof(Write),  operation, command );
+            this.CallMethod(new[] { entityType, table.KeyType }, nameof(Write), operation, command);
         }
 
         private void Write<TEntity, TKey>(AddOperation<TEntity> operation, Command command) {
@@ -40,7 +40,7 @@
                 this.sqlDialect.AppendName(builder, keyColumnEntry.Value.Name);
                 builder.Append(", ");
             }
-            
+
             foreach (var columnEntry in table.NonKeyColumns().AsSmartEnumerable()) {
                 this.sqlDialect.AppendName(builder, columnEntry.Value.Name);
                 if (!columnEntry.IsLast) {
@@ -50,8 +50,7 @@
 
             builder.Append(") values (");
             var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key))
-            {
+            foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key)) {
                 var paramName = command.AddParameter(keyColumnEntry.Value);
                 this.sqlDialect.AddParameter(builder, paramName);
                 builder.Append(", ");
@@ -64,7 +63,7 @@
 
             var typeParamName = command.AddParameter(typeof(TEntity).AssemblyQualifiedName);
             this.sqlDialect.AddParameter(builder, typeParamName);
-            
+
             builder.Append(")");
             command.AddQuery(builder.ToString());
         }

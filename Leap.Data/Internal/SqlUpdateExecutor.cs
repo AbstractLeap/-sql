@@ -1,5 +1,4 @@
-namespace Leap.Data.Internal
-{
+namespace Leap.Data.Internal {
     using System.Data;
     using System.Threading;
     using System.Threading.Tasks;
@@ -14,7 +13,7 @@ namespace Leap.Data.Internal
 
         public SqlUpdateExecutor(IConnectionFactory connectionFactory, ISqlUpdateWriter updateWriter) {
             this.connectionFactory = connectionFactory;
-            this.updateWriter = updateWriter;
+            this.updateWriter      = updateWriter;
         }
 
         public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {

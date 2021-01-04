@@ -11,8 +11,8 @@
         private readonly ISchema schema;
 
         protected SqlBaseWriter(ISqlDialect sqlDialect, ISchema schema) {
-            this.sqlDialect              = sqlDialect;
-            this.schema                  = schema;
+            this.sqlDialect = sqlDialect;
+            this.schema     = schema;
         }
 
         protected void WriteColumns<TEntity>(StringBuilder builder) {

@@ -48,8 +48,7 @@
             }
 
             if (!string.IsNullOrWhiteSpace(query.OrderByClause)) {
-                if (!query.OrderByClause.TrimStart().StartsWith("order by ", StringComparison.InvariantCultureIgnoreCase))
-                {
+                if (!query.OrderByClause.TrimStart().StartsWith("order by ", StringComparison.InvariantCultureIgnoreCase)) {
                     builder.Append(" order by ");
                 }
 
@@ -59,7 +58,7 @@
             if (query.Offset.HasValue || query.Limit.HasValue) {
                 this.sqlDialect.AppendPaging(builder, query.Offset, query.Limit);
             }
-            
+
             command.AddQuery(builder.ToString());
         }
     }

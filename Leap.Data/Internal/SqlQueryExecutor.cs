@@ -96,7 +96,10 @@
         }
 
         private async ValueTask ReadResultIntoCacheAsync(IQuery nonCompleteQuery) {
-            var queryResults = await (ValueTask<List<DatabaseRow>>)this.CallMethod(new[] { nonCompleteQuery.EntityType }, nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
+            var queryResults = await (ValueTask<List<DatabaseRow>>)this.CallMethod(
+                                   new[] { nonCompleteQuery.EntityType },
+                                   nameof(this.ReadResultIntoListAsync),
+                                   Array.Empty<object>());
             this.resultCache.Add(nonCompleteQuery, queryResults);
         }
 

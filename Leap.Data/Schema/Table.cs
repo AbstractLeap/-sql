@@ -2,7 +2,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Reflection;
 
     using Leap.Data.Internal;
 
@@ -15,13 +14,13 @@
         public string Schema { get; init; }
 
         public Type KeyType { get; init; }
-        
+
         public IList<Column> Columns { get; init; }
 
         public IList<Column> KeyColumns { get; init; }
-        
+
         public IKeyColumnValueExtractor KeyColumnValueExtractor { get; set; }
-        
+
         public IKeyExtractor KeyExtractor { get; set; }
 
         public Table(ISchema schema) {

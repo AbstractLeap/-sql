@@ -64,7 +64,8 @@
             return Get<TEntity>(query).ToAsyncEnumerable();
         }
 
-        private IEnumerable<Document<TEntity>> Get<TEntity>(IQuery query) where TEntity : class {
+        private IEnumerable<Document<TEntity>> Get<TEntity>(IQuery query)
+            where TEntity : class {
             if (this.resultCache.TryGetValue<Document<TEntity>>(query, out var result)) {
                 foreach (var document in result) {
                     yield return document;

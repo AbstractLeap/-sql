@@ -10,8 +10,8 @@
             this.NonExecutedQueries = nonExecutedQueries ?? Enumerable.Empty<IQuery>();
         }
 
-        public ExecuteResult() : this(Enumerable.Empty<IQuery>(), Enumerable.Empty<IQuery>()) {
-        }
+        public ExecuteResult()
+            : this(Enumerable.Empty<IQuery>(), Enumerable.Empty<IQuery>()) { }
 
         public IEnumerable<IQuery> ExecutedQueries { get; }
 
