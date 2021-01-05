@@ -8,7 +8,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
-    internal abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlQueryWriter {
+    public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;

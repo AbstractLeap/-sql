@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data {
     using Leap.Data.IdentityMap;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
 
     class ChangeTracker {
         private readonly ISerializer serializer;

@@ -1,5 +1,5 @@
 ﻿namespace Leap.Data.Queries {
-    class EntityQuery<TEntity> : QueryBase<TEntity>
+    public class EntityQuery<TEntity> : QueryBase<TEntity>
         where TEntity : class {
         public string WhereClause { get; set; }
 

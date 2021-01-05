@@ -1,7 +1,7 @@
 ﻿namespace Leap.Data.Queries {
     using System;
 
-    abstract class QueryBase<TEntity> : IQuery<TEntity>, IQuery
+    public abstract class QueryBase<TEntity> : IQuery<TEntity>, IQuery
         where TEntity : class {
         public QueryBase() {
             this.Identifier = Guid.NewGuid();

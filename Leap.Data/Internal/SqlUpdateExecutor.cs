@@ -6,7 +6,7 @@ namespace Leap.Data.Internal {
     using Leap.Data.Internal.UpdateWriter;
     using Leap.Data.UnitOfWork;
 
-    class SqlUpdateExecutor : IUpdateExecutor {
+    public class SqlUpdateExecutor : IUpdateExecutor {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlUpdateWriter updateWriter;

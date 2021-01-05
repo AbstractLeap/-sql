@@ -8,8 +8,9 @@
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
 
-    internal abstract class SqlUpdateOperationWriter : SqlBaseWriter {
+    public abstract class SqlUpdateOperationWriter : SqlBaseWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;

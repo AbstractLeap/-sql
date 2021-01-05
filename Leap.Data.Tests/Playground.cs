@@ -3,15 +3,8 @@ namespace Leap.Data.Tests {
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Leap.Data.Internal;
-    using Leap.Data.Internal.QueryWriter.SqlServer;
-    using Leap.Data.Internal.UpdateWriter.SqlServer;
-
-    using Microsoft.Data.SqlClient;
-
-    using Moq;
-
-    using Newtonsoft.Json;
+    using Leap.Data.Configuration;
+    using Leap.Data.SqlServer;
 
     using Xunit;
 
@@ -28,7 +21,7 @@ namespace Leap.Data.Tests {
             var blogs = await session.Get<Blog>().ToArrayAsync();
             Assert.True(blogs.Length > 0);
         }
-        
+
         [Fact]
         public async Task MultipleWorks() {
             var insertSession = MakeTarget();
@@ -54,7 +47,7 @@ namespace Leap.Data.Tests {
             Assert.Same(blogNow1, blogFuture1);
             Assert.Same(blogNow2, blogFuture2);
         }
-        
+
         [Fact]
         public async Task ItRoundTrips() {
             var session = MakeTarget();
@@ -64,14 +57,13 @@ namespace Leap.Data.Tests {
             Assert.Same(blog, sameBlog);
             await session.SaveChangesAsync();
 
-
             var secondSession = MakeTarget();
             var fetchedBlog = await secondSession.Get<Blog>().SingleAsync(blog.BlogId);
             Assert.NotNull(fetchedBlog);
             Assert.Equal(blog.Title, fetchedBlog.Title);
             Assert.Equal(blog.BlogId, fetchedBlog.BlogId);
         }
-        
+
         [Fact]
         public async Task ItWorks() {
             var insertSession = MakeTarget();
@@ -88,22 +80,21 @@ namespace Leap.Data.Tests {
         [Fact]
         public async Task FutureKeyWorks() {
             var session = MakeTarget();
-            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
-            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId() { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
+            var blogFuture = session.Get<Blog>().SingleFuture(new BlogId { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
+            var blogNow = await session.Get<Blog>().SingleAsync(new BlogId { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
             var blogFromFuture = await blogFuture.SingleAsync();
             Assert.Same(blogNow, blogFromFuture);
         }
-        
+
         [Fact]
-        public async Task AllTheOperationsInOne()
-        {
+        public async Task AllTheOperationsInOne() {
             var session = MakeTarget();
             var firstBlog = new Blog("My first blog");
             session.Add(firstBlog);
             var secondBlog = new Blog("My second blog");
             session.Add(secondBlog);
             await session.SaveChangesAsync();
-            
+
             var secondSession = MakeTarget();
             var firstBlogAgain = await secondSession.Get<Blog>().SingleAsync(firstBlog.BlogId);
             var secondBlogAgain = await secondSession.Get<Blog>().SingleAsync(secondBlog.BlogId);
@@ -123,19 +114,10 @@ namespace Leap.Data.Tests {
             Assert.NotNull(thirdBlogAgainAgain);
         }
 
-        private static Session MakeTarget() {
-            var connectionFactory = new Mock<IConnectionFactory>();
-            var connection = new SqlConnection("Server=.;Database=leap-data;Trusted_Connection=True;");
-            connectionFactory.Setup(c => c.Get()).Returns(connection);
-
-            var mockSerializer = new Mock<ISerializer>();
-            mockSerializer.Setup(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<string>())).Returns((Type type, string json) => JsonConvert.DeserializeObject(json, type));
-            mockSerializer.Setup(s => s.Serialize(It.IsAny<object>())).Returns((object obj) => JsonConvert.SerializeObject(obj));
-
-            var mockSchema = TestSchema.GetSchema();
-            
-            var session = new Session(mockSchema, mockSerializer.Object, new SqlQueryExecutor(connectionFactory.Object, new SqlServerSqlQueryWriter(mockSchema), mockSchema), new SqlUpdateExecutor(connectionFactory.Object, new SqlServerSqlUpdateWriter(mockSchema, mockSerializer.Object)));
-            return session;
+        private static ISession MakeTarget() {
+            var testSchema = TestSchema.Get();
+            var sessionFactory = new Configuration(testSchema).UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;").BuildSessionFactory();
+            return sessionFactory.StartSession();
         }
     }
 }

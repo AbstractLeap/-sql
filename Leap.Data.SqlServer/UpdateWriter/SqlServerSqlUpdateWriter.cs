@@ -1,9 +1,11 @@
-﻿namespace Leap.Data.Internal.UpdateWriter.SqlServer {
-    using Leap.Data.Internal.Common.SqlServer;
+﻿namespace Leap.Data.SqlServer.UpdateWriter {
+    using Leap.Data.Internal;
+    using Leap.Data.Internal.UpdateWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
 
-    class SqlServerSqlUpdateWriter : ISqlUpdateWriter {
+    public class SqlServerSqlUpdateWriter : ISqlUpdateWriter {
         private readonly SqlServerSqlAddOperationWriter addOperationWriter;
 
         private readonly SqlServerSqlUpdateOperationWriter updateOperationWriter;

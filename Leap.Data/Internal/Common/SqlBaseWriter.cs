@@ -5,7 +5,7 @@
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    abstract class SqlBaseWriter {
+    public abstract class SqlBaseWriter {
         private readonly ISqlDialect sqlDialect;
 
         private readonly ISchema schema;

@@ -1,7 +1,7 @@
 ﻿namespace Leap.Data.Internal.QueryWriter {
     using Leap.Data.Queries;
 
-    interface ISqlQueryWriter {
+    public interface ISqlQueryWriter {
         void Write(IQuery query, Command command);
     }
 }

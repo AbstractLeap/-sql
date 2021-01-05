@@ -6,7 +6,7 @@
     using Leap.Data.IdentityMap;
     using Leap.Data.Queries;
 
-    interface IQueryExecutor {
+    public interface IQueryExecutor {
         ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default);
 
         IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)

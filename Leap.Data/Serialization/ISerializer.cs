@@ -1,4 +1,4 @@
-﻿namespace Leap.Data {
+﻿namespace Leap.Data.Serialization {
     using System;
 
     public interface ISerializer {

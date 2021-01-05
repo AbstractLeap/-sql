@@ -6,7 +6,7 @@
     /// <summary>
     ///     store database rows in the second level cache
     /// </summary>
-    class DatabaseRow {
+    public class DatabaseRow {
         public DatabaseRow(Table table, object[] values) {
             this.Table  = table;
             this.Values = values;

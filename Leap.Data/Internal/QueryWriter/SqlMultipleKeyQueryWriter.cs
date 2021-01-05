@@ -8,7 +8,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
-    internal abstract class SqlMultipleKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
+    public abstract class SqlMultipleKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;

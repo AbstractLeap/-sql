@@ -7,9 +7,10 @@
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
     using Leap.Data.Utilities;
 
-    internal abstract class SqlAddOperationWriter {
+    public abstract class SqlAddOperationWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;

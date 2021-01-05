@@ -1,7 +1,7 @@
 ﻿namespace Leap.Data.Operations {
     using Leap.Data.IdentityMap;
 
-    internal class UpdateOperation<TEntity, TKey> : IOperation {
+    public class UpdateOperation<TEntity, TKey> : IOperation {
         public Document<TEntity> Document { get; }
 
         public TKey Key { get; }

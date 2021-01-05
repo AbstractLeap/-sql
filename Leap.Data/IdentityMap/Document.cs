@@ -1,7 +1,7 @@
 ﻿namespace Leap.Data.IdentityMap {
     using Leap.Data.Internal;
 
-    class Document<TEntity> {
+    public class Document<TEntity> {
         public Document(DatabaseRow row) {
             this.Row = row;
         }

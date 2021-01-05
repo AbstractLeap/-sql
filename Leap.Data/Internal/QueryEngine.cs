@@ -10,6 +10,7 @@
     using Leap.Data.IdentityMap;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
 
     class QueryEngine : IAsyncDisposable {
         private readonly ISchema schema;

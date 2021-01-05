@@ -1,9 +1,9 @@
-﻿namespace Leap.Data.Internal.Common.SqlServer {
+﻿namespace Leap.Data.SqlServer {
     using System.Text;
 
     using Leap.Data.Internal.QueryWriter;
 
-    internal class SqlServerDialect : ISqlDialect {
+    public class SqlServerDialect : ISqlDialect {
         public void AppendName(StringBuilder builder, string name) {
             builder.Append("[").Append(name).Append("]");
         }

@@ -4,7 +4,7 @@ namespace Leap.Data.Internal {
 
     using Leap.Data.UnitOfWork;
 
-    interface IUpdateExecutor {
+    public interface IUpdateExecutor {
         ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default);
     }
 }

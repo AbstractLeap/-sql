@@ -4,7 +4,7 @@
 
     using Leap.Data.Queries;
 
-    class ExecuteResult {
+    public class ExecuteResult {
         public ExecuteResult(IEnumerable<IQuery> executedQueries, IEnumerable<IQuery> nonExecutedQueries) {
             this.ExecutedQueries    = executedQueries ?? Enumerable.Empty<IQuery>();
             this.NonExecutedQueries = nonExecutedQueries ?? Enumerable.Empty<IQuery>();

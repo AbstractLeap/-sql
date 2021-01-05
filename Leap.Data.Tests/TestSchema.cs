@@ -2,7 +2,7 @@ namespace Leap.Data.Tests {
     using Leap.Data.Schema;
 
     class TestSchema {
-        public static ISchema GetSchema() {
+        public static ISchema Get() {
             return new SchemaBuilder().AddTypes(typeof(Blog)).Build();
 
             //var mockSchema = new Mock<ISchema>();

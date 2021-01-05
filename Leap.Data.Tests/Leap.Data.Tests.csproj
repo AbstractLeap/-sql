@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Leap.Data.SqlServer\Leap.Data.SqlServer.csproj" />
     <ProjectReference Include="..\Leap.Data\Leap.Data.csproj" />
   </ItemGroup>
 

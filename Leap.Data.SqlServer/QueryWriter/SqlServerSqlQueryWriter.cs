@@ -1,8 +1,10 @@
-﻿namespace Leap.Data.Internal.QueryWriter.SqlServer {
+﻿namespace Leap.Data.SqlServer.QueryWriter {
+    using Leap.Data.Internal;
+    using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
-    internal class SqlServerSqlQueryWriter : ISqlQueryWriter {
+    public class SqlServerSqlQueryWriter : ISqlQueryWriter {
         private readonly SqlServerSqlKeyQueryWriter sqlKeyQueryWriter;
 
         private readonly SqlServerSqlMultipleKeyQueryWriter sqlMultipleKeyQueryWriter;

@@ -14,7 +14,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
-    class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable {
+    public class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlQueryWriter sqlQueryWriter;

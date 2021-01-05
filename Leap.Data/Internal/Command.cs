@@ -4,7 +4,7 @@
     using System.Data.Common;
     using System.Linq;
 
-    class Command {
+    public class Command {
         private readonly List<string> queries = new List<string>();
 
         private readonly Dictionary<string, ParameterInfo> parameters = new Dictionary<string, ParameterInfo>();

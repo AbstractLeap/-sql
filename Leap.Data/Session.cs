@@ -9,6 +9,7 @@
     using Leap.Data.Internal;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
+    using Leap.Data.Serialization;
 
     class Session : ISession {
         private readonly ISchema schema;

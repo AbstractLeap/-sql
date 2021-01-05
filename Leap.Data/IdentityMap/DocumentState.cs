@@ -1,5 +1,5 @@
 ﻿namespace Leap.Data.IdentityMap {
-    enum DocumentState {
+    public enum DocumentState {
         Persisted = 1,
 
         New = 2,

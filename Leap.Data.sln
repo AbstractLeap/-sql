@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data", "Leap.Data\Leap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.Tests", "Leap.Data.Tests\Leap.Data.Tests.csproj", "{DF297597-93E1-474F-BD8B-B3CDE51D6B81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.SqlServer", "Leap.Data.SqlServer\Leap.Data.SqlServer.csproj", "{424BED90-0F5C-44AD-AE2D-CC2EB277633A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,5 +46,17 @@ Global
 		{DF297597-93E1-474F-BD8B-B3CDE51D6B81}.Release|x64.Build.0 = Release|Any CPU
 		{DF297597-93E1-474F-BD8B-B3CDE51D6B81}.Release|x86.ActiveCfg = Release|Any CPU
 		{DF297597-93E1-474F-BD8B-B3CDE51D6B81}.Release|x86.Build.0 = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|x64.Build.0 = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Debug|x86.Build.0 = Debug|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|x64.ActiveCfg = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|x64.Build.0 = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|x86.ActiveCfg = Release|Any CPU
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

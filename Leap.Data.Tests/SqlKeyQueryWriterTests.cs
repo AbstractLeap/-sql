@@ -2,8 +2,8 @@ namespace Leap.Data.Tests {
     using System.Linq;
 
     using Leap.Data.Internal;
-    using Leap.Data.Internal.QueryWriter.SqlServer;
     using Leap.Data.Queries;
+    using Leap.Data.SqlServer.QueryWriter;
 
     using Xunit;
     using Xunit.Abstractions;
@@ -17,7 +17,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItWorks() {
-            var keyQueryWriter = new SqlServerSqlKeyQueryWriter(TestSchema.GetSchema());
+            var keyQueryWriter = new SqlServerSqlKeyQueryWriter(TestSchema.Get());
             var command = new Command();
             keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
             this.outputHelper.WriteLine(command.Queries.First());
@@ -34,7 +34,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItDelegatesKeyQuery() {
-            var writer = new SqlServerSqlQueryWriter(TestSchema.GetSchema());
+            var writer = new SqlServerSqlQueryWriter(TestSchema.Get());
             var command = new Command();
             writer.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
             this.outputHelper.WriteLine(command.Queries.First());

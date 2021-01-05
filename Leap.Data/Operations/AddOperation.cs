@@ -1,5 +1,5 @@
 ﻿namespace Leap.Data.Operations {
-    internal class AddOperation<TEntity> : IOperation {
+    public class AddOperation<TEntity> : IOperation {
         public TEntity Entity { get; }
 
         public AddOperation(TEntity entity) {
