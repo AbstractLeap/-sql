@@ -17,6 +17,8 @@
 
         private readonly IdentityMap identityMap;
 
+        private readonly IQueryExecutor persistenceQueryExecutor;
+
         private readonly ISerializer serializer;
 
         /// <summary>
@@ -26,13 +28,14 @@
 
         private readonly IDictionary<Guid, IQueryExecutor> queryExecutorLookup = new Dictionary<Guid, IQueryExecutor>();
 
-        private readonly IQueryExecutor[] executors;
+        private readonly LocalQueryExecutor localQueryExecutor;
 
         public QueryEngine(ISchema schema, IdentityMap identityMap, IQueryExecutor persistenceQueryExecutor, ISerializer serializer) {
-            this.schema      = schema;
-            this.identityMap = identityMap;
-            this.serializer  = serializer;
-            this.executors   = new[] { new LocalQueryExecutor(this.identityMap), persistenceQueryExecutor };
+            this.schema                   = schema;
+            this.identityMap              = identityMap;
+            this.persistenceQueryExecutor = persistenceQueryExecutor;
+            this.serializer               = serializer;
+            this.localQueryExecutor       = new LocalQueryExecutor(this.identityMap);
         }
 
         public void Add(IQuery query) {
@@ -87,33 +90,38 @@
         }
 
         private async ValueTask FlushAsync() {
-            foreach (var queryExecutor in this.executors) {
-                await queryExecutor.FlushAsync();
+            await this.localQueryExecutor.FlushAsync();
+            if (this.persistenceQueryExecutor != null) {
+                await this.persistenceQueryExecutor.FlushAsync();
             }
         }
 
         private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
-            foreach (var queryExecutor in this.executors) {
+            await ExecuteAsync(this.localQueryExecutor);
+            if (queriesStillToExecute.Any()) {
+                if (this.persistenceQueryExecutor == null) {
+                    throw new Exception("No persistence query mechanism has been configured");
+                }
+
+                await ExecuteAsync(this.persistenceQueryExecutor);
+            }
+            
+            this.queriesToExecute.Clear();
+
+            async Task ExecuteAsync(IQueryExecutor queryExecutor) {
                 var executionResult = await queryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
                 foreach (var executedQuery in executionResult.ExecutedQueries) {
                     this.queryExecutorLookup.Add(executedQuery.Identifier, queryExecutor);
                 }
 
                 queriesStillToExecute = executionResult.NonExecutedQueries;
-                if (!queriesStillToExecute.Any()) {
-                    break;
-                }
             }
-
-            this.queriesToExecute.Clear();
         }
 
         public async ValueTask DisposeAsync() {
-            foreach (var queryExecutor in this.executors) {
-                if (queryExecutor is IAsyncDisposable disposable) {
-                    await disposable.DisposeAsync();
-                }
+            if (this.persistenceQueryExecutor != null && this.persistenceQueryExecutor is IAsyncDisposable disposablePersistenceQueryExecutor) {
+                await disposablePersistenceQueryExecutor.DisposeAsync();
             }
         }
     }
