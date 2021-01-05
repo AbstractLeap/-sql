@@ -1,12 +1,15 @@
 ﻿namespace Leap.Data.Internal.UpdateWriter {
+    using System;
     using System.Linq;
     using System.Text;
 
     using Fasterflect;
 
+    using Leap.Data.Internal.ColumnValueFactories;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Columns;
     using Leap.Data.Serialization;
     using Leap.Data.Utilities;
 
@@ -50,23 +53,28 @@
             }
 
             builder.Append(") values (");
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key)) {
-                var paramName = command.AddParameter(keyColumnEntry.Value);
-                this.sqlDialect.AddParameter(builder, paramName);
+            var columnValueFactoryFactory = new ColumnValueFactoryFactory(this.serializer);
+            foreach (var keyColumn in table.KeyColumns) {
+                AppendValue(keyColumn);
                 builder.Append(", ");
             }
 
-            var json = this.serializer.Serialize(entity);
-            var jsonParamName = command.AddParameter(json);
-            this.sqlDialect.AddParameter(builder, jsonParamName);
-            builder.Append(", ");
-
-            var typeParamName = command.AddParameter(typeof(TEntity).AssemblyQualifiedName);
-            this.sqlDialect.AddParameter(builder, typeParamName);
+            foreach (var entry in table.NonKeyColumns.AsSmartEnumerable()) {
+                var column = entry.Value;
+                AppendValue(column);
+                if (!entry.IsLast) {
+                    builder.Append(", ");
+                }
+            }
 
             builder.Append(")");
             command.AddQuery(builder.ToString());
+
+            void AppendValue(Column column) {
+                var columnValue = columnValueFactoryFactory.GetFactory(column).GetValue<TEntity, TKey>(column, entity, null); ;
+                var paramName = command.AddParameter(columnValue);
+                this.sqlDialect.AddParameter(builder, paramName);
+            }
         }
     }
 }

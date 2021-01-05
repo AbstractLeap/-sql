@@ -9,6 +9,6 @@
 
         Type GetKeyType(string tableName, IEnumerable<Type> entityTypes);
 
-        IEnumerable<Column> GetKeyColumns(Type keyType);
+        IEnumerable<(Type Type, string Name)> GetKeyColumns(Type keyType);
     }
 }

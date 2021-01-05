@@ -1,8 +1,10 @@
 namespace Leap.Data.Tests {
+    using System;
     using System.Linq;
 
     using Leap.Data.IdentityMap;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Columns;
 
     using Moq;
 
@@ -13,7 +15,7 @@ namespace Leap.Data.Tests {
         [Fact]
         public void ItWorks() {
             var mockSchema = new Mock<ISchema>();
-            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table ("Blogs", "dbo", typeof(BlogId), Enumerable.Empty<Column>()));
+            mockSchema.Setup(s => s.GetTable<Blog>()).Returns(new Table ("Blogs", "dbo", typeof(BlogId), Enumerable.Empty<(Type, string)>()));
             var identityMap = new IdentityMap(mockSchema.Object);
 
             var blog = new Blog("Title");

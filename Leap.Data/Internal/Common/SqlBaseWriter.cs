@@ -2,6 +2,7 @@
     using System.Text;
 
     using Leap.Data.Internal.QueryWriter;
+    using Leap.Data.Internal.ColumnValueFactories;
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
@@ -31,14 +32,15 @@
         protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
-            foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(key).AsSmartEnumerable()) {
+            foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable()) {
+                var keyColumn = keyColumnEntry.Value;
                 if (useAlias) {
                     builder.Append("t.");
                 }
 
-                this.sqlDialect.AppendName(builder, keyColumnEntry.Value.Key.Name);
+                this.sqlDialect.AppendName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(keyColumnEntry.Value.Value);
+                var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key));
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -51,14 +53,16 @@
             var table = this.schema.GetTable<TEntity>();
             foreach (var keyEntry in keys.AsSmartEnumerable()) {
                 builder.Append("(");
-                foreach (var keyColumnEntry in table.KeyColumnValueExtractor.Extract<TEntity, TKey>(keyEntry.Value).AsSmartEnumerable()) {
+                foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable())
+                {
+                    var keyColumn = keyColumnEntry.Value;
                     if (useAlias) {
                         builder.Append("t.");
                     }
 
-                    this.sqlDialect.AppendName(builder, keyColumnEntry.Value.Key.Name);
+                    this.sqlDialect.AppendName(builder, keyColumn.Name);
                     builder.Append(" = ");
-                    var paramName = command.AddParameter(keyColumnEntry.Value.Value);
+                    var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, keyEntry.Value));
                     this.sqlDialect.AddParameter(builder, paramName);
                     if (!keyColumnEntry.IsLast) {
                         builder.Append(" and ");

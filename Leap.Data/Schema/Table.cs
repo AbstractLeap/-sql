@@ -4,6 +4,8 @@
     using System.Linq;
 
     using Leap.Data.Internal;
+    using Leap.Data.Internal.ColumnValueFactories;
+    using Leap.Data.Schema.Columns;
 
     /// <summary>
     ///     metadata
@@ -24,6 +26,8 @@
         public DocumentColumn DocumentColumn { get; }
         
         public DocumentTypeColumn DocumentTypeColumn { get; }
+        
+        public OptimisticConcurrencyColumn OptimisticConcurrencyColumn { get; private set; }
 
         public IList<Column> Columns => this.allColumns;
 
@@ -31,21 +35,22 @@
 
         public IEnumerable<Column> NonKeyColumns => this.nonKeyColumns;
 
-        public IKeyColumnValueExtractor KeyColumnValueExtractor { get; set; }
+        public IKeyColumnValueFactory KeyColumnValueExtractor { get; set; }
 
         public IKeyExtractor KeyExtractor { get; set; }
 
-        public Table(string tableName, string schemaName, Type keyType, IEnumerable<Column> keyColumns) {
-            this.Name                    = tableName;
-            this.Schema                  = schemaName;
-            this.KeyType                 = keyType;
-            this.keyColumns              = keyColumns.ToArray();
-            this.DocumentColumn          = new DocumentColumn();
-            this.DocumentTypeColumn      = new DocumentTypeColumn();
-            this.KeyColumnValueExtractor = new DefaultKeyColumnValueExtractor(this);
-            this.KeyExtractor            = new DefaultKeyExtractor();
-            this.nonKeyColumns           = new Column[] { this.DocumentColumn, this.DocumentTypeColumn };
-            this.allColumns              = this.keyColumns.Union(this.nonKeyColumns).ToArray();
+        public Table(string tableName, string schemaName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
+            this.Name                        = tableName;
+            this.Schema                      = schemaName;
+            this.KeyType                     = keyType;
+            this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this)).ToArray();
+            this.DocumentColumn              = new DocumentColumn(this);
+            this.DocumentTypeColumn          = new DocumentTypeColumn(this);
+            this.OptimisticConcurrencyColumn = useOptimisticConcurrency ? new OptimisticConcurrencyColumn(this) : null;
+            this.nonKeyColumns               = new Column[] { this.DocumentColumn, this.DocumentTypeColumn, this.OptimisticConcurrencyColumn }.Where(c => c != null).ToArray();
+            this.allColumns                  = this.keyColumns.Union(this.nonKeyColumns).ToArray();
+            this.KeyColumnValueExtractor     = new KeyColumnValueFactory(this);
+            this.KeyExtractor                = new DefaultKeyExtractor();
         }
 
         protected bool Equals(Table other) {

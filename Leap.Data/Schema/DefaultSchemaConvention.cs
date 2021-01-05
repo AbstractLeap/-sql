@@ -2,6 +2,8 @@
     using System;
     using System.Collections.Generic;
 
+    using Leap.Data.Schema.Columns;
+
     class DefaultSchemaConvention : ISchemaConvention {
         public virtual string GetTableName(Type type) {
             return type.Name; // TODO pluralize?
@@ -15,7 +17,7 @@
             return new DefaultKeyTypeExtractor().Extract(tableName, entityTypes);
         }
 
-        public virtual IEnumerable<Column> GetKeyColumns(Type keyType) {
+        public virtual IEnumerable<(Type Type, string Name)> GetKeyColumns(Type keyType) {
             return new DefaultKeyColumnExtractor().Extract(keyType);
         }
     }
