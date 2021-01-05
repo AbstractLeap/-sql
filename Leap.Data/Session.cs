@@ -39,6 +39,7 @@
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) {
             // find changed entities, add those operations to the unit of work
+            this.EnsureUnitOfWork();
             foreach (var tuple in this.identityMap.GetAll()) {
                 if ((bool)this.changeTracker.CallMethod(new[] { tuple.Document.GetType().GetGenericArguments().First() }, nameof(ChangeTracker.HasEntityChanged), tuple.Document)) {
                     var updateOperation = (IOperation)typeof(UpdateOperation<,>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First(), tuple.Key.GetType())
