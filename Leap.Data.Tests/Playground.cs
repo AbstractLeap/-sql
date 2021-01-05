@@ -140,10 +140,7 @@ namespace Leap.Data.Tests {
         [Fact]
         public async Task OptimisticConcurrenyFail() {
             var sessionFactory = MakeTarget();
-            var insertSession = sessionFactory.StartSession();
-            var addedBlog = new Blog("Pessimistic blog");
-            insertSession.Add(addedBlog);
-            await insertSession.SaveChangesAsync();
+            var addedBlog = await AddBlog(sessionFactory, "Pessimistic blog");
 
             var session1 = sessionFactory.StartSession();
             var session1Blog = await session1.Get<Blog>().SingleAsync(addedBlog.BlogId);
@@ -156,6 +153,29 @@ namespace Leap.Data.Tests {
 
             session2Blog.Title = "Doomed to failure";
             await Assert.ThrowsAsync<AggregateException>(() => session2.SaveChangesAsync());
+        }
+
+        [Fact]
+        public async Task NonExecutedFuturesExecutedBeforeUpdate() {
+            var sessionFactory = MakeTarget();
+            var toBeBlog = await AddBlog(sessionFactory, "Future");
+            var nowBlog = await AddBlog(sessionFactory, "Now");
+
+            var session = sessionFactory.StartSession();
+            var nowBlogAgain = await session.Get<Blog>().SingleAsync(nowBlog.BlogId);
+            var futureRequest = session.Get<Blog>().SingleFuture(toBeBlog.BlogId);
+            nowBlog.Title = "Now now";
+            await session.SaveChangesAsync();
+            
+            Assert.NotNull(await futureRequest.SingleAsync());
+        }
+
+        private static async Task<Blog> AddBlog(ISessionFactory sessionFactory, string title) {
+            var insertSession = sessionFactory.StartSession();
+            var addedBlog = new Blog(title);
+            insertSession.Add(addedBlog);
+            await insertSession.SaveChangesAsync();
+            return addedBlog;
         }
 
         private static ISessionFactory MakeTarget() {
