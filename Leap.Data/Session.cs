@@ -47,12 +47,14 @@
                     this.unitOfWork.Add(updateOperation);
                 }
             }
+            
+            // flush the queryEngine
+            await this.queryEngine.EnsureExecutedAsync();
 
             // get sql to execute
             await this.updateEngine.ExecuteAsync(this.unitOfWork);
 
             // TODO reset states in identity map
-            // TODO flush queryEngine
             // TODO reset queryEngine
 
             // instantiate new unit of work

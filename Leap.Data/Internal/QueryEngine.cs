@@ -12,7 +12,7 @@
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
 
-    class QueryEngine : IAsyncDisposable {
+    class QueryEngine {
         private readonly ISchema schema;
 
         private readonly IdentityMap identityMap;
@@ -50,10 +50,7 @@
                 this.Add(query);
             }
 
-            if (this.queriesToExecute.Any()) {
-                await this.ExecuteAsync();
-            }
-
+            await this.EnsureExecutedAsync();
             if (!this.queryExecutorLookup.TryGetValue(query.Identifier, out executor)) {
                 throw new Exception("Query has not been executed");
             }
@@ -89,6 +86,12 @@
             }
         }
 
+        public async ValueTask EnsureExecutedAsync() {
+            if (this.queriesToExecute.Any()) {
+                await this.ExecuteAsync();
+            }
+        }
+
         private async ValueTask FlushAsync() {
             if (this.persistenceQueryExecutor != null) {
                 await this.persistenceQueryExecutor.FlushAsync();
@@ -114,14 +117,8 @@
                     this.queryExecutorLookup.Add(executedQuery.Identifier, this.persistenceQueryExecutor);
                 }
             }
-            
-            this.queriesToExecute.Clear();
-        }
 
-        public async ValueTask DisposeAsync() {
-            if (this.persistenceQueryExecutor != null && this.persistenceQueryExecutor is IAsyncDisposable disposablePersistenceQueryExecutor) {
-                await disposablePersistenceQueryExecutor.DisposeAsync();
-            }
+            this.queriesToExecute.Clear();
         }
     }
 }

@@ -164,7 +164,7 @@ namespace Leap.Data.Tests {
             var session = sessionFactory.StartSession();
             var nowBlogAgain = await session.Get<Blog>().SingleAsync(nowBlog.BlogId);
             var futureRequest = session.Get<Blog>().SingleFuture(toBeBlog.BlogId);
-            nowBlog.Title = "Now now";
+            nowBlogAgain.Title = "Now now";
             await session.SaveChangesAsync();
             
             Assert.NotNull(await futureRequest.SingleAsync());
