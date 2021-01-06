@@ -42,9 +42,9 @@
         /// </summary>
         private readonly Queue<IQuery> notReadQueries = new Queue<IQuery>();
 
-        public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+        public async ValueTask ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
             if (!queries.Any()) {
-                return new ExecuteResult();
+                return;
             }
 
             var connection = this.connectionFactory.Get();
@@ -62,7 +62,6 @@
 
             queryCommand.WriteToDbCommand(this.command);
             this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-            return new ExecuteResult(queries, null);
         }
 
         public async IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)

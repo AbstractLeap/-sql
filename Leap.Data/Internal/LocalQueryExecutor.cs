@@ -12,7 +12,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
-    class LocalQueryExecutor : IQueryExecutor {
+    class LocalQueryExecutor : IQueryGetter {
         private readonly IdentityMap identityMap;
 
         private readonly ResultCache resultCache;
@@ -74,10 +74,6 @@
             else {
                 throw new Exception($"{nameof(LocalQueryExecutor)} did not execute {query} so can not get result");
             }
-        }
-
-        public ValueTask FlushAsync() {
-            return ValueTask.CompletedTask;
         }
     }
 }

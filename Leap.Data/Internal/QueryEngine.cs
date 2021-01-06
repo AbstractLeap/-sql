@@ -26,7 +26,7 @@
         /// </summary>
         private readonly List<IQuery> queriesToExecute = new List<IQuery>();
 
-        private readonly IDictionary<Guid, IQueryExecutor> queryExecutorLookup = new Dictionary<Guid, IQueryExecutor>();
+        private readonly IDictionary<Guid, IQueryGetter> queryExecutorLookup = new Dictionary<Guid, IQueryGetter>();
 
         private readonly LocalQueryExecutor localQueryExecutor;
 
@@ -90,7 +90,6 @@
         }
 
         private async ValueTask FlushAsync() {
-            await this.localQueryExecutor.FlushAsync();
             if (this.persistenceQueryExecutor != null) {
                 await this.persistenceQueryExecutor.FlushAsync();
             }
@@ -98,25 +97,25 @@
 
         private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
-            await ExecuteAsync(this.localQueryExecutor);
+            var localExecutionResult = await this.localQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
+            foreach (var executedQuery in localExecutionResult.ExecutedQueries) {
+                this.queryExecutorLookup.Add(executedQuery.Identifier, this.localQueryExecutor);
+            }
+
+            queriesStillToExecute = localExecutionResult.NonExecutedQueries;
+
             if (queriesStillToExecute.Any()) {
                 if (this.persistenceQueryExecutor == null) {
                     throw new Exception("No persistence query mechanism has been configured");
                 }
 
-                await ExecuteAsync(this.persistenceQueryExecutor);
+                await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
+                foreach (var executedQuery in queriesStillToExecute) {
+                    this.queryExecutorLookup.Add(executedQuery.Identifier, this.persistenceQueryExecutor);
+                }
             }
             
             this.queriesToExecute.Clear();
-
-            async Task ExecuteAsync(IQueryExecutor queryExecutor) {
-                var executionResult = await queryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
-                foreach (var executedQuery in executionResult.ExecutedQueries) {
-                    this.queryExecutorLookup.Add(executedQuery.Identifier, queryExecutor);
-                }
-
-                queriesStillToExecute = executionResult.NonExecutedQueries;
-            }
         }
 
         public async ValueTask DisposeAsync() {
