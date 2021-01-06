@@ -12,7 +12,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
-    class LocalQueryExecutor : IQueryGetter {
+    class LocalQueryExecutor {
         private readonly IdentityMap identityMap;
 
         private readonly ResultCache resultCache;

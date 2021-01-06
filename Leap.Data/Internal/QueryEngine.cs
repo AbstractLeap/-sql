@@ -26,7 +26,9 @@
         /// </summary>
         private readonly List<IQuery> queriesToExecute = new List<IQuery>();
 
-        private readonly IDictionary<Guid, IQueryGetter> queryExecutorLookup = new Dictionary<Guid, IQueryGetter>();
+        private readonly HashSet<Guid> localQueryExecutorQueries = new HashSet<Guid>();
+
+        private readonly HashSet<Guid> persistenceQueryExecutorQueries = new HashSet<Guid>();
 
         private readonly LocalQueryExecutor localQueryExecutor;
 
@@ -44,26 +46,25 @@
 
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
-            if (!this.queryExecutorLookup.TryGetValue(query.Identifier, out var executor)) {
+            if (!this.localQueryExecutorQueries.Contains(query.Identifier) && !this.persistenceQueryExecutorQueries.Contains(query.Identifier)) {
                 // query has not been executed, so let's flush existing queries and then add
                 await this.FlushAsync();
                 this.Add(query);
             }
 
             await this.EnsureExecutedAsync();
-            if (!this.queryExecutorLookup.TryGetValue(query.Identifier, out executor)) {
-                throw new Exception("Query has not been executed");
+            if (this.localQueryExecutorQueries.Contains(query.Identifier)) {
+                await foreach (var document in this.localQueryExecutor.GetAsync<T>(query)) {
+                    yield return document.Entity;
+                }
+                
+                yield break;
             }
 
             var table = this.schema.GetTable<T>();
-            await foreach (var document in executor.GetAsync<T>(query)) {
-                if (document.Entity != null) {
-                    yield return document.Entity;
-                    continue;
-                }
-
+            await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
                 // need to hydrate the entity from the database row and add to the document
-                var id = table.KeyType.TryCreateInstance(table.Columns.Select(c => c.Name).ToArray(), document.Row.Values);
+                var id = table.KeyType.TryCreateInstance(table.Columns.Select(c => c.Name).ToArray(), row);
 
                 // TODO invalidate old versions
                 // check ID map for instance
@@ -72,14 +73,14 @@
                     continue;
                 }
 
-                var json = document.Row.GetValue<string>(SpecialColumns.Document);
-                var typeName = document.Row.GetValue<string>(SpecialColumns.DocumentType);
+                var json = RowValueHelper.GetValue<string>(table, row, SpecialColumns.Document);
+                var typeName = RowValueHelper.GetValue<string>(table, row, SpecialColumns.DocumentType);
                 var documentType = Type.GetType(typeName); // TODO better type handling across assemblies
                 if (!(this.serializer.Deserialize(documentType, json) is T entity)) {
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(table.KeyType, id, new Document<T>(document.Row, entity) { State = DocumentState.Persisted });
+                this.identityMap.Add(table.KeyType, id, new Document<T>(new DatabaseRow(table, row), entity) { State = DocumentState.Persisted });
                 yield return entity;
 
                 // TODO second level cache
@@ -102,7 +103,7 @@
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
             var localExecutionResult = await this.localQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
             foreach (var executedQuery in localExecutionResult.ExecutedQueries) {
-                this.queryExecutorLookup.Add(executedQuery.Identifier, this.localQueryExecutor);
+                this.localQueryExecutorQueries.Add(executedQuery.Identifier);
             }
 
             queriesStillToExecute = localExecutionResult.NonExecutedQueries;
@@ -114,7 +115,7 @@
 
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
                 foreach (var executedQuery in queriesStillToExecute) {
-                    this.queryExecutorLookup.Add(executedQuery.Identifier, this.persistenceQueryExecutor);
+                    this.persistenceQueryExecutorQueries.Add(executedQuery.Identifier);
                 }
             }
 

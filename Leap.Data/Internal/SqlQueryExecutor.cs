@@ -9,7 +9,6 @@
 
     using Fasterflect;
 
-    using Leap.Data.IdentityMap;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
@@ -64,13 +63,13 @@
             this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)
+        public async IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
             where TEntity : class {
             // do we have the result already?
             // (we've already read this result from the resultsets)
             if (this.resultCache.TryGetValue(query, out var result)) {
                 foreach (var row in result) {
-                    yield return new Document<TEntity>(row);
+                    yield return row;
                 }
 
                 yield break;
@@ -86,7 +85,7 @@
 
             // read the result we've been asked for
             await foreach (var row in this.ReadResultAsync<TEntity>()) {
-                yield return new Document<TEntity>(row);
+                yield return row;
             }
 
             if (this.notReadQueries.Count == 0) {
@@ -95,10 +94,7 @@
         }
 
         private async ValueTask ReadResultIntoCacheAsync(IQuery nonCompleteQuery) {
-            var queryResults = await (ValueTask<List<DatabaseRow>>)this.CallMethod(
-                                   new[] { nonCompleteQuery.EntityType },
-                                   nameof(this.ReadResultIntoListAsync),
-                                   Array.Empty<object>());
+            var queryResults = await (ValueTask<List<object[]>>)this.CallMethod(new[] { nonCompleteQuery.EntityType }, nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
             this.resultCache.Add(nonCompleteQuery, queryResults);
         }
 
@@ -119,19 +115,19 @@
             await this.command.DisposeAsync();
         }
 
-        private async ValueTask<List<DatabaseRow>> ReadResultIntoListAsync<T>()
+        private async ValueTask<List<object[]>> ReadResultIntoListAsync<T>()
             where T : class {
             return await this.ReadResultAsync<T>().ToListAsync();
         }
 
-        private async IAsyncEnumerable<DatabaseRow> ReadResultAsync<T>()
+        private async IAsyncEnumerable<object[]> ReadResultAsync<T>()
             where T : class {
             while (await this.dataReader.ReadAsync().ConfigureAwait(false)) {
                 // hydrate database row
                 var table = this.schema.GetTable<T>();
                 var values = new object[table.Columns.Count];
                 this.dataReader.GetValues(values);
-                yield return new DatabaseRow(table, values);
+                yield return values;
             }
         }
 

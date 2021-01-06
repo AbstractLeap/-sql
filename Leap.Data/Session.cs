@@ -26,10 +26,10 @@
 
         public Session(ISchema schema, ISerializer serializer, IQueryExecutor queryExecutor, IUpdateExecutor updateExecutor) {
             this.schema        = schema;
-            this.identityMap   = new IdentityMap.IdentityMap(this.schema);
+            this.identityMap   = new IdentityMap.IdentityMap(schema);
             this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer);
             this.updateEngine  = new UpdateEngine(updateExecutor);
-            this.changeTracker = new ChangeTracker(serializer);
+            this.changeTracker = new ChangeTracker(serializer, schema);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()

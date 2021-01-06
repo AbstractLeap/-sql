@@ -17,6 +17,8 @@
         
         private Column[] keyColumns;
 
+        private Dictionary<string, int> columnIndices;
+
         public string Name { get; }
 
         public string Schema { get; }
@@ -39,6 +41,14 @@
 
         public IKeyExtractor KeyExtractor { get; set; }
 
+        public int GetColumnIndex(string columnName) {
+            if (!this.columnIndices.TryGetValue(columnName, out var index)) {
+                throw new Exception($"column with name \"{columnName}\" not found on table {this.Name}");
+            }
+
+            return index;
+        }
+
         public Table(string tableName, string schemaName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
             this.Name                        = tableName;
             this.Schema                      = schemaName;
@@ -51,6 +61,7 @@
             this.allColumns                  = this.keyColumns.Union(this.nonKeyColumns).ToArray();
             this.KeyColumnValueExtractor     = new KeyColumnValueFactory(this);
             this.KeyExtractor                = new DefaultKeyExtractor();
+            this.columnIndices               = this.allColumns.Select((c, i) => new { c, i }).ToDictionary(c => c.c.Name, c => c.i);
         }
 
         protected bool Equals(Table other) {
