@@ -1,9 +1,11 @@
 ﻿namespace Leap.Data.Operations {
-    public class DeleteOperation<TEntity> : IOperation {
-        public TEntity Entity { get; }
+    using Leap.Data.IdentityMap;
 
-        public DeleteOperation(TEntity entity) {
-            this.Entity = entity;
+    public class DeleteOperation<TEntity> : IOperation {
+        public Document<TEntity> Document { get; }
+
+        public DeleteOperation(Document<TEntity> document) {
+            this.Document = document;
         }
     }
 }

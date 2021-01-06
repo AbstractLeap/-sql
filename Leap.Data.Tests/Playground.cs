@@ -147,12 +147,13 @@ namespace Leap.Data.Tests {
             var session2 = sessionFactory.StartSession();
             var session2Blog = await session2.Get<Blog>().SingleAsync(addedBlog.BlogId);
             Assert.Equal(session1Blog.BlogId, session2Blog.BlogId);
+            Assert.NotSame(session1Blog, session2Blog);
 
             session1Blog.Title = "Optimistic Blog";
             await session1.SaveChangesAsync();
 
             session2Blog.Title = "Doomed to failure";
-            await Assert.ThrowsAsync<AggregateException>(() => session2.SaveChangesAsync());
+            await Assert.ThrowsAsync<AggregateException>(async () => await session2.SaveChangesAsync());
         }
 
         [Fact]

@@ -15,7 +15,7 @@
             var connectionFactory = sqlServerConfiguration.ConnectionFactory ?? new DefaultSqlServerConnectionFactory(connectionString);
 
             configuration.QueryExecutor  = new SqlQueryExecutor(connectionFactory, new SqlServerSqlQueryWriter(configuration.Schema), configuration.Schema);
-            configuration.UpdateExecutor = new SqlUpdateExecutor(connectionFactory, new SqlServerSqlUpdateWriter(configuration.Schema, configuration.Serializer));
+            configuration.UpdateExecutor = new SqlUpdateExecutor(connectionFactory, new SqlServerSqlUpdateWriter(configuration.Schema, configuration.Serializer), new SqlServerDialect());
             return configuration;
         }
     }

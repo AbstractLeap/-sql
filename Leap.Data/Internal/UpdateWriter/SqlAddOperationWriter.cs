@@ -33,8 +33,6 @@
         }
 
         private void Write<TEntity, TKey>(AddOperation<TEntity> operation, Command command) {
-            // TODO optimistic concurrency
-            // TODO generate databaserow and store in identity map document
             var entity = operation.Entity;
             var table = this.schema.GetTable<TEntity>();
             var builder = new StringBuilder("insert into ");

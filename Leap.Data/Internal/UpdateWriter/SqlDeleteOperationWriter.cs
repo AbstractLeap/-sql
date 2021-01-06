@@ -34,12 +34,13 @@
             where TEntity : class {
             // TODO optimistic concurrency
             // TODO update databaserow 
-            var entity = operation.Entity;
+            var entity = operation.Document.Entity;
             var table = this.schema.GetTable<TEntity>();
             var builder = new StringBuilder("delete from ");
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" where ");
             this.WriteWhereClauseForSingleEntity<TEntity, TKey>(table.KeyExtractor.Extract<TEntity, TKey>(entity), command, builder);
+            this.MaybeAddOptimisticConcurrencyWhereClause(builder, command, operation.Document);
             command.AddQuery(builder.ToString());
         }
     }

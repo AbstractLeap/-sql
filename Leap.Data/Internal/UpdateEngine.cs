@@ -17,7 +17,7 @@
                 return;
             }
 
-            await this.persistenceUpdateExecutor.ExecuteAsync(unitOfWork, cancellationToken);
+            await this.persistenceUpdateExecutor.ExecuteAsync(unitOfWork.Operations, cancellationToken);
         }
     }
 }

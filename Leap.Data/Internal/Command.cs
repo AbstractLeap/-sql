@@ -1,4 +1,5 @@
 ﻿namespace Leap.Data.Internal {
+    using System;
     using System.Collections.Generic;
     using System.Data;
     using System.Data.Common;
@@ -9,8 +10,18 @@
 
         private readonly Dictionary<string, ParameterInfo> parameters = new Dictionary<string, ParameterInfo>();
 
+        public event EventHandler<QueryAddedEventArgs> OnQueryAdded;
+        
         public void AddQuery(string query) {
-            this.queries.Add(query);
+            if (this.OnQueryAdded != null) {
+                var args = new QueryAddedEventArgs(query);
+                this.OnQueryAdded(this, args);
+                query = args.Query;
+            }
+
+            if (!string.IsNullOrWhiteSpace(query)) {
+                this.queries.Add(query);
+            }
         }
 
         public string AddParameter(object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
@@ -63,6 +74,14 @@
 
                 dbCommand.Parameters.Add(parameter);
             }
+        }
+    }
+
+    public class QueryAddedEventArgs : EventArgs {
+        public string Query { get; set; }
+
+        public QueryAddedEventArgs(string query) {
+            this.Query = query;
         }
     }
 }

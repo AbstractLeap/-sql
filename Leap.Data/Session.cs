@@ -1,4 +1,5 @@
 ﻿namespace Leap.Data {
+    using System;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -55,7 +56,6 @@
             await this.updateEngine.ExecuteAsync(this.unitOfWork);
 
             // TODO reset states in identity map
-            // TODO reset queryEngine
 
             // instantiate new unit of work
             this.unitOfWork = new UnitOfWork.UnitOfWork();
@@ -64,13 +64,15 @@
         public void Delete<TEntity>(TEntity entity)
             where TEntity : class {
             this.EnsureUnitOfWork();
-            this.unitOfWork.Add(new DeleteOperation<TEntity>(entity));
             var table = this.schema.GetTable<TEntity>();
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
-            if (this.identityMap.TryGetValue<TEntity>(keyType, key, out var document)) {
-                document.State = DocumentState.Deleted;
+            if (!this.identityMap.TryGetValue<TEntity>(table.KeyType, key, out var document)) {
+                throw new Exception($"The entity was not fetched in this session");
             }
+            
+            this.unitOfWork.Add(new DeleteOperation<TEntity>(document));
+            document.State = DocumentState.Deleted;
         }
 
         public void Add<TEntity>(TEntity entity)

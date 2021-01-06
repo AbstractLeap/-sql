@@ -3,7 +3,7 @@
 
     using Leap.Data.Operations;
 
-    public class UnitOfWork {
+    internal class UnitOfWork {
         private readonly IList<IOperation> operations = new List<IOperation>();
 
         public void Add(IOperation operation) {

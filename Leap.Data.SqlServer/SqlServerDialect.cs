@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data.SqlServer {
     using System.Text;
 
+    using Leap.Data.Internal;
     using Leap.Data.Internal.QueryWriter;
 
     public class SqlServerDialect : ISqlDialect {
@@ -17,6 +18,10 @@
             if (queryLimit.HasValue) {
                 builder.Append(" fetch next ").Append(queryLimit.Value).Append(" rows only");
             }
+        }
+
+        public string AddAffectedRowsCount(string sql, Command command) {
+            return sql + "; select @@ROWCOUNT";
         }
     }
 }

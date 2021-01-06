@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data.Internal.Common {
     using System.Text;
 
+    using Leap.Data.IdentityMap;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Internal.ColumnValueFactories;
     using Leap.Data.Schema;
@@ -73,6 +74,24 @@
                 if (!keyEntry.IsLast) {
                     builder.Append(" or ");
                 }
+            }
+        }
+
+        protected void MaybeAddOptimisticConcurrencyWhereClause<TEntity>(StringBuilder builder, Command command, Document<TEntity> document, bool appendWhere = false) {
+            var table = this.schema.GetTable<TEntity>();
+            if (table.OptimisticConcurrencyColumn != null) {
+                if (appendWhere) {
+                    builder.Append(" where ");
+                }
+                else {
+                    builder.Append(" and ");
+                }
+
+                this.sqlDialect.AppendName(builder, table.OptimisticConcurrencyColumn.Name);
+                builder.Append(" = ");
+                var paramName = command.AddParameter(
+                    RowValueHelper.GetValue(table.OptimisticConcurrencyColumn.Type, table, document.Row.Values, table.OptimisticConcurrencyColumn.Name));
+                this.sqlDialect.AddParameter(builder, paramName);
             }
         }
     }
