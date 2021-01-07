@@ -34,9 +34,9 @@ namespace Leap.Data.Internal {
             await using (var dbCommand = connection.CreateCommand()) {
                 dbCommand.Transaction = transaction;
                 var command = new Command();
-                var wrapSql = false;
+                var wrapSqlWithAffectedRowsCount = false;
                 command.OnQueryAdded += (sender, args) => {
-                    if (wrapSql) {
+                    if (wrapSqlWithAffectedRowsCount) {
                         args.Query = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
                     }
                 };
@@ -44,9 +44,9 @@ namespace Leap.Data.Internal {
                 var returnsData = false;
                 var enumeratedOperations = operations as IOperation[] ?? operations.ToArray();
                 foreach (var operation in enumeratedOperations) {
-                    wrapSql = IsRowsAffectedOperation(operation);
+                    wrapSqlWithAffectedRowsCount = IsRowsAffectedOperation(operation);
                     this.updateWriter.Write(operation, command);
-                    if (wrapSql) {
+                    if (wrapSqlWithAffectedRowsCount) {
                         returnsData = true;
                     }
                 }
@@ -61,8 +61,7 @@ namespace Leap.Data.Internal {
                 await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
                     List<Exception> exceptions = null;
                     foreach (var operation in enumeratedOperations) {
-                        var genericTypeDefinition = operation.GetType().GetGenericTypeDefinition();
-                        if (genericTypeDefinition == typeof(UpdateOperation<,>) || genericTypeDefinition == typeof(DeleteOperation<>)) {
+                        if (IsRowsAffectedOperation(operation)) {
                             if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
                                 AddException(ref exceptions, operation);
                             }
