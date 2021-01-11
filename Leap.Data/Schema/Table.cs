@@ -1,11 +1,13 @@
 ﻿namespace Leap.Data.Schema {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
 
     using Leap.Data.Internal;
     using Leap.Data.Internal.ColumnValueFactories;
     using Leap.Data.Schema.Columns;
+    using Leap.Data.Utilities;
 
     /// <summary>
     ///     metadata
@@ -19,11 +21,15 @@
 
         private Dictionary<string, int> columnIndices;
 
+        private List<Type> entityTypes = new List<Type>();
+
         public string Name { get; }
 
         public string Schema { get; }
 
         public Type KeyType { get; }
+        
+        public Type BaseEntityType { get; private set; }
         
         public DocumentColumn DocumentColumn { get; }
         
@@ -40,6 +46,8 @@
         public IKeyColumnValueFactory KeyColumnValueExtractor { get; set; }
 
         public IKeyExtractor KeyExtractor { get; set; }
+
+        public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
 
         public int GetColumnIndex(string columnName) {
             if (!this.columnIndices.TryGetValue(columnName, out var index)) {
@@ -77,6 +85,21 @@
 
         public override int GetHashCode() {
             return HashCode.Combine(this.Name, this.Schema);
+        }
+
+        public void AddClassType(Type entityType) {
+            this.entityTypes.Add(entityType);
+            if (this.BaseEntityType == null) {
+                this.BaseEntityType = entityType;
+            }
+            else {
+                var commonBase = this.entityTypes.FindAssignableWith();
+                if (commonBase == null || commonBase == typeof(object)) {
+                    throw new Exception("All of the classes inside a single table must have a common base class or interface");
+                }
+
+                this.BaseEntityType = commonBase;
+            }
         }
     }
 }

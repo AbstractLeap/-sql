@@ -13,12 +13,14 @@
             return null;
         }
 
-        public void TryAddTable(Type entityType, Table table) {
-            if (this.tableLookup.ContainsKey(entityType)) {
-                return;
+        public void AddTable(Table table) {
+            foreach (var entityType in table.EntityTypes) {
+                if (this.tableLookup.TryGetValue(entityType, out var dupeTable)) {
+                    throw new Exception($"The entity type {entityType} has already been added to the schema with table {dupeTable.Name}");
+                }
+                
+                this.tableLookup.Add(entityType, table);
             }
-            
-            this.tableLookup.Add(entityType, table);
         }
     }
 }

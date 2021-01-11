@@ -45,8 +45,10 @@
                 var keyColumns = this.schemaConvention.GetKeyColumns(keyType);
                 var table = new Table(tableName, schemaName, keyType, keyColumns);
                 foreach (var entityType in namedType.Value) {
-                    schema.TryAddTable(entityType, table);
+                    table.AddClassType(entityType);
                 }
+
+                schema.AddTable(table);
             }
 
             return schema;

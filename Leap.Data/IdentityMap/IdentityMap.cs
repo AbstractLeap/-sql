@@ -1,4 +1,5 @@
 ﻿namespace Leap.Data.IdentityMap {
+    using System;
     using System.Collections;
     using System.Collections.Generic;
 
@@ -17,7 +18,15 @@
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
             if (this.map.TryGetValue(table, out var entityMap)) {
-                return ((IDictionary<TKey, Document<TEntity>>)entityMap).TryGetValue(key, out document);
+                if (((IDictionary<TKey, object>)entityMap).TryGetValue(key, out var nonTypedDocument)) {
+                    if (nonTypedDocument is Document<TEntity> typedDocument) {
+                        document = typedDocument;
+                        return true;
+                    }
+                    else {
+                        throw new Exception($"Unable to cast document to {typeof(TEntity)}");
+                    }
+                }
             }
 
             document = null;
@@ -27,10 +36,10 @@
         public void Add<TEntity, TKey>(TKey key, Document<TEntity> document) {
             var table = this.schema.GetTable<TEntity>();
             if (this.map.TryGetValue(table, out var entityMap)) {
-                ((IDictionary<TKey, Document<TEntity>>)entityMap).Add(key, document);
+                ((IDictionary<TKey, object>)entityMap).Add(key, document);
             }
             else {
-                var typedMap = new Dictionary<TKey, Document<TEntity>>();
+                var typedMap = new Dictionary<TKey, object>();
                 typedMap.Add(key, document);
                 this.map.Add(table, typedMap);
             }
@@ -39,7 +48,7 @@
         public void Remove<TEntity, TKey>(TKey key) {
             var table = this.schema.GetTable<TEntity>();
             if (this.map.TryGetValue(table, out var entityMap)) {
-                ((IDictionary<TKey, Document<TEntity>>)entityMap).Remove(key);
+                ((IDictionary<TKey, object>)entityMap).Remove(key);
             }
         }
 
