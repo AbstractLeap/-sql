@@ -17,6 +17,27 @@
             throw new Exception($"Expected FieldInfo or PropertyInfo but got {memberInfo}");
         }
 
+        public static IEnumerable<Type> GetAssignableTypes(this Type type, IEnumerable<Type> candidateTypes) {
+            foreach (var candidateType in candidateTypes) {
+                if (type.IsInterface) {
+                    if (candidateType.GetInterfaces().Any(t => t == type)) {
+                        yield return candidateType;
+                    }
+                }
+                else {
+                    var baseType = candidateType;
+                    do {
+                        if (baseType == type) {
+                            yield return candidateType;
+                            break;
+                        }
+                        baseType = baseType.BaseType;
+                    }
+                    while (baseType != null);
+                }
+            }
+        }
+
         public static Type FindAssignableWith(this IEnumerable<Type> types) {
             var commonBaseClass = FindBaseClassWith(types);
             return commonBaseClass == typeof(object) ? FindInterfaceWith(types) : commonBaseClass;

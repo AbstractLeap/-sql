@@ -1,5 +1,6 @@
 ﻿namespace Leap.Data.Internal.QueryWriter {
     using System;
+    using System.Linq;
     using System.Text;
 
     using Fasterflect;
@@ -7,6 +8,7 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
+    using Leap.Data.Utilities;
 
     public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlQueryWriter {
         private readonly ISchema schema;
@@ -39,19 +41,47 @@
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" as t");
 
+            var whereAppended = false;
+            if (table.ContainsTypeHierarchy) {
+                if (typeof(TEntity) != table.BaseEntityType) {
+                    // we're querying for some of the derived types only
+                    var assignableTypes = typeof(TEntity).GetAssignableTypes(table.EntityTypes);
+                    if (!whereAppended) {
+                        builder.Append(" where ");
+                        whereAppended = true;
+                    }
+                    
+                    builder.Append("(");
+                    foreach (var entry in assignableTypes.AsSmartEnumerable()) {
+                        this.sqlDialect.AppendName(builder, table.DocumentTypeColumn.Name);
+                        builder.Append(" = ");
+                        var paramName = command.AddParameter(entry.Value.AssemblyQualifiedName);
+                        this.sqlDialect.AddParameter(builder, paramName);
+                        if (!entry.IsLast) {
+                            builder.Append(" or ");
+                        }
+                    }
+
+                    builder.Append(")");
+                }
+            }
+            
             if (!string.IsNullOrWhiteSpace(query.WhereClause)) {
-                if (!query.WhereClause.TrimStart().StartsWith("where ", StringComparison.InvariantCultureIgnoreCase)) {
+                if (!whereAppended) {
                     builder.Append(" where ");
+                    whereAppended = true;
+                }
+                else {
+                    builder.Append(" and ");
                 }
 
+                builder.Append("(");
                 builder.Append(query.WhereClause);
+                builder.Append(")");
             }
 
             if (!string.IsNullOrWhiteSpace(query.OrderByClause)) {
-                if (!query.OrderByClause.TrimStart().StartsWith("order by ", StringComparison.InvariantCultureIgnoreCase)) {
-                    builder.Append(" order by ");
-                }
-
+                builder.Append(" order by ");
                 builder.Append(query.OrderByClause);
             }
 

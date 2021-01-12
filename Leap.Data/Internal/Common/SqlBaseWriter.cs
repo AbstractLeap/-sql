@@ -77,7 +77,7 @@
             }
         }
 
-        protected void MaybeAddOptimisticConcurrencyWhereClause<TEntity>(StringBuilder builder, Command command, Document<TEntity> document, bool appendWhere = false) {
+        protected void MaybeAddOptimisticConcurrencyWhereClause<TEntity>(StringBuilder builder, Command command, IDocument<TEntity> document, bool appendWhere = false) {
             var table = this.schema.GetTable<TEntity>();
             if (table.OptimisticConcurrencyColumn != null) {
                 if (appendWhere) {

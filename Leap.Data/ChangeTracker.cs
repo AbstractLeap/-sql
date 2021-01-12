@@ -14,7 +14,7 @@
             this.schema     = schema;
         }
 
-        public bool HasEntityChanged<TEntity>(Document<TEntity> document) {
+        public bool HasEntityChanged<TEntity>(IDocument<TEntity> document) {
             if (document.State != DocumentState.Persisted) {
                 return false;
             }

@@ -68,7 +68,7 @@
 
                 // TODO invalidate old versions
                 // check ID map for instance
-                if (this.identityMap.TryGetValue(table.KeyType, id, out Document<T> alreadyMappedDocument)) {
+                if (this.identityMap.TryGetValue(table.KeyType, id, out IDocument<T> alreadyMappedDocument)) {
                     yield return alreadyMappedDocument.Entity;
                     continue;
                 }

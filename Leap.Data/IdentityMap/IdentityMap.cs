@@ -14,12 +14,12 @@
             this.schema = schema;
         }
 
-        public bool TryGetValue<TEntity, TKey>(TKey key, out Document<TEntity> document)
+        public bool TryGetValue<TEntity, TKey>(TKey key, out IDocument<TEntity> document)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
             if (this.map.TryGetValue(table, out var entityMap)) {
                 if (((IDictionary<TKey, object>)entityMap).TryGetValue(key, out var nonTypedDocument)) {
-                    if (nonTypedDocument is Document<TEntity> typedDocument) {
+                    if (nonTypedDocument is IDocument<TEntity> typedDocument) {
                         document = typedDocument;
                         return true;
                     }
@@ -33,7 +33,7 @@
             return false;
         }
 
-        public void Add<TEntity, TKey>(TKey key, Document<TEntity> document) {
+        public void Add<TEntity, TKey>(TKey key, IDocument<TEntity> document) {
             var table = this.schema.GetTable<TEntity>();
             if (this.map.TryGetValue(table, out var entityMap)) {
                 ((IDictionary<TKey, object>)entityMap).Add(key, document);

@@ -10,7 +10,7 @@
             this.serializer = serializer;
         }
 
-        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, Document<TEntity> document) {
+        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, IDocument<TEntity> document) {
             return (TValue)(object)this.serializer.Serialize(entity);
         }
     }

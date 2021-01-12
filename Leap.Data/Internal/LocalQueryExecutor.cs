@@ -34,9 +34,9 @@
 
         private ValueTask<Maybe> TryGetInstanceFromIdentityMap<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
-            if (this.identityMap.TryGetValue(keyQuery.Key, out Document<TEntity> document)) {
+            if (this.identityMap.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
                 // TODO removed entities
-                return new ValueTask<Maybe>(new Maybe(new List<Document<TEntity>> { document }));
+                return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>> { document }));
             }
 
             return new ValueTask<Maybe>(Maybe.NotSuccessful);
@@ -59,14 +59,14 @@
             return new ExecuteResult(executedQueries, nonExecutedQueries);
         }
 
-        public IAsyncEnumerable<Document<TEntity>> GetAsync<TEntity>(IQuery query)
+        public IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)
             where TEntity : class {
             return Get<TEntity>(query).ToAsyncEnumerable();
         }
 
-        private IEnumerable<Document<TEntity>> Get<TEntity>(IQuery query)
+        private IEnumerable<IDocument<TEntity>> Get<TEntity>(IQuery query)
             where TEntity : class {
-            if (this.resultCache.TryGetValue<Document<TEntity>>(query, out var result)) {
+            if (this.resultCache.TryGetValue<IDocument<TEntity>>(query, out var result)) {
                 foreach (var document in result) {
                     yield return document;
                 }

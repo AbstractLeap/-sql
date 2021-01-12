@@ -48,6 +48,8 @@
         public IKeyExtractor KeyExtractor { get; set; }
 
         public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
+        
+        public bool ContainsTypeHierarchy { get; private set; }
 
         public int GetColumnIndex(string columnName) {
             if (!this.columnIndices.TryGetValue(columnName, out var index)) {
@@ -98,7 +100,8 @@
                     throw new Exception("All of the classes inside a single table must have a common base class or interface");
                 }
 
-                this.BaseEntityType = commonBase;
+                this.BaseEntityType        = commonBase;
+                this.ContainsTypeHierarchy = true;
             }
         }
     }

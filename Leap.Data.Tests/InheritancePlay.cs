@@ -31,6 +31,47 @@ namespace Leap.Data.Tests {
             Assert.Contains(terrier, allAnimals);
         }
 
+        [Fact]
+        public async Task QuerySubType() {
+            var sf = MakeTarget();
+            var insertSession = sf.StartSession();
+            var cat = new Cat("Trevor");
+            insertSession.Add(cat);
+
+            var poodle = new Poodle("Bubbles");
+            insertSession.Add(poodle);
+
+            var terrier = new Terrier("Jack");
+            insertSession.Add(terrier);
+            await insertSession.SaveChangesAsync();
+
+            var querySession1 = sf.StartSession();
+            var allAnimals = await querySession1.Get<Dog>().ToListAsync();
+            Assert.Contains(poodle, allAnimals);
+            Assert.Contains(terrier, allAnimals);
+        }
+
+        [Fact]
+        public async Task Contravariance() {
+            var sf = MakeTarget();
+            var session = sf.StartSession();
+            var poodle = new Poodle("Paul");
+            session.Add(poodle);
+
+            var dog = await session.Get<Dog>().SingleAsync(poodle.Id);
+            Assert.Same(poodle, dog);
+        }
+
+        [Fact]
+        public async Task ContravarianceFail() {
+            var sf = MakeTarget();
+            var session = sf.StartSession();
+            var poodle = new Cat("Paul");
+            session.Add(poodle);
+
+            await Assert.ThrowsAsync<Exception>(async () => await session.Get<Dog>().SingleAsync(poodle.Id));
+        }
+
         private static ISessionFactory MakeTarget() {
             var testSchema = new SchemaBuilder().AddTypes(typeof(IAnimal), typeof(Animal), typeof(Dog), typeof(Terrier), typeof(Poodle), typeof(Cat))
                                                 .UsingConvention(new Convention())

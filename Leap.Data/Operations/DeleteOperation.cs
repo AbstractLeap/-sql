@@ -2,9 +2,9 @@
     using Leap.Data.IdentityMap;
 
     public class DeleteOperation<TEntity> : IOperation {
-        public Document<TEntity> Document { get; }
+        public IDocument<TEntity> Document { get; }
 
-        public DeleteOperation(Document<TEntity> document) {
+        public DeleteOperation(IDocument<TEntity> document) {
             this.Document = document;
         }
     }

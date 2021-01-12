@@ -12,7 +12,7 @@
             this.table = table;
         }
 
-        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, Document<TEntity> document) {
+        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, IDocument<TEntity> document) {
             var key = this.table.KeyExtractor.Extract<TEntity, TKey>(entity);
             return this.GetValue<TEntity, TKey, TValue>(column, key);
         }

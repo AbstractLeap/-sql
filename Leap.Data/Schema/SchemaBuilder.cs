@@ -24,7 +24,7 @@
             return this;
         }
 
-        public SchemaBuilder AddTypesToTable(string tableName, params Type[] types) {
+        public SchemaBuilder AddTypes(string tableName, params Type[] types) {
             if (!this.addedNamedTypes.TryGetValue(tableName, out var tableTypes)) {
                 tableTypes = new HashSet<Type>();
                 this.addedNamedTypes.Add(tableName, tableTypes);
@@ -57,7 +57,7 @@
         private void AddUnnamedTypesToNamed() {
             foreach (var type in this.addedTypes) {
                 var tableName = this.schemaConvention.GetTableName(type);
-                this.AddTypesToTable(tableName, type);
+                this.AddTypes(tableName, type);
             }
         }
     }

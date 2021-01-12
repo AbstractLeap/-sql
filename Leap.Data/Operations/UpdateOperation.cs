@@ -2,11 +2,11 @@
     using Leap.Data.IdentityMap;
 
     public class UpdateOperation<TEntity, TKey> : IOperation {
-        public Document<TEntity> Document { get; }
+        public IDocument<TEntity> Document { get; }
 
         public TKey Key { get; }
 
-        public UpdateOperation(Document<TEntity> document, TKey key) {
+        public UpdateOperation(IDocument<TEntity> document, TKey key) {
             this.Document = document;
             this.Key      = key;
         }
