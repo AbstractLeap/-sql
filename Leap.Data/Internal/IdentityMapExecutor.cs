@@ -12,12 +12,12 @@
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
-    class LocalQueryExecutor {
+    class IdentityMapExecutor {
         private readonly IdentityMap identityMap;
 
         private readonly ResultCache resultCache;
 
-        public LocalQueryExecutor(IdentityMap identityMap) {
+        public IdentityMapExecutor(IdentityMap identityMap) {
             this.identityMap = identityMap;
             this.resultCache = new ResultCache();
         }
@@ -72,7 +72,7 @@
                 }
             }
             else {
-                throw new Exception($"{nameof(LocalQueryExecutor)} did not execute {query} so can not get result");
+                throw new Exception($"{nameof(IdentityMapExecutor)} did not execute {query} so can not get result");
             }
         }
     }

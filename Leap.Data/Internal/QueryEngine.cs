@@ -30,14 +30,14 @@
 
         private readonly HashSet<Guid> persistenceQueryExecutorQueries = new HashSet<Guid>();
 
-        private readonly LocalQueryExecutor localQueryExecutor;
+        private readonly IdentityMapExecutor localQueryExecutor;
 
         public QueryEngine(ISchema schema, IdentityMap identityMap, IQueryExecutor persistenceQueryExecutor, ISerializer serializer) {
             this.schema                   = schema;
             this.identityMap              = identityMap;
             this.persistenceQueryExecutor = persistenceQueryExecutor;
             this.serializer               = serializer;
-            this.localQueryExecutor       = new LocalQueryExecutor(this.identityMap);
+            this.localQueryExecutor       = new IdentityMapExecutor(this.identityMap);
         }
 
         public void Add(IQuery query) {
