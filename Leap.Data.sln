@@ -11,6 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leap.Data.SqlServer", "Leap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.MemoryCache", "Leap.Data.MemoryCache\Leap.Data.MemoryCache.csproj", "{E59651AC-455B-4E3D-A508-BE146123632E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Providers", "Providers", "{1E687A62-8649-46CC-B499-D0FF9F1542F7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Caching", "Caching", "{E2111506-CDAA-42E9-9943-3FED4555B5D3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +78,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{424BED90-0F5C-44AD-AE2D-CC2EB277633A} = {8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297}
+		{E59651AC-455B-4E3D-A508-BE146123632E} = {E2111506-CDAA-42E9-9943-3FED4555B5D3}
+		{E2111506-CDAA-42E9-9943-3FED4555B5D3} = {1E687A62-8649-46CC-B499-D0FF9F1542F7}
+		{8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297} = {1E687A62-8649-46CC-B499-D0FF9F1542F7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB658BC-B9D1-4982-A8CC-D10A651895D5}
