@@ -1,5 +1,6 @@
 ﻿namespace Leap.Data.Configuration {
     using Leap.Data.Internal;
+    using Leap.Data.Internal.Caching;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
 
@@ -15,9 +16,13 @@
         public IQueryExecutor QueryExecutor { get; set; }
 
         public IUpdateExecutor UpdateExecutor { get; set; }
+        
+        public IMemoryCache MemoryCache { get; set; }
+        
+        public IDistributedCache DistributedCache { get; set; }
 
         public ISessionFactory BuildSessionFactory() {
-            return new SessionFactory(this.Schema, this.Serializer, this.QueryExecutor, this.UpdateExecutor);
+            return new SessionFactory(this.Schema, this.Serializer, this.QueryExecutor, this.UpdateExecutor, this.MemoryCache, this.DistributedCache);
         }
     }
 }

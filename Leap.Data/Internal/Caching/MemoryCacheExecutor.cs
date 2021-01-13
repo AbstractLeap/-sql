@@ -1,4 +1,4 @@
-﻿namespace Leap.Data.Internal {
+﻿namespace Leap.Data.Internal.Caching {
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -12,20 +12,13 @@
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
-    internal interface ICacheExecutor {
-        ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default);
-
-        IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)
-            where TEntity : class;
-    }
-
-    class IdentityMapExecutor : ICacheExecutor {
-        private readonly IdentityMap identityMap;
+    class MemoryCacheExecutor : ICacheExecutor {
+        private readonly IMemoryCache memoryCache;
 
         private readonly ResultCache resultCache;
 
-        public IdentityMapExecutor(IdentityMap identityMap) {
-            this.identityMap = identityMap;
+        public MemoryCacheExecutor(IMemoryCache memoryCache) {
+            this.memoryCache = memoryCache;
             this.resultCache = new ResultCache();
         }
 
@@ -33,15 +26,15 @@
             var queryType = query.GetType();
             var genericTypeDefinition = queryType.GetGenericTypeDefinition();
             if (genericTypeDefinition == typeof(KeyQuery<,>)) {
-                return (ValueTask<Maybe>)this.CallMethod(queryType.GetGenericArguments(), nameof(this.TryGetInstanceFromIdentityMap), query);
+                return (ValueTask<Maybe>)this.CallMethod(queryType.GetGenericArguments(), nameof(this.TryGetInstanceFromCache), query);
             }
 
             return new ValueTask<Maybe>(Maybe.NotSuccessful);
         }
 
-        private ValueTask<Maybe> TryGetInstanceFromIdentityMap<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
+        private ValueTask<Maybe> TryGetInstanceFromCache<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
-            if (this.identityMap.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
+            if (this.memoryCache.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
                 // TODO removed entities
                 return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>> { document }));
             }

@@ -8,6 +8,7 @@
 
     using Leap.Data.IdentityMap;
     using Leap.Data.Internal;
+    using Leap.Data.Internal.Caching;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
@@ -25,10 +26,16 @@
 
         private readonly ChangeTracker changeTracker;
 
-        public Session(ISchema schema, ISerializer serializer, IQueryExecutor queryExecutor, IUpdateExecutor updateExecutor) {
+        public Session(
+            ISchema schema,
+            ISerializer serializer,
+            IQueryExecutor queryExecutor,
+            IUpdateExecutor updateExecutor,
+            MemoryCacheExecutor memoryCacheExecutor,
+            DistributedCacheExecutor distributedCacheExecutor) {
             this.schema        = schema;
             this.identityMap   = new IdentityMap.IdentityMap(schema);
-            this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer);
+            this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer, memoryCacheExecutor, distributedCacheExecutor);
             this.updateEngine  = new UpdateEngine(updateExecutor);
             this.changeTracker = new ChangeTracker(serializer, schema);
         }

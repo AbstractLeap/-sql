@@ -1,5 +1,6 @@
 ﻿namespace Leap.Data.Internal {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -8,9 +9,11 @@
     using Fasterflect;
 
     using Leap.Data.IdentityMap;
+    using Leap.Data.Internal.Caching;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
+    using Leap.Data.Utilities;
 
     class QueryEngine {
         private readonly ISchema schema;
@@ -24,20 +27,38 @@
         /// <summary>
         ///     queries to be executed
         /// </summary>
-        private readonly List<IQuery> queriesToExecute = new List<IQuery>();
+        private readonly List<IQuery> queriesToExecute = new();
+        
+        private readonly ICacheExecutor[] cacheExecutors;
 
-        private readonly HashSet<Guid> localQueryExecutorQueries = new HashSet<Guid>();
+        private readonly HashSet<Guid>[] cacheExecutorQueries;
 
-        private readonly HashSet<Guid> persistenceQueryExecutorQueries = new HashSet<Guid>();
+        private readonly HashSet<Guid> persistenceQueryExecutorQueries = new();
 
-        private readonly IdentityMapExecutor localQueryExecutor;
-
-        public QueryEngine(ISchema schema, IdentityMap identityMap, IQueryExecutor persistenceQueryExecutor, ISerializer serializer) {
+        public QueryEngine(
+            ISchema schema,
+            IdentityMap identityMap,
+            IQueryExecutor persistenceQueryExecutor,
+            ISerializer serializer,
+            MemoryCacheExecutor memoryCacheExecutor,
+            DistributedCacheExecutor distributedCacheExecutor) {
             this.schema                   = schema;
             this.identityMap              = identityMap;
             this.persistenceQueryExecutor = persistenceQueryExecutor;
             this.serializer               = serializer;
-            this.localQueryExecutor       = new IdentityMapExecutor(this.identityMap);
+            this.cacheExecutors           = GetNonNullCacheExecutors().ToArray();
+            this.cacheExecutorQueries     = this.cacheExecutors.Select(_ => new HashSet<Guid>()).ToArray();
+
+            IEnumerable<ICacheExecutor> GetNonNullCacheExecutors() {
+                yield return new IdentityMapExecutor(this.identityMap);
+                if (memoryCacheExecutor != null) {
+                    yield return memoryCacheExecutor;
+                }
+
+                if (distributedCacheExecutor != null) {
+                    yield return distributedCacheExecutor;
+                }
+            }
         }
 
         public void Add(IQuery query) {
@@ -46,19 +67,23 @@
 
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
-            if (!this.localQueryExecutorQueries.Contains(query.Identifier) && !this.persistenceQueryExecutorQueries.Contains(query.Identifier)) {
+            if (!this.cacheExecutorQueries.Any(e => e.Contains(query.Identifier)) 
+                && !this.persistenceQueryExecutorQueries.Contains(query.Identifier)) {
                 // query has not been executed, so let's flush existing queries and then add
                 await this.FlushAsync();
                 this.Add(query);
             }
 
             await this.EnsureExecutedAsync();
-            if (this.localQueryExecutorQueries.Contains(query.Identifier)) {
-                await foreach (var document in this.localQueryExecutor.GetAsync<T>(query)) {
-                    yield return document.Entity;
+            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
+                var cacheExecutor = entry.Value;
+                if (this.cacheExecutorQueries[entry.Index].Contains(query.Identifier)) {
+                    await foreach (var document in cacheExecutor.GetAsync<T>(query)) {
+                        yield return document.Entity;
+                    }
+                    
+                    yield break;
                 }
-                
-                yield break;
             }
 
             var table = this.schema.GetTable<T>();
@@ -101,12 +126,17 @@
 
         private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
-            var localExecutionResult = await this.localQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
-            foreach (var executedQuery in localExecutionResult.ExecutedQueries) {
-                this.localQueryExecutorQueries.Add(executedQuery.Identifier);
-            }
+            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
+                var cacheExecutionResult = await entry.Value.ExecuteAsync(queriesStillToExecute, cancellationToken);
+                foreach (var executedQuery in cacheExecutionResult.ExecutedQueries) {
+                    this.cacheExecutorQueries[entry.Index].Add(executedQuery.Identifier);
+                }
 
-            queriesStillToExecute = localExecutionResult.NonExecutedQueries;
+                queriesStillToExecute = cacheExecutionResult.NonExecutedQueries;
+                if (!queriesStillToExecute.Any()) {
+                    break;
+                }
+            }
 
             if (queriesStillToExecute.Any()) {
                 if (this.persistenceQueryExecutor == null) {
