@@ -12,14 +12,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
-    internal interface ICacheExecutor {
-        ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default);
-
-        IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)
-            where TEntity : class;
-    }
-
-    class IdentityMapExecutor : ICacheExecutor {
+    class IdentityMapExecutor {
         private readonly IdentityMap identityMap;
 
         private readonly ResultCache resultCache;

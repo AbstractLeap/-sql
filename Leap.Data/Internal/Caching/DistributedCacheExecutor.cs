@@ -8,7 +8,6 @@
 
     using Fasterflect;
 
-    using Leap.Data.IdentityMap;
     using Leap.Data.Queries;
     using Leap.Data.Utilities;
 
@@ -34,11 +33,11 @@
 
         private async ValueTask<Maybe> TryGetInstanceFromCache<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken)
             where TEntity : class {
-            var cachedDocument = await this.distributedCache.GetAsync<IDocument<TEntity>>(keyQuery.Key, cancellationToken);
-            if (cachedDocument != null) {
-                return new Maybe(new List<IDocument<TEntity>> { cachedDocument });
+            var cachedRow = await this.distributedCache.GetAsync<object[]>(keyQuery.Key, cancellationToken);
+            if (cachedRow != null) {
+                return new Maybe(new List<object[]> { cachedRow });
             }
-            
+
             return Maybe.NotSuccessful;
         }
 
@@ -59,20 +58,19 @@
             return new ExecuteResult(executedQueries, nonExecutedQueries);
         }
 
-        public IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)
+        public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
             where TEntity : class {
-            return Get<TEntity>(query).ToAsyncEnumerable();
+            return this.Get(query).ToAsyncEnumerable();
         }
 
-        private IEnumerable<IDocument<TEntity>> Get<TEntity>(IQuery query)
-            where TEntity : class {
-            if (this.resultCache.TryGetValue<IDocument<TEntity>>(query, out var result)) {
-                foreach (var document in result) {
-                    yield return document;
+        private IEnumerable<object[]> Get(IQuery query) {
+            if (this.resultCache.TryGetValue<object[]>(query, out var result)) {
+                foreach (var row in result) {
+                    yield return row;
                 }
             }
             else {
-                throw new Exception($"{nameof(IdentityMapExecutor)} did not execute {query} so can not get result");
+                throw new Exception($"{nameof(DistributedCacheExecutor)} did not execute {query} so can not get result");
             }
         }
     }

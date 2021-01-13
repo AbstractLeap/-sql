@@ -4,6 +4,7 @@ namespace Leap.Data.Tests {
     using System.Threading.Tasks;
 
     using Leap.Data.Configuration;
+    using Leap.Data.MemoryCache;
     using Leap.Data.SqlServer;
 
     using Xunit;
@@ -181,7 +182,10 @@ namespace Leap.Data.Tests {
 
         private static ISessionFactory MakeTarget() {
             var testSchema = TestSchema.Get();
-            var sessionFactory = new Configuration(testSchema).UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;").BuildSessionFactory();
+            var sessionFactory = new Configuration(testSchema)
+                                 .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
+                                 .UseMemoryCache()
+                                 .BuildSessionFactory();
             return sessionFactory;
         }
     }
