@@ -31,11 +31,17 @@
             ISerializer serializer,
             IQueryExecutor queryExecutor,
             IUpdateExecutor updateExecutor,
-            MemoryCacheExecutor memoryCacheExecutor,
-            DistributedCacheExecutor distributedCacheExecutor) {
+            IMemoryCache memoryCache,
+            IDistributedCache distributedCache) {
             this.schema        = schema;
             this.identityMap   = new IdentityMap.IdentityMap(schema);
-            this.queryEngine   = new QueryEngine(schema, this.identityMap, queryExecutor, serializer, memoryCacheExecutor, distributedCacheExecutor);
+            this.queryEngine = new QueryEngine(
+                schema,
+                this.identityMap,
+                queryExecutor,
+                serializer,
+                memoryCache != null ? new MemoryCacheExecutor(memoryCache) : null,
+                distributedCache != null ? new DistributedCacheExecutor(distributedCache) : null);
             this.updateEngine  = new UpdateEngine(updateExecutor);
             this.changeTracker = new ChangeTracker(serializer, schema);
         }
