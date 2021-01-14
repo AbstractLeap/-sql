@@ -35,7 +35,11 @@
         private ValueTask<Maybe> TryGetInstanceFromIdentityMap<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
             if (this.identityMap.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
-                // TODO removed entities
+                if (document.State == DocumentState.Deleted) {
+                    // we need to say that we've handled it but that we return nothing
+                    return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>>()));
+                }
+                
                 return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>> { document }));
             }
 
