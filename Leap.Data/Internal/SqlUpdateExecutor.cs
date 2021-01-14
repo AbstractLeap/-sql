@@ -84,8 +84,7 @@ namespace Leap.Data.Internal {
             }
 
             bool IsRowsAffectedOperation(IOperation operation) {
-                var genericTypeDefinition = operation.GetType().GetGenericTypeDefinition();
-                return genericTypeDefinition == typeof(UpdateOperation<,>) || genericTypeDefinition == typeof(DeleteOperation<>);
+                return operation.IsUpdateOperation() || operation.IsDeleteOperation();
             }
 
             void AddException(ref List<Exception> exceptions, IOperation operation) {

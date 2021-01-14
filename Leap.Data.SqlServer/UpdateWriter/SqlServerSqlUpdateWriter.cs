@@ -19,14 +19,13 @@
         }
 
         public void Write(IOperation operation, Command command) {
-            var genericTypeDefinition = operation.GetType().GetGenericTypeDefinition();
-            if (genericTypeDefinition == typeof(AddOperation<>)) {
+            if (operation.IsAddOperation()) {
                 this.addOperationWriter.Write(operation, command);
             }
-            else if (genericTypeDefinition == typeof(UpdateOperation<,>)) {
+            else if (operation.IsUpdateOperation()) {
                 this.updateOperationWriter.Write(operation, command);
             }
-            else if (genericTypeDefinition == typeof(DeleteOperation<>)) {
+            else if (operation.IsDeleteOperation()) {
                 this.deleteOperationWriter.Write(operation, command);
             }
         }
