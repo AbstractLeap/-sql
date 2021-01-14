@@ -1,9 +1,11 @@
 ﻿namespace Leap.Data.Operations {
-    public class AddOperation<TEntity> : IOperation {
-        public TEntity Entity { get; }
+    using Leap.Data.IdentityMap;
 
-        public AddOperation(TEntity entity) {
-            this.Entity = entity;
+    class AddOperation<TEntity> : IOperation<TEntity> {
+        public IDocument<TEntity> Document { get; }
+
+        public AddOperation(IDocument<TEntity> document) {
+            this.Document = document;
         }
     }
 }

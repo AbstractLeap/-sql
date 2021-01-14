@@ -17,7 +17,7 @@ namespace Leap.Data.Tests {
             var identityMap = new IdentityMap(mockSchema.Object);
 
             var blog = new Blog("Title");
-            identityMap.Add(blog.BlogId, new Document<Blog>(null, blog));
+            identityMap.Add(blog.BlogId, new Document<Blog>(blog));
 
             Assert.True(identityMap.TryGetValue<Blog, BlogId>(blog.BlogId, out var mappedBlogDocument));
             Assert.NotNull(mappedBlogDocument);
@@ -33,7 +33,7 @@ namespace Leap.Data.Tests {
             var schema = new SchemaBuilder().AddTypes("Foos", typeof(IFoo), typeof(BaseFoo), typeof(Foo), typeof(FooFoo)).Build();
             var identityMap = new IdentityMap(schema);
             var id = Guid.NewGuid();
-            var fooDoc = new Document<Foo>(null, new Foo());
+            var fooDoc = new Document<Foo>(new Foo());
             identityMap.Add(id, fooDoc);
 
             Assert.True(identityMap.TryGetValue<BaseFoo, Guid>(id, out var baseFoo));

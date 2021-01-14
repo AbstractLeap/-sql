@@ -49,6 +49,23 @@
             }
         }
 
+        protected void WriteWhereClauseForRow(DatabaseRow databaseRow, Command command, StringBuilder builder, bool useAlias = false) {
+            foreach (var keyColumnEntry in databaseRow.Table.KeyColumns.AsSmartEnumerable()) {
+                var keyColumn = keyColumnEntry.Value;
+                if (useAlias) {
+                    builder.Append("t.");
+                }
+
+                this.sqlDialect.AppendName(builder, keyColumn.Name);
+                builder.Append(" = ");
+                var paramName = command.AddParameter(databaseRow.Values[databaseRow.Table.GetColumnIndex(keyColumn.Name)]);
+                this.sqlDialect.AddParameter(builder, paramName);
+                if (!keyColumnEntry.IsLast) {
+                    builder.Append(" and ");
+                }
+            }
+        }
+
         protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
@@ -77,20 +94,13 @@
             }
         }
 
-        protected void MaybeAddOptimisticConcurrencyWhereClause<TEntity>(StringBuilder builder, Command command, IDocument<TEntity> document, bool appendWhere = false) {
-            var table = this.schema.GetTable<TEntity>();
-            if (table.OptimisticConcurrencyColumn != null) {
-                if (appendWhere) {
-                    builder.Append(" where ");
-                }
-                else {
-                    builder.Append(" and ");
-                }
-
-                this.sqlDialect.AppendName(builder, table.OptimisticConcurrencyColumn.Name);
+        protected void MaybeAddOptimisticConcurrencyWhereClause(StringBuilder builder, Command command, DatabaseRow databaseRow, bool appendWhere = false) {
+            if (databaseRow.Table.OptimisticConcurrencyColumn != null) {
+                builder.Append(appendWhere ? " where " : " and ");
+                this.sqlDialect.AppendName(builder, databaseRow.Table.OptimisticConcurrencyColumn.Name);
                 builder.Append(" = ");
                 var paramName = command.AddParameter(
-                    RowValueHelper.GetValue(table.OptimisticConcurrencyColumn.Type, table, document.Row.Values, table.OptimisticConcurrencyColumn.Name));
+                    RowValueHelper.GetValue(databaseRow.Table.OptimisticConcurrencyColumn.Type, databaseRow.Table, databaseRow.Values, databaseRow.Table.OptimisticConcurrencyColumn.Name));
                 this.sqlDialect.AddParameter(builder, paramName);
             }
         }

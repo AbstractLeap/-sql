@@ -2,24 +2,24 @@
     using System;
     using System.Runtime.Serialization;
 
-    using Leap.Data.Operations;
+    using Leap.Data.Internal;
 
     [Serializable]
     public class OptimisticConcurrencyException : Exception {
-        public IOperation Operation { get; }
+        public DatabaseRow DatabaseRow { get; }
 
-        public OptimisticConcurrencyException(IOperation operation) {
-            this.Operation = operation;
+        public OptimisticConcurrencyException(DatabaseRow databaseRow) {
+            this.DatabaseRow = databaseRow;
         }
 
-        public OptimisticConcurrencyException(IOperation operation, string message)
+        public OptimisticConcurrencyException(DatabaseRow databaseRow, string message)
             : base(message) {
-            this.Operation = operation;
+            this.DatabaseRow = databaseRow;
         }
 
-        public OptimisticConcurrencyException(IOperation operation, string message, Exception inner)
+        public OptimisticConcurrencyException(DatabaseRow databaseRow, string message, Exception inner)
             : base(message, inner) {
-            this.Operation = operation;
+            this.DatabaseRow = databaseRow;
         }
 
         protected OptimisticConcurrencyException(SerializationInfo info, StreamingContext context)

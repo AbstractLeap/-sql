@@ -1,3 +1,9 @@
 ﻿namespace Leap.Data.Operations {
-    public interface IOperation { }
+    using Leap.Data.IdentityMap;
+
+    interface IOperation { }
+    
+    interface IOperation<out TEntity> : IOperation {
+        IDocument<TEntity> Document { get; }
+    }
 }

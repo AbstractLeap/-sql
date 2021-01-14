@@ -1,7 +1,6 @@
 ﻿namespace Leap.Data.SqlServer.UpdateWriter {
     using Leap.Data.Internal;
     using Leap.Data.Internal.UpdateWriter;
-    using Leap.Data.Operations;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
 
@@ -18,16 +17,16 @@
             this.deleteOperationWriter = new SqlServerSqlDeleteOperationWriter(schema, new SqlServerDialect(), serializer);
         }
 
-        public void Write(IOperation operation, Command command) {
-            if (operation.IsAddOperation()) {
-                this.addOperationWriter.Write(operation, command);
-            }
-            else if (operation.IsUpdateOperation()) {
-                this.updateOperationWriter.Write(operation, command);
-            }
-            else if (operation.IsDeleteOperation()) {
-                this.deleteOperationWriter.Write(operation, command);
-            }
+        public void WriteInsert(DatabaseRow row, Command command) {
+            this.addOperationWriter.Write(row, command);
+        }
+
+        public void WriteUpdate(DatabaseRow row, Command command) {
+            this.updateOperationWriter.Write(row, command);
+        }
+
+        public void WriteDelete(DatabaseRow row, Command command) {
+            this.deleteOperationWriter.Write(row, command);
         }
     }
 }

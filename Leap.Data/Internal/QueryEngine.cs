@@ -121,10 +121,8 @@
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(table.KeyType, id, new Document<T>(new DatabaseRow(table, row), entity) { State = DocumentState.Persisted });
+                this.identityMap.Add(table.KeyType, id, new Document<T>(entity, new DatabaseRow(table, row)) { State = DocumentState.Persisted });
                 return entity;
-
-                // TODO second level cache
             }
         }
 

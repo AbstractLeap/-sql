@@ -184,7 +184,6 @@ namespace Leap.Data.Tests {
             var testSchema = TestSchema.Get();
             var sessionFactory = new Configuration(testSchema)
                                  .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
-                                 .UseMemoryCache()
                                  .BuildSessionFactory();
             return sessionFactory;
         }

@@ -3,9 +3,11 @@ namespace Leap.Data.Internal {
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Leap.Data.Operations;
-
     public interface IUpdateExecutor {
-        ValueTask ExecuteAsync(IEnumerable<IOperation> operations, CancellationToken cancellationToken = default);
+        ValueTask ExecuteAsync(
+            IEnumerable<DatabaseRow> additions,
+            IEnumerable<DatabaseRow> updates,
+            IEnumerable<DatabaseRow> deletes,
+            CancellationToken cancellationToken = default);
     }
 }

@@ -3,7 +3,7 @@
     using System.Threading.Tasks;
 
     public interface IDistributedCache {
-        ValueTask SetAsync<TItem>(string key, TItem value, CancellationToken cancellationToken);
+        ValueTask SetAsync<TItem>(object key, TItem value, CancellationToken cancellationToken);
 
         ValueTask<TItem> GetAsync<TItem>(object key, CancellationToken cancellationToken);
 

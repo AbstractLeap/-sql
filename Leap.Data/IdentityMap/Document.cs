@@ -2,13 +2,13 @@
     using Leap.Data.Internal;
 
     internal class Document<TEntity> : IDocument<TEntity> {
-        public Document(DatabaseRow row) {
-            this.Row = row;
+        public Document(TEntity entity) {
+            this.Entity = entity;
         }
 
-        public Document(DatabaseRow row, TEntity entity) {
-            this.Row    = row;
+        public Document(TEntity entity, DatabaseRow row) {
             this.Entity = entity;
+            this.Row    = row;
         }
 
         public TEntity Entity { get; }

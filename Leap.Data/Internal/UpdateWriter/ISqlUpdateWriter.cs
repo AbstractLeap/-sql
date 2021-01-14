@@ -1,7 +1,9 @@
 ﻿namespace Leap.Data.Internal.UpdateWriter {
-    using Leap.Data.Operations;
-
     public interface ISqlUpdateWriter {
-        void Write(IOperation operation, Command command);
+        void WriteInsert(DatabaseRow row, Command command);
+
+        void WriteUpdate(DatabaseRow row, Command command);
+
+        void WriteDelete(DatabaseRow row, Command command);
     }
 }

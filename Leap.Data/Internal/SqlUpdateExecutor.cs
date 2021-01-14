@@ -2,6 +2,7 @@ namespace Leap.Data.Internal {
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Data.Common;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -24,7 +25,8 @@ namespace Leap.Data.Internal {
             this.sqlDialect        = sqlDialect;
         }
 
-        public async ValueTask ExecuteAsync(IEnumerable<IOperation> operations, CancellationToken cancellationToken = default) {
+        public async ValueTask ExecuteAsync(IEnumerable<DatabaseRow> inserts, IEnumerable<DatabaseRow> updates, IEnumerable<DatabaseRow> deletes, CancellationToken cancellationToken = default)
+        {
             var connection = this.connectionFactory.Get();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -35,22 +37,27 @@ namespace Leap.Data.Internal {
                 dbCommand.Transaction = transaction;
                 var command = new Command();
                 var wrapSqlWithAffectedRowsCount = false;
+                var returnsData = false;
                 command.OnQueryAdded += (sender, args) => {
                     if (wrapSqlWithAffectedRowsCount) {
-                        args.Query = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
+                        args.Query  = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
+                        returnsData = true;
                     }
                 };
                 
-                var returnsData = false;
-                var enumeratedOperations = operations as IOperation[] ?? operations.ToArray();
-                foreach (var operation in enumeratedOperations) {
-                    wrapSqlWithAffectedRowsCount = IsRowsAffectedOperation(operation);
-                    this.updateWriter.Write(operation, command);
-                    if (wrapSqlWithAffectedRowsCount) {
-                        returnsData = true;
-                    }
+                foreach (var databaseRow in inserts) {
+                    this.updateWriter.WriteInsert(databaseRow, command);
                 }
 
+                wrapSqlWithAffectedRowsCount = true;
+                foreach (var databaseRow in updates) {
+                    this.updateWriter.WriteUpdate(databaseRow, command);
+                }
+
+                foreach (var databaseRow in deletes) {
+                    this.updateWriter.WriteDelete(databaseRow, command);
+                }
+                
                 command.WriteToDbCommand(dbCommand);
                 if (!returnsData) {
                     await dbCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
@@ -59,23 +66,16 @@ namespace Leap.Data.Internal {
                 }
 
                 await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
-                    List<Exception> exceptions = null;
-                    foreach (var operation in enumeratedOperations) {
-                        if (IsRowsAffectedOperation(operation)) {
-                            if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
-                                AddException(ref exceptions, operation);
-                            }
-
-                            var affectedRows = await dbReader.GetFieldValueAsync<int>(0, cancellationToken);
-                            if (affectedRows == 0) {
-                                AddException(ref exceptions, operation);
-                            }
-
-                            await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-                        }
+                    List<Exception> exceptions = new();
+                    foreach (var databaseRow in updates) {
+                        await ReadResultAsync(dbReader, databaseRow, exceptions);
                     }
 
-                    if (exceptions != null) {
+                    foreach (var databaseRow in deletes) {
+                        await ReadResultAsync(dbReader, databaseRow, exceptions);
+                    }
+
+                    if (exceptions.Any()) {
                         throw new AggregateException(exceptions);
                     }
                 }
@@ -83,13 +83,21 @@ namespace Leap.Data.Internal {
                 await transaction.CommitAsync(cancellationToken);
             }
 
-            bool IsRowsAffectedOperation(IOperation operation) {
-                return operation.IsUpdateOperation() || operation.IsDeleteOperation();
+            async Task ReadResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
+                if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
+                    AddException(ref exceptions, databaseRow);
+                }
+
+                var affectedRows = await dbReader.GetFieldValueAsync<int>(0, cancellationToken);
+                if (affectedRows == 0) {
+                    AddException(ref exceptions, databaseRow);
+                }
+
+                await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            void AddException(ref List<Exception> exceptions, IOperation operation) {
-                exceptions ??= new List<Exception>();
-                exceptions.Add(new OptimisticConcurrencyException(operation));
+            void AddException(ref List<Exception> exceptions, DatabaseRow databaseRow) {
+                exceptions.Add(new OptimisticConcurrencyException(databaseRow));
             }
         }
     }

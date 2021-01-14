@@ -6,8 +6,6 @@
     using Leap.Data.Configuration;
     using Leap.Data.Internal;
     using Leap.Data.MemoryCache;
-    using Leap.Data.Operations;
-    using Leap.Data.SqlServer;
 
     using Moq;
 
@@ -27,19 +25,25 @@
             Assert.Equal(blog, blogAgain);
         }
 
-        private static ISessionFactory MakeTarget()
-        {
+        private static ISessionFactory MakeTarget() {
             var testSchema = TestSchema.Get();
             var configuration = new Configuration(testSchema).UseMemoryCache();
-            
+
             // should never get called
             var mockQueryExecutor = new Mock<IQueryExecutor>();
             configuration.QueryExecutor = mockQueryExecutor.Object;
 
             var mockUpdateExecutor = new Mock<IUpdateExecutor>();
-            mockUpdateExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IOperation>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
+            mockUpdateExecutor
+                .Setup(
+                    e => e.ExecuteAsync(
+                        It.IsAny<IEnumerable<DatabaseRow>>(),
+                        It.IsAny<IEnumerable<DatabaseRow>>(),
+                        It.IsAny<IEnumerable<DatabaseRow>>(),
+                        It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
             configuration.UpdateExecutor = mockUpdateExecutor.Object;
-            
+
             return configuration.BuildSessionFactory();
         }
     }

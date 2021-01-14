@@ -16,6 +16,10 @@
     class Session : ISession {
         private readonly ISchema schema;
 
+        private readonly IMemoryCache memoryCache;
+
+        private readonly IDistributedCache distributedCache;
+
         private UnitOfWork.UnitOfWork unitOfWork;
 
         private readonly IdentityMap.IdentityMap identityMap;
@@ -33,8 +37,10 @@
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache) {
-            this.schema        = schema;
-            this.identityMap   = new IdentityMap.IdentityMap(schema);
+            this.schema           = schema;
+            this.memoryCache      = memoryCache;
+            this.distributedCache = distributedCache;
+            this.identityMap      = new IdentityMap.IdentityMap(schema);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,
@@ -42,8 +48,9 @@
                 serializer,
                 memoryCache != null ? new MemoryCacheExecutor(memoryCache) : null,
                 distributedCache != null ? new DistributedCacheExecutor(distributedCache) : null);
-            this.updateEngine  = new UpdateEngine(updateExecutor);
+            this.updateEngine  = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
             this.changeTracker = new ChangeTracker(serializer, schema);
+            
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
@@ -56,8 +63,8 @@
             this.EnsureUnitOfWork();
             foreach (var tuple in this.identityMap.GetAll()) {
                 if ((bool)this.changeTracker.CallMethod(new[] { tuple.Document.GetType().GetGenericArguments().First() }, nameof(ChangeTracker.HasEntityChanged), tuple.Document)) {
-                    var updateOperation = (IOperation)typeof(UpdateOperation<,>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First(), tuple.Key.GetType())
-                                                                                .CreateInstance(tuple.Document, tuple.Key);
+                    var updateOperation = (IOperation)typeof(UpdateOperation<>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First())
+                                                                                .CreateInstance(tuple.Document);
                     this.unitOfWork.Add(updateOperation);
                 }
             }
@@ -65,8 +72,8 @@
             // flush the queryEngine
             await this.queryEngine.EnsureExecutedAsync();
 
-            // get sql to execute
-            await this.updateEngine.ExecuteAsync(this.unitOfWork);
+            // execute against caches and persistence
+            await this.updateEngine.ExecuteAsync(this.unitOfWork, cancellationToken);
 
             // TODO reset states in identity map
 
@@ -91,11 +98,11 @@
         public void Add<TEntity>(TEntity entity)
             where TEntity : class {
             this.EnsureUnitOfWork();
-            this.unitOfWork.Add(new AddOperation<TEntity>(entity));
+            this.unitOfWork.Add(new AddOperation<TEntity>(new Document<TEntity>(entity)));
             var table = this.schema.GetTable<TEntity>();
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
-            this.identityMap.Add(keyType, key, new Document<TEntity>(null, entity) { State = DocumentState.New });
+            this.identityMap.Add(keyType, key, new Document<TEntity>(entity) { State = DocumentState.New });
         }
 
         void EnsureUnitOfWork() {
