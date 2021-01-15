@@ -74,9 +74,7 @@
 
             // execute against caches and persistence
             await this.updateEngine.ExecuteAsync(this.unitOfWork, cancellationToken);
-
-            // TODO reset states in identity map
-
+            
             // instantiate new unit of work
             this.unitOfWork = new UnitOfWork.UnitOfWork();
         }

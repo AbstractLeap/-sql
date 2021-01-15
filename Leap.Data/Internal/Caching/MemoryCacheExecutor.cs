@@ -34,7 +34,6 @@
         private ValueTask<Maybe> TryGetInstanceFromCache<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
             if (this.memoryCache.TryGetValue(keyQuery.Key, out object[] document)) {
-                // TODO removed entities
                 return new ValueTask<Maybe>(new Maybe(new List<object[]> { document }));
             }
 

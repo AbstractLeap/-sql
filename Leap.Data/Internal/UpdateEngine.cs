@@ -86,7 +86,6 @@
             // if the above fails we won't get here which is good
             foreach (var operation in unitOfWork.Operations) {
                 if (operation.IsAddOperation() || operation.IsUpdateOperation()) {
-                    // TODO update document in identity map
                     this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation);
                     await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateDistributedCacheAsync), operation, cancellationToken);
                 }
