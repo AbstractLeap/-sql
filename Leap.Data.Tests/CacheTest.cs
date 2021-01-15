@@ -32,7 +32,7 @@
 
             // should never get called
             var mockQueryExecutor = new Mock<IQueryExecutor>();
-            configuration.QueryExecutor = mockQueryExecutor.Object;
+            configuration.QueryExecutorFactory = () => mockQueryExecutor.Object;
 
             var mockUpdateExecutor = new Mock<IUpdateExecutor>();
             mockUpdateExecutor
@@ -43,7 +43,7 @@
                         It.IsAny<IEnumerable<DatabaseRow>>(),
                         It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
-            configuration.UpdateExecutor = mockUpdateExecutor.Object;
+            configuration.UpdateExecutorFactory = () => mockUpdateExecutor.Object;
 
             return configuration.BuildSessionFactory();
         }

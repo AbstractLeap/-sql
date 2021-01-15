@@ -25,6 +25,8 @@
         /// </summary>
         private readonly DatabaseRowResultCache resultCache;
 
+        private DbConnection connection;
+
         private DbCommand command;
 
         private DbDataReader dataReader;
@@ -46,7 +48,7 @@
                 return;
             }
 
-            var connection = this.connectionFactory.Get();
+            this.connection = this.connectionFactory.Get();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -113,6 +115,7 @@
             await this.dataReader.CloseAsync();
             await this.dataReader.DisposeAsync();
             await this.command.DisposeAsync();
+            await this.connection.DisposeAsync();
         }
 
         private async ValueTask<List<object[]>> ReadResultIntoListAsync<T>()
@@ -138,6 +141,10 @@
 
             if (this.command != null) {
                 await this.command.DisposeAsync().ConfigureAwait(false);
+            }
+
+            if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
+                await disposableConnectionFactory.DisposeAsync();
             }
         }
     }

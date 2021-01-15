@@ -12,10 +12,19 @@
             var sqlServerConfiguration = new SqlServerConfiguration();
             setup?.Invoke(sqlServerConfiguration);
 
-            var connectionFactory = sqlServerConfiguration.ConnectionFactory ?? new DefaultSqlServerConnectionFactory(connectionString);
+            var connectionFactoryFactory = sqlServerConfiguration.ConnectionFactoryFactory
+                                           ?? (sqlServerConfiguration.ConnectionMode.HasValue && sqlServerConfiguration.ConnectionMode.Value == ConnectionMode.PerSession
+                                                   ? new ConnectionPerSessionSqlServerConnectionFactoryFactory(connectionString)
+                                                   : new ConnectionPerCommandSqlServerConnectionFactoryFactory(connectionString));
 
-            configuration.QueryExecutor  = new SqlQueryExecutor(connectionFactory, new SqlServerSqlQueryWriter(configuration.Schema), configuration.Schema);
-            configuration.UpdateExecutor = new SqlUpdateExecutor(connectionFactory, new SqlServerSqlUpdateWriter(configuration.Schema, configuration.Serializer), new SqlServerDialect());
+            configuration.QueryExecutorFactory = () => new SqlQueryExecutor(
+                connectionFactoryFactory.Get(),
+                new SqlServerSqlQueryWriter(configuration.Schema),
+                configuration.Schema);
+            configuration.UpdateExecutorFactory = () => new SqlUpdateExecutor(
+                connectionFactoryFactory.Get(),
+                new SqlServerSqlUpdateWriter(configuration.Schema, configuration.Serializer),
+                new SqlServerDialect());
             return configuration;
         }
     }

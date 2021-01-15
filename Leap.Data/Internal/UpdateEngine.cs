@@ -15,7 +15,7 @@
     using Leap.Data.Serialization;
     using Leap.Data.UnitOfWork;
 
-    class UpdateEngine {
+    class UpdateEngine : IAsyncDisposable {
         private readonly IUpdateExecutor persistenceUpdateExecutor;
 
         private readonly IMemoryCache memoryCache;
@@ -155,5 +155,11 @@
         }
 
         #endregion
+
+        public async ValueTask DisposeAsync() {
+            if (this.persistenceUpdateExecutor is IAsyncDisposable disposable) {
+                await disposable.DisposeAsync();
+            }
+        }
     }
 }

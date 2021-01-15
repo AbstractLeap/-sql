@@ -1,5 +1,12 @@
 ﻿namespace Leap.Data.SqlServer {
     public class SqlServerConfiguration {
-        public IConnectionFactory ConnectionFactory { get; set; }
+        public IConnectionFactoryFactory ConnectionFactoryFactory { get; set; }
+        
+        public ConnectionMode? ConnectionMode { get; set; }
+    }
+
+    public enum ConnectionMode {
+        PerCommand,
+        PerSession
     }
 }

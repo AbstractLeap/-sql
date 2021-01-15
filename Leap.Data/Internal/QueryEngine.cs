@@ -15,7 +15,7 @@
     using Leap.Data.Serialization;
     using Leap.Data.Utilities;
 
-    class QueryEngine {
+    class QueryEngine : IAsyncDisposable {
         private readonly ISchema schema;
 
         private readonly IdentityMap identityMap;
@@ -173,6 +173,12 @@
             }
 
             this.queriesToExecute.Clear();
+        }
+
+        public async ValueTask DisposeAsync() {
+            if (this.persistenceQueryExecutor is IAsyncDisposable disposable) {
+                await disposable.DisposeAsync();
+            }
         }
     }
 }

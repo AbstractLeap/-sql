@@ -10,9 +10,8 @@ namespace Leap.Data.Internal {
     using Leap.Data.Exceptions;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Internal.UpdateWriter;
-    using Leap.Data.Operations;
 
-    public class SqlUpdateExecutor : IUpdateExecutor {
+    public class SqlUpdateExecutor : IUpdateExecutor, IAsyncDisposable {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlUpdateWriter updateWriter;
@@ -27,7 +26,7 @@ namespace Leap.Data.Internal {
 
         public async ValueTask ExecuteAsync(IEnumerable<DatabaseRow> inserts, IEnumerable<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)> updates, IEnumerable<DatabaseRow> deletes, CancellationToken cancellationToken = default)
         {
-            var connection = this.connectionFactory.Get();
+            await using var connection = this.connectionFactory.Get();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }
@@ -94,6 +93,12 @@ namespace Leap.Data.Internal {
                 }
 
                 await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public async ValueTask DisposeAsync() {
+            if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
+                await disposableConnectionFactory.DisposeAsync();
             }
         }
     }

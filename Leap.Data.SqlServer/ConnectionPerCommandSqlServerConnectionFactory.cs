@@ -3,10 +3,10 @@
 
     using Microsoft.Data.SqlClient;
 
-    public class DefaultSqlServerConnectionFactory : IConnectionFactory {
+    public class ConnectionPerCommandSqlServerConnectionFactory : IConnectionFactory {
         private readonly string connectionString;
 
-        public DefaultSqlServerConnectionFactory(string connectionString) {
+        public ConnectionPerCommandSqlServerConnectionFactory(string connectionString) {
             this.connectionString = connectionString;
         }
 
