@@ -5,8 +5,8 @@ namespace Leap.Data.Internal {
 
     public interface IUpdateExecutor {
         ValueTask ExecuteAsync(
-            IEnumerable<DatabaseRow> additions,
-            IEnumerable<DatabaseRow> updates,
+            IEnumerable<DatabaseRow> inserts,
+            IEnumerable<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)> updates,
             IEnumerable<DatabaseRow> deletes,
             CancellationToken cancellationToken = default);
     }

@@ -13,7 +13,7 @@
 
         public TEntity Entity { get; }
 
-        public DatabaseRow Row { get; }
+        public DatabaseRow Row { get; set; }
 
         public DocumentState State { get; set; }
     }

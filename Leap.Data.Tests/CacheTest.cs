@@ -23,6 +23,7 @@
             var session2 = sf.StartSession();
             var blogAgain = await session2.Get<Blog>().SingleAsync(blog.BlogId);
             Assert.Equal(blog, blogAgain);
+            Assert.NotSame(blogAgain, blog);
         }
 
         private static ISessionFactory MakeTarget() {
@@ -38,7 +39,7 @@
                 .Setup(
                     e => e.ExecuteAsync(
                         It.IsAny<IEnumerable<DatabaseRow>>(),
-                        It.IsAny<IEnumerable<DatabaseRow>>(),
+                        It.IsAny<IEnumerable<(DatabaseRow, DatabaseRow)>>(),
                         It.IsAny<IEnumerable<DatabaseRow>>(),
                         It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);

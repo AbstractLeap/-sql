@@ -21,7 +21,7 @@
             this.addOperationWriter.Write(row, command);
         }
 
-        public void WriteUpdate(DatabaseRow row, Command command) {
+        public void WriteUpdate((DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow) row, Command command) {
             this.updateOperationWriter.Write(row, command);
         }
 

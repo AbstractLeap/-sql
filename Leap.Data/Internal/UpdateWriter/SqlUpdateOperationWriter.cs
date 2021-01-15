@@ -22,18 +22,17 @@
             this.serializer = serializer;
         }
 
-        public void Write(DatabaseRow databaseRow, Command command) {
+        public void Write((DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow) update, Command command) {
             var builder = new StringBuilder("update ");
-            this.sqlDialect.AppendName(builder, databaseRow.Table.Name);
+            var table = update.OldDatabaseRow.Table;
+            this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" set ");
 
-            foreach (var entry in databaseRow.Table.NonKeyColumns.AsSmartEnumerable()) {
+            foreach (var entry in table.NonKeyColumns.AsSmartEnumerable()) {
                 var nonKeyColumn = entry.Value;
                 this.sqlDialect.AppendName(builder, nonKeyColumn.Name);
                 builder.Append(" = ");
-                var columnValue = entry.Value == databaseRow.Table.OptimisticConcurrencyColumn
-                                      ? Guid.NewGuid()
-                                      : databaseRow.Values[databaseRow.Table.GetColumnIndex(nonKeyColumn.Name)];
+                var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Table.GetColumnIndex(nonKeyColumn.Name)];
                 var paramName = command.AddParameter(columnValue);
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!entry.IsLast) {
@@ -42,8 +41,8 @@
             }
 
             builder.Append(" where ");
-            this.WriteWhereClauseForRow(databaseRow, command, builder);
-            this.MaybeAddOptimisticConcurrencyWhereClause(builder, command, databaseRow);
+            this.WriteWhereClauseForRow(update.NewDatabaseRow, command, builder);
+            this.MaybeAddOptimisticConcurrencyWhereClause(builder, command, update.OldDatabaseRow);
             command.AddQuery(builder.ToString());
         }
     }

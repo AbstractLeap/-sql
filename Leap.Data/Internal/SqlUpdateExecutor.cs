@@ -25,7 +25,7 @@ namespace Leap.Data.Internal {
             this.sqlDialect        = sqlDialect;
         }
 
-        public async ValueTask ExecuteAsync(IEnumerable<DatabaseRow> inserts, IEnumerable<DatabaseRow> updates, IEnumerable<DatabaseRow> deletes, CancellationToken cancellationToken = default)
+        public async ValueTask ExecuteAsync(IEnumerable<DatabaseRow> inserts, IEnumerable<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)> updates, IEnumerable<DatabaseRow> deletes, CancellationToken cancellationToken = default)
         {
             var connection = this.connectionFactory.Get();
             if (connection.State != ConnectionState.Open) {
@@ -50,8 +50,8 @@ namespace Leap.Data.Internal {
                 }
 
                 wrapSqlWithAffectedRowsCount = true;
-                foreach (var databaseRow in updates) {
-                    this.updateWriter.WriteUpdate(databaseRow, command);
+                foreach (var update in updates) {
+                    this.updateWriter.WriteUpdate(update, command);
                 }
 
                 foreach (var databaseRow in deletes) {
@@ -67,8 +67,8 @@ namespace Leap.Data.Internal {
 
                 await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
                     List<Exception> exceptions = new();
-                    foreach (var databaseRow in updates) {
-                        await ReadResultAsync(dbReader, databaseRow, exceptions);
+                    foreach (var update in updates) {
+                        await ReadResultAsync(dbReader, update.OldDatabaseRow, exceptions);
                     }
 
                     foreach (var databaseRow in deletes) {
@@ -85,19 +85,15 @@ namespace Leap.Data.Internal {
 
             async Task ReadResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
                 if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
-                    AddException(ref exceptions, databaseRow);
+                    exceptions.Add(new OptimisticConcurrencyException(databaseRow));
                 }
 
                 var affectedRows = await dbReader.GetFieldValueAsync<int>(0, cancellationToken);
                 if (affectedRows == 0) {
-                    AddException(ref exceptions, databaseRow);
+                    exceptions.Add(new OptimisticConcurrencyException(databaseRow));
                 }
 
                 await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            void AddException(ref List<Exception> exceptions, DatabaseRow databaseRow) {
-                exceptions.Add(new OptimisticConcurrencyException(databaseRow));
             }
         }
     }
