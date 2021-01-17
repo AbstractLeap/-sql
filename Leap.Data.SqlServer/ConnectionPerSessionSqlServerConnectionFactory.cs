@@ -1,7 +1,7 @@
 ﻿namespace Leap.Data.SqlServer {
     using System.Data.Common;
 
-    using Leap.Data.Configuration.Sql;
+    using Leap.Data.Storage.Sql;
 
     using Microsoft.Data.SqlClient;
 
