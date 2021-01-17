@@ -1,17 +1,16 @@
 ﻿namespace Leap.Data.SqlServer {
     using System.Data.Common;
 
+    using Leap.Data.Configuration.Sql;
+
     using Microsoft.Data.SqlClient;
 
-    public class ConnectionPerCommandSqlServerConnectionFactory : IConnectionFactory {
-        private readonly string connectionString;
+    public class ConnectionPerCommandSqlServerConnectionFactory : ConnectionPerCommandConnectionFactory {
+        public ConnectionPerCommandSqlServerConnectionFactory(string connectionString)
+            : base(connectionString) { }
 
-        public ConnectionPerCommandSqlServerConnectionFactory(string connectionString) {
-            this.connectionString = connectionString;
-        }
-
-        public DbConnection Get() {
-            return new SqlConnection(this.connectionString);
+        protected override DbConnection CreateConnection(string connectionString) {
+            return new SqlConnection(connectionString);
         }
     }
 }
