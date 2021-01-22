@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Caching", "Caching", "{E211
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.JsonNet", "Leap.Data.JsonNet\Leap.Data.JsonNet.csproj", "{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,18 @@ Global
 		{E59651AC-455B-4E3D-A508-BE146123632E}.Release|x64.Build.0 = Release|Any CPU
 		{E59651AC-455B-4E3D-A508-BE146123632E}.Release|x86.ActiveCfg = Release|Any CPU
 		{E59651AC-455B-4E3D-A508-BE146123632E}.Release|x86.Build.0 = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|x64.Build.0 = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Debug|x86.Build.0 = Debug|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x64.ActiveCfg = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x64.Build.0 = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x86.ActiveCfg = Release|Any CPU
+		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
