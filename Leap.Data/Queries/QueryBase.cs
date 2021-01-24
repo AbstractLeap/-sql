@@ -10,5 +10,7 @@
         public Guid Identifier { get; }
 
         public virtual Type EntityType => typeof(TEntity);
+
+        public abstract void Accept(IQueryVisitor visitor);
     }
 }

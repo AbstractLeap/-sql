@@ -8,5 +8,10 @@
         public int? Limit { get; set; }
 
         public int? Offset { get; set; }
+
+        public override void Accept(IQueryVisitor visitor)
+        {
+            visitor.VisitEntityQuery(this);
+        }
     }
 }

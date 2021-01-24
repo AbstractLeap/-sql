@@ -6,5 +6,10 @@
         }
 
         public TKey Key { get; }
+
+        public override void Accept(IQueryVisitor visitor)
+        {
+            visitor.VisitKeyQuery(this);
+        }
     }
 }

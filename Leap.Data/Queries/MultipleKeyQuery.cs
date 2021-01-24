@@ -6,5 +6,10 @@
         }
 
         public TKey[] Keys { get; }
+
+        public override void Accept(IQueryVisitor visitor)
+        {
+            visitor.VisitMultipleKeyQuery(this);
+        }
     }
 }

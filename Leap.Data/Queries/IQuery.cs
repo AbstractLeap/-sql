@@ -5,6 +5,8 @@
         Guid Identifier { get; }
 
         Type EntityType { get; }
+
+        void Accept(IQueryVisitor visitor);
     }
 
     internal interface IQuery<TEntity> : IQuery
