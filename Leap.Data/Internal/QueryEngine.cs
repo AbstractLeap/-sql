@@ -140,7 +140,7 @@
 
         private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
-            var identityMapExecutionResult = await this.identityMapExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
+            var identityMapExecutionResult = this.identityMapExecutor.Execute(queriesStillToExecute, cancellationToken);
             foreach (var executedQuery in identityMapExecutionResult.ExecutedQueries) {
                 this.identityMapQueries.Add(executedQuery.Identifier);
             }

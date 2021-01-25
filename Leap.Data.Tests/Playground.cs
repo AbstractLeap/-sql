@@ -4,6 +4,7 @@ namespace Leap.Data.Tests {
     using System.Threading.Tasks;
 
     using Leap.Data.Configuration;
+    using Leap.Data.JsonNet;
     using Leap.Data.MemoryCache;
     using Leap.Data.SqlServer;
 
@@ -183,6 +184,7 @@ namespace Leap.Data.Tests {
         private static ISessionFactory MakeTarget() {
             var testSchema = TestSchema.Get();
             var sessionFactory = new Configuration(testSchema)
+                                 .UseJsonNetFieldSerialization()
                                  .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
                                  .BuildSessionFactory();
             return sessionFactory;

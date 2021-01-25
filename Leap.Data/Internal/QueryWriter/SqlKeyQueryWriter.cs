@@ -1,14 +1,11 @@
 ﻿namespace Leap.Data.Internal.QueryWriter {
-    using System;
     using System.Text;
-
-    using Fasterflect;
 
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
 
-    public abstract class SqlKeyQueryWriter : SqlBaseWriter, ISqlQueryWriter {
+    public abstract class SqlKeyQueryWriter : SqlBaseWriter, ISqlKeyQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;
@@ -19,16 +16,7 @@
             this.sqlDialect = sqlDialect;
         }
 
-        public void Write(IQuery query, Command command) {
-            if (query.GetType().Name != typeof(KeyQuery<,>).Name) {
-                throw new Exception($"{query.GetType()} is not KeyQuery<>");
-            }
-
-            var genericTypeParameters = query.GetType().GetGenericArguments();
-            this.CallMethod(genericTypeParameters, nameof(Write), new[] { query.GetType(), typeof(Command) }, Flags.InstancePrivate | Flags.ExactBinding, query, command);
-        }
-
-        private void Write<TEntity, TKey>(KeyQuery<TEntity, TKey> query, Command command)
+        public void Write<TEntity, TKey>(KeyQuery<TEntity, TKey> query, Command command)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
 

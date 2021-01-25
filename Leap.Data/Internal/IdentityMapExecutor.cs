@@ -1,66 +1,57 @@
 ﻿namespace Leap.Data.Internal {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
-    using System.Threading.Tasks;
-
-    using Fasterflect;
 
     using Leap.Data.IdentityMap;
     using Leap.Data.Queries;
-    using Leap.Data.Utilities;
 
-    class IdentityMapExecutor {
+    class IdentityMapExecutor : IQueryVisitor {
         private readonly IdentityMap identityMap;
 
         private readonly ResultCache resultCache;
+
+        private readonly HashSet<Guid> executedQueryIds = new();
 
         public IdentityMapExecutor(IdentityMap identityMap) {
             this.identityMap = identityMap;
             this.resultCache = new ResultCache();
         }
 
-        private ValueTask<Maybe> ExecuteAsync(IQuery query) {
-            var queryType = query.GetType();
-            var genericTypeDefinition = queryType.GetGenericTypeDefinition();
-            if (genericTypeDefinition == typeof(KeyQuery<,>)) {
-                return (ValueTask<Maybe>)this.CallMethod(queryType.GetGenericArguments(), nameof(this.TryGetInstanceFromIdentityMap), query);
-            }
-
-            return new ValueTask<Maybe>(Maybe.NotSuccessful);
+        public void VisitEntityQuery<TEntity>(EntityQuery<TEntity> entityQuery)
+            where TEntity : class {
+            // not supported by this
         }
 
-        private ValueTask<Maybe> TryGetInstanceFromIdentityMap<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
+        public void VisitKeyQuery<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
             if (this.identityMap.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
                 if (document.State == DocumentState.Deleted) {
                     // we need to say that we've handled it but that we return nothing
-                    return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>>()));
+                    this.resultCache.Add(keyQuery, new List<IDocument<TEntity>>());
                 }
-                
-                return new ValueTask<Maybe>(new Maybe(new List<IDocument<TEntity>> { document }));
-            }
+                else {
+                    this.resultCache.Add(keyQuery, new List<IDocument<TEntity>> { document });
+                }
 
-            return new ValueTask<Maybe>(Maybe.NotSuccessful);
+                this.executedQueryIds.Add(keyQuery.Identifier);
+            }
         }
 
-        public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
-            var executedQueries = new List<IQuery>();
-            var nonExecutedQueries = new List<IQuery>();
-            foreach (var query in queries) {
-                var executionResult = await this.ExecuteAsync(query);
-                if (!executionResult.WasSuccessful) {
-                    nonExecutedQueries.Add(query);
-                    continue;
-                }
+        public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
+            where TEntity : class {
+            // TODO Support this (see dist cache executor)
+            // not supported by this
+        }
 
-                this.resultCache.Add(query, (IList)executionResult.Result);
-                executedQueries.Add(query);
+        public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+            this.executedQueryIds.Clear();
+            foreach (var query in queries) {
+                query.Accept(this);
             }
 
-            return new ExecuteResult(executedQueries, nonExecutedQueries);
+            return new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier)));
         }
 
         public IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)

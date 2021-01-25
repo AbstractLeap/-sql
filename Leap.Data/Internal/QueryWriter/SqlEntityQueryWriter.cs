@@ -1,16 +1,12 @@
 ﻿namespace Leap.Data.Internal.QueryWriter {
-    using System;
-    using System.Linq;
     using System.Text;
-
-    using Fasterflect;
 
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
     using Leap.Data.Utilities;
 
-    public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlQueryWriter {
+    public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlEntityQueryWriter {
         private readonly ISchema schema;
 
         private readonly ISqlDialect sqlDialect;
@@ -21,16 +17,7 @@
             this.sqlDialect = sqlDialect;
         }
 
-        public void Write(IQuery query, Command command) {
-            if (query.GetType().Name != typeof(EntityQuery<>).Name) {
-                throw new Exception($"{query.GetType()} is not EntityQuery<>");
-            }
-
-            var genericTypeParameters = query.GetType().GetGenericArguments();
-            this.CallMethod(genericTypeParameters, nameof(Write), new[] { query.GetType(), typeof(Command) }, Flags.InstancePrivate | Flags.ExactBinding, query, command);
-        }
-
-        private void Write<TEntity>(EntityQuery<TEntity> query, Command command)
+        public void Write<TEntity>(EntityQuery<TEntity> query, Command command)
             where TEntity : class {
             var table = this.schema.GetTable<TEntity>();
 
@@ -50,7 +37,7 @@
                         builder.Append(" where ");
                         whereAppended = true;
                     }
-                    
+
                     builder.Append("(");
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
                         this.sqlDialect.AppendName(builder, table.DocumentTypeColumn.Name);
@@ -65,7 +52,7 @@
                     builder.Append(")");
                 }
             }
-            
+
             if (!string.IsNullOrWhiteSpace(query.WhereClause)) {
                 if (!whereAppended) {
                     builder.Append(" where ");

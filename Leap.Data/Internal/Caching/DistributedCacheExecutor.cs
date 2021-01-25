@@ -1,61 +1,51 @@
 ﻿namespace Leap.Data.Internal.Caching {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Fasterflect;
-
     using Leap.Data.Queries;
-    using Leap.Data.Utilities;
 
-    class DistributedCacheExecutor : ICacheExecutor {
+    class DistributedCacheExecutor : ICacheExecutor, IAsyncQueryVisitor {
         private readonly IDistributedCache distributedCache;
 
         private readonly ResultCache resultCache;
+
+        private readonly HashSet<Guid> executedQueryIds = new();
 
         public DistributedCacheExecutor(IDistributedCache distributedCache) {
             this.distributedCache = distributedCache;
             this.resultCache      = new ResultCache();
         }
 
-        private ValueTask<Maybe> ExecuteAsync(IQuery query, CancellationToken cancellationToken) {
-            var queryType = query.GetType();
-            var genericTypeDefinition = queryType.GetGenericTypeDefinition();
-            if (genericTypeDefinition == typeof(KeyQuery<,>)) {
-                return (ValueTask<Maybe>)this.CallMethod(queryType.GetGenericArguments(), nameof(this.TryGetInstanceFromCache), query, cancellationToken);
-            }
-
-            return new ValueTask<Maybe>(Maybe.NotSuccessful);
+        public ValueTask VisitEntityQueryAsync<TEntity>(EntityQuery<TEntity> entityQuery, CancellationToken cancellationToken = default)
+            where TEntity : class {
+            // not supported by this
+            return ValueTask.CompletedTask;
         }
 
-        private async ValueTask<Maybe> TryGetInstanceFromCache<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken)
+        public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
             var cachedRow = await this.distributedCache.GetAsync<object[]>(keyQuery.Key, cancellationToken);
             if (cachedRow != null) {
-                return new Maybe(new List<object[]> { cachedRow });
+                this.resultCache.Add(keyQuery, new List<object[]> { cachedRow });
+                this.executedQueryIds.Add(keyQuery.Identifier);
             }
+        }
 
-            return Maybe.NotSuccessful;
+        public ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
+            where TEntity : class {
+            throw new NotImplementedException();
         }
 
         public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
-            var executedQueries = new List<IQuery>();
-            var nonExecutedQueries = new List<IQuery>();
+            this.executedQueryIds.Clear();
             foreach (var query in queries) {
-                var executionResult = await this.ExecuteAsync(query, cancellationToken);
-                if (!executionResult.WasSuccessful) {
-                    nonExecutedQueries.Add(query);
-                    continue;
-                }
-
-                this.resultCache.Add(query, (IList)executionResult.Result);
-                executedQueries.Add(query);
+                await query.AcceptAsync(this, cancellationToken);
             }
 
-            return new ExecuteResult(executedQueries, nonExecutedQueries);
+            return new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier)));
         }
 
         public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
