@@ -41,8 +41,19 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            // TODO Support this (see dist cache executor)
-            // not supported by this
+            var result = new List<IDocument<TEntity>>();
+            foreach (var key in multipleKeyQuery.Keys) {
+                if (!this.identityMap.TryGetValue(key, out IDocument<TEntity> document)) {
+                    return;
+                }
+
+                if (document.State != DocumentState.Deleted) {
+                    result.Add(document);
+                }
+            }
+            
+            this.resultCache.Add(multipleKeyQuery, result);
+            this.executedQueryIds.Add(multipleKeyQuery.Identifier);
         }
 
         public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {

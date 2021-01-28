@@ -34,8 +34,17 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            // TODO Support this (see dist cache executor)
-            // not supported by this
+            var result = new List<object[]>();
+            foreach (var key in multipleKeyQuery.Keys) {
+                if (!this.memoryCache.TryGetValue(key, out object[] row)) {
+                    return; // can't support this query as don't have all the entities cached
+                }
+                
+                result.Add(row);
+            }
+
+            this.resultCache.Add(multipleKeyQuery, result);
+            this.executedQueryIds.Add(multipleKeyQuery.Identifier);
         }
 
         public ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
