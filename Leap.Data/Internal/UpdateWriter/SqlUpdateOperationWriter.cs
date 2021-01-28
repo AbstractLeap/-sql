@@ -28,7 +28,7 @@
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" set ");
 
-            foreach (var entry in table.NonKeyColumns.AsSmartEnumerable()) {
+            foreach (var entry in table.NonKeyNonComputedColumns.AsSmartEnumerable()) {
                 var nonKeyColumn = entry.Value;
                 this.sqlDialect.AppendName(builder, nonKeyColumn.Name);
                 builder.Append(" = ");

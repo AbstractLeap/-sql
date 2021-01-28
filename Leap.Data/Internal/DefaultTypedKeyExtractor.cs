@@ -18,6 +18,12 @@
                                                         m => (m is FieldInfo fieldInfo && fieldInfo.FieldType == keyType)
                                                              || (m is PropertyInfo propertyInfo && propertyInfo.PropertyType == keyType))
                                                     .ToArray();
+            // support properties with a backing field
+            if (candidateIdMembers.Length == 2 && candidateIdMembers.Select(m => m.Name.ToUpperInvariant()).Distinct().Count() == 1) {
+                MemberInfo = candidateIdMembers.OrderByDescending(m => m is FieldInfo).First();
+                return;
+            }
+            
             if (candidateIdMembers.Length != 1) {
                 throw new Exception(
                     $"Unable to determine key property or field on type {typeof(TEntity)} while extracting key values. Please override {nameof(Table.KeyExtractor)} to provide custom extraction method");

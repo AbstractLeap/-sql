@@ -20,6 +20,8 @@
                 return new DocumentTypeColumnValueFactory();
             } else if (column is OptimisticConcurrencyColumn) {
                 return new OptimisticConcurrencyColumnValueFactory();
+            } else if (column.IsComputed) {
+                return new NullColumnFactory();
             }
 
             throw new NotSupportedException();

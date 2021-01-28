@@ -10,6 +10,8 @@
 
         private readonly Dictionary<string, HashSet<Type>> addedNamedTypes = new();
 
+        private readonly IDictionary<Type, IList<Action<Table>>> buildActions = new Dictionary<Type, IList<Action<Table>>>();
+
         public SchemaBuilder() {
             this.schemaConvention = new DefaultSchemaConvention();
         }
@@ -34,6 +36,19 @@
             return this;
         }
 
+        public TableBuilder<T> Setup<T>() {
+            return new(this);
+        }
+
+        internal void AddAction<T>(Action<Table> action) {
+            if (this.buildActions.TryGetValue(typeof(T), out var actions)) {
+                actions.Add(action);
+            }
+            else {
+                this.buildActions.Add(typeof(T), new List<Action<Table>> { action });
+            }
+        }
+
         public ISchema Build() {
             this.AddUnnamedTypesToNamed();
 
@@ -51,6 +66,13 @@
                 schema.AddTable(table);
             }
 
+            foreach (var typeActions in this.buildActions) {
+                var table = schema.GetTable(typeActions.Key);
+                foreach (var buildAction in typeActions.Value) {
+                    buildAction(table);
+                }
+            }
+
             return schema;
         }
 
@@ -59,6 +81,19 @@
                 var tableName = this.schemaConvention.GetTableName(type);
                 this.AddTypes(tableName, type);
             }
+        }
+    }
+
+    public class TableBuilder<TEntity> {
+        private readonly SchemaBuilder schemaBuilder;
+
+        public TableBuilder(SchemaBuilder schemaBuilder) {
+            this.schemaBuilder = schemaBuilder;
+        }
+
+        public SchemaBuilder AddComputedColumn<TColumn>(string name, string formula) {
+            this.schemaBuilder.AddAction<TEntity>(table => table.AddComputedColumn<TColumn>(name, formula));
+            return this.schemaBuilder;
         }
     }
 }

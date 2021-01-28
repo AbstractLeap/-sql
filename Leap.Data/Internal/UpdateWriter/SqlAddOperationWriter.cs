@@ -24,7 +24,7 @@
             var builder = new StringBuilder("insert into ");
             this.sqlDialect.AppendName(builder, databaseRow.Table.Name);
             builder.Append(" (");
-            foreach (var entry in databaseRow.Table.Columns.AsSmartEnumerable()) {
+            foreach (var entry in databaseRow.Table.NonComputedColumns.AsSmartEnumerable()) {
                 this.sqlDialect.AppendName(builder, entry.Value.Name);
                 if (!entry.IsLast) {
                     builder.Append(", ");
@@ -32,7 +32,7 @@
             }
 
             builder.Append(") values (");
-            foreach (var entry in databaseRow.Table.Columns.AsSmartEnumerable()) {
+            foreach (var entry in databaseRow.Table.NonComputedColumns.AsSmartEnumerable()) {
                 AppendValue(entry.Value, databaseRow.Values);
                 if (!entry.IsLast) {
                     builder.Append(", ");

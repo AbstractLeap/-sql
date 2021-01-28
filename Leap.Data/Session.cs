@@ -50,7 +50,6 @@
                 distributedCache != null ? new DistributedCacheExecutor(distributedCache) : null);
             this.updateEngine  = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
             this.changeTracker = new ChangeTracker(serializer, schema);
-            
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
@@ -64,17 +63,17 @@
             foreach (var tuple in this.identityMap.GetAll()) {
                 if ((bool)this.changeTracker.CallMethod(new[] { tuple.Document.GetType().GetGenericArguments().First() }, nameof(ChangeTracker.HasEntityChanged), tuple.Document)) {
                     var updateOperation = (IOperation)typeof(UpdateOperation<>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First())
-                                                                                .CreateInstance(tuple.Document);
+                                                                               .CreateInstance(tuple.Document);
                     this.unitOfWork.Add(updateOperation);
                 }
             }
-            
+
             // flush the queryEngine
             await this.queryEngine.EnsureExecutedAsync();
 
             // execute against caches and persistence
             await this.updateEngine.ExecuteAsync(this.unitOfWork, cancellationToken);
-            
+
             // instantiate new unit of work
             this.unitOfWork = new UnitOfWork.UnitOfWork();
         }
@@ -86,9 +85,9 @@
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
             if (!this.identityMap.TryGetValue<TEntity>(table.KeyType, key, out var document)) {
-                throw new Exception($"The entity was not fetched in this session");
+                throw new Exception("The entity was not fetched in this session");
             }
-            
+
             this.unitOfWork.Add(new DeleteOperation<TEntity>(document));
             document.State = DocumentState.Deleted;
         }
@@ -101,6 +100,11 @@
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
             this.identityMap.Add(keyType, key, new Document<TEntity>(entity) { State = DocumentState.New });
+        }
+
+        public IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity)
+            where TEntity : class {
+            return new EntityInspector<TEntity>(this.schema, this.identityMap, entity);
         }
 
         void EnsureUnitOfWork() {

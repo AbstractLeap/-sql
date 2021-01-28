@@ -10,9 +10,15 @@
 
     internal class DefaultKeyColumnExtractor {
         public IEnumerable<(Type, string)> Extract(Type keyType) {
-            return keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
+            var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
                           .Where(m => m.Name != "EqualityContract") // compiler generated for records
-                          .Select(m => (m.PropertyOrFieldType(), m.Name));
+                          .Select(m => (m.PropertyOrFieldType(), m.Name))
+                          .ToArray();
+            if (members.Length == 2 && members.Select(m => m.Name.ToUpperInvariant()).Distinct().Count() == 1) {
+                return members.Take(1);
+            }
+
+            return members;
         }
     }
 }

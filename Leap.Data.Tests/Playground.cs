@@ -5,7 +5,6 @@ namespace Leap.Data.Tests {
 
     using Leap.Data.Configuration;
     using Leap.Data.JsonNet;
-    using Leap.Data.MemoryCache;
     using Leap.Data.SqlServer;
 
     using Xunit;
@@ -169,7 +168,7 @@ namespace Leap.Data.Tests {
             var futureRequest = session.Get<Blog>().SingleFuture(toBeBlog.BlogId);
             nowBlogAgain.Title = "Now now";
             await session.SaveChangesAsync();
-            
+
             Assert.NotNull(await futureRequest.SingleAsync());
         }
 
@@ -183,10 +182,9 @@ namespace Leap.Data.Tests {
 
         private static ISessionFactory MakeTarget() {
             var testSchema = TestSchema.Get();
-            var sessionFactory = new Configuration(testSchema)
-                                 .UseJsonNetFieldSerialization()
-                                 .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
-                                 .BuildSessionFactory();
+            var sessionFactory = new Configuration(testSchema).UseJsonNetFieldSerialization()
+                                                              .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
+                                                              .BuildSessionFactory();
             return sessionFactory;
         }
     }
