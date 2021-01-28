@@ -22,6 +22,8 @@
                 return new OptimisticConcurrencyColumnValueFactory();
             } else if (column.IsComputed) {
                 return new NullColumnFactory();
+            } else if (column.GetType().GetGenericTypeDefinition() == typeof(ProjectionColumn<,>)) {
+                return new ProjectionColumnFactory();
             }
 
             throw new NotSupportedException();

@@ -25,13 +25,16 @@ namespace Leap.Data.Tests {
             Assert.Equal(person.Name, personAgain.Name);
             Assert.Equal(person.Email, personAgain.Email);
             var metaData = selectSession.Inspect(personAgain);
-            var emailColumn = metaData.GetColumnValue<string>("Email");
-            Assert.Equal(person.Email.Address, emailColumn);
+            var emailColumnValue = metaData.GetColumnValue<string>("Email");
+            var fullNameColumnValue = metaData.GetColumnValue<string>("Fullname");
+            Assert.Equal(person.Email.Address, emailColumnValue);
+            Assert.Equal("Mark Jerzykowski", fullNameColumnValue);
         }
 
         private static ISessionFactory MakeTarget() {
             var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person));
             schemaBuilder.Setup<Person>().AddComputedColumn<string>("Email", "$.email.emailAddress");
+            schemaBuilder.Setup<Person>().AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));
 
             var testSchema = schemaBuilder.Build();
             var sessionFactory = new Configuration(testSchema).UseJsonNetFieldSerialization()

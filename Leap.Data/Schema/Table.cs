@@ -97,6 +97,11 @@
             this.RecalculateColumns();
         }
 
+        public void AddProjectionColumn<TEntity, TColumn>(string name, Func<TEntity, TColumn> projectionFunc) {
+            this.nonKeyColumns.Add(new ProjectionColumn<TEntity, TColumn>(this, name, projectionFunc));
+            this.RecalculateColumns();
+        }
+
         private void RecalculateColumns() {
             this.allColumns    = this.keyColumns.Union(this.nonKeyColumns).ToList();
             this.columnIndices = this.allColumns.Select((c, i) => new { c, i }).ToDictionary(c => c.c.Name, c => c.i);
