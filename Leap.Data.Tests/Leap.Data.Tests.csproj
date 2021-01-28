@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Leap.Data.Humanizer\Leap.Data.Humanizer.csproj" />
     <ProjectReference Include="..\Leap.Data.JsonNet\Leap.Data.JsonNet.csproj" />
     <ProjectReference Include="..\Leap.Data.MemoryCache\Leap.Data.MemoryCache.csproj" />
     <ProjectReference Include="..\Leap.Data.SqlServer\Leap.Data.SqlServer.csproj" />

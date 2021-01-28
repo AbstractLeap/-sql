@@ -21,7 +21,7 @@ namespace Leap.Data.Tests {
             var command = new Command();
             keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
             this.outputHelper.WriteLine(command.Queries.First());
-            Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blog] as t where t.[Id] = @p1", command.Queries.First());
+            Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blogs] as t where t.[Id] = @p1", command.Queries.First());
         }
     }
 
@@ -38,7 +38,7 @@ namespace Leap.Data.Tests {
             var command = new Command();
             writer.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
             this.outputHelper.WriteLine(command.Queries.First());
-            Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blog] as t where t.[Id] = @p1", command.Queries.First());
+            Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blogs] as t where t.[Id] = @p1", command.Queries.First());
         }
     }
 }

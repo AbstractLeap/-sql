@@ -4,7 +4,7 @@
 
     class DefaultSchemaConvention : INamingSchemaConvention, ISchemaNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
         public virtual string GetTableName(Type type) {
-            return type.Name; // TODO pluralize?
+            return type.Name;
         }
 
         public virtual string GetSchemaName(string tableName) {

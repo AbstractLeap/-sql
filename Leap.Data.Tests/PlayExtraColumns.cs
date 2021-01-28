@@ -3,6 +3,7 @@ namespace Leap.Data.Tests {
     using System.Threading.Tasks;
 
     using Leap.Data.Configuration;
+    using Leap.Data.Humanizer;
     using Leap.Data.JsonNet;
     using Leap.Data.Schema;
     using Leap.Data.SqlServer;
@@ -32,7 +33,7 @@ namespace Leap.Data.Tests {
         }
 
         private static ISessionFactory MakeTarget() {
-            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person));
+            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person)).UseHumanizerPluralization();
             schemaBuilder.Setup<Person>().AddComputedColumn<string>("Email", "$.email.emailAddress");
             schemaBuilder.Setup<Person>().AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));
 

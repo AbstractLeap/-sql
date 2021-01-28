@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leap.Data.Tests", "Leap.Dat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leap.Data.SqlServer", "Leap.Data.SqlServer\Leap.Data.SqlServer.csproj", "{424BED90-0F5C-44AD-AE2D-CC2EB277633A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.MemoryCache", "Leap.Data.MemoryCache\Leap.Data.MemoryCache.csproj", "{E59651AC-455B-4E3D-A508-BE146123632E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leap.Data.MemoryCache", "Leap.Data.MemoryCache\Leap.Data.MemoryCache.csproj", "{E59651AC-455B-4E3D-A508-BE146123632E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Providers", "Providers", "{1E687A62-8649-46CC-B499-D0FF9F1542F7}"
 EndProject
@@ -17,7 +17,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Caching", "Caching", "{E211
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.JsonNet", "Leap.Data.JsonNet\Leap.Data.JsonNet.csproj", "{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leap.Data.JsonNet", "Leap.Data.JsonNet\Leap.Data.JsonNet.csproj", "{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Misc", "Misc", "{9184823F-88A6-45F4-A014-C5C780DA5F6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leap.Data.Humanizer", "Leap.Data.Humanizer\Leap.Data.Humanizer.csproj", "{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,6 +93,18 @@ Global
 		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x64.Build.0 = Release|Any CPU
 		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x86.ActiveCfg = Release|Any CPU
 		{5C0B9F94-CE87-4384-A3D7-D0EF981438E8}.Release|x86.Build.0 = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|x64.Build.0 = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Debug|x86.Build.0 = Debug|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|x64.ActiveCfg = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|x64.Build.0 = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|x86.ActiveCfg = Release|Any CPU
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -98,6 +114,8 @@ Global
 		{E59651AC-455B-4E3D-A508-BE146123632E} = {E2111506-CDAA-42E9-9943-3FED4555B5D3}
 		{E2111506-CDAA-42E9-9943-3FED4555B5D3} = {1E687A62-8649-46CC-B499-D0FF9F1542F7}
 		{8AFCA94B-8CB0-4CAC-8A9E-C1B9E2991297} = {1E687A62-8649-46CC-B499-D0FF9F1542F7}
+		{9184823F-88A6-45F4-A014-C5C780DA5F6D} = {1E687A62-8649-46CC-B499-D0FF9F1542F7}
+		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96} = {9184823F-88A6-45F4-A014-C5C780DA5F6D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB658BC-B9D1-4982-A8CC-D10A651895D5}

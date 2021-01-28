@@ -74,7 +74,7 @@ namespace Leap.Data.Tests {
 
         private static ISessionFactory MakeTarget() {
             var testSchema = new SchemaBuilder().AddTypes(typeof(IAnimal), typeof(Animal), typeof(Dog), typeof(Terrier), typeof(Poodle), typeof(Cat))
-                                                .UsingConvention(new Convention())
+                                                .UseConvention(new Convention())
                                                 .Build();
             var sessionFactory = new Configuration(testSchema).UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;").BuildSessionFactory();
             return sessionFactory;

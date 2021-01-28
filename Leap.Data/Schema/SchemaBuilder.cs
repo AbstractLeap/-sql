@@ -12,7 +12,7 @@
 
         private readonly IDictionary<Type, IList<Action<Table>>> buildActions = new Dictionary<Type, IList<Action<Table>>>();
 
-        public SchemaBuilder UsingConvention(ISchemaConvention convention) {
+        public SchemaBuilder UseConvention(ISchemaConvention convention) {
             this.schemaConventions.Add(convention);
             return this;
         }

@@ -20,6 +20,8 @@
                 Flags.InstanceAnyVisibility | Flags.ExcludeBackingMembers,
                 "Id",
                 "Key",
+                $"{indicatorType.Name}Id",
+                $"{indicatorType.Name}Key",
                 $"{tableName}Id",
                 $"{tableName}Key");
             if (possibleMembers.Count != 1) {
