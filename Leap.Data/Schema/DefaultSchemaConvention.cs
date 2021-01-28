@@ -2,7 +2,7 @@
     using System;
     using System.Collections.Generic;
 
-    class DefaultSchemaConvention : ISchemaConvention {
+    class DefaultSchemaConvention : INamingSchemaConvention, ISchemaNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
         public virtual string GetTableName(Type type) {
             return type.Name; // TODO pluralize?
         }
