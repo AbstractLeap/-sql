@@ -4,7 +4,6 @@
     using Fasterflect;
 
     static class IdentityMapExtensions {
-        // TODO Fix
         public static bool TryGetValue<TEntity>(this IdentityMap identityMap, Type keyType, object key, out TEntity entity)
             where TEntity : class {
             var entityType = typeof(TEntity);

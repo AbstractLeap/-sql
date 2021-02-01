@@ -93,6 +93,7 @@
                 yield break;
             }
             
+            // TODO fix caches getting instances from the wrong collection
             foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
                 var cacheExecutor = entry.Value;
                 if (this.cacheExecutorQueries[entry.Index].Contains(query.Identifier)) {
