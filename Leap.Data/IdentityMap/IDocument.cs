@@ -1,11 +1,30 @@
 ﻿namespace Leap.Data.IdentityMap {
-    using Leap.Data.Internal;
+    using System;
 
-    public interface IDocument<out TEntity> {
-        TEntity Entity { get; }
+    using Fasterflect;
+
+    using Leap.Data.Internal;
+    using Leap.Data.Schema;
+
+    interface IDocument {
+        Table Table { get; }
 
         DatabaseRow Row { get; set; }
 
         DocumentState State { get; set; }
+    }
+
+    interface IDocument<out TEntity> : IDocument {
+        TEntity Entity { get; }
+    }
+
+    static class DocumentExtensions {
+        public static Type EntityType(this IDocument document) {
+            return document.GetType().GenericTypeArguments[0];
+        }
+
+        public static object GetEntity(this IDocument document) {
+            return document.GetPropertyValue(nameof(IDocument<string>.Entity));
+        }
     }
 }

@@ -2,6 +2,6 @@
     using Leap.Data.Schema.Columns;
 
     public interface IKeyColumnValueFactory : IColumnValueFactory {
-        TValue GetValue<TEntity, TKey, TValue>(Column column, TKey key);
+        TValue GetValueUsingKey<TEntity, TKey, TValue>(Column column, TKey key);
     }
 }

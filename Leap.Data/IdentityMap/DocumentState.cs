@@ -4,6 +4,8 @@
 
         New = 2,
 
-        Deleted = 3
+        Deleted = 3,
+        
+        NotAttached = 4
     }
 }

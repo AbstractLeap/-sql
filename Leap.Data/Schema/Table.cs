@@ -22,9 +22,17 @@
 
         private readonly List<Type> entityTypes = new List<Type>();
 
+        /// <summary>
+        /// The name of the table that will used for storage e.g. the database table name
+        /// </summary>
         public string Name { get; }
 
         public string Schema { get; }
+        
+        /// <summary>
+        /// The name of the collection (can be different from the table name)
+        /// </summary>
+        public string CollectionName { get; }
 
         public Type KeyType { get; }
 
@@ -62,8 +70,9 @@
             return index;
         }
 
-        public Table(string tableName, string schemaName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
+        public Table(string collectionName, string tableName, string schemaName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
             this.Name                        = tableName;
+            this.CollectionName              = collectionName;
             this.Schema                      = schemaName;
             this.KeyType                     = keyType;
             this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this)).Cast<Column>().ToList();

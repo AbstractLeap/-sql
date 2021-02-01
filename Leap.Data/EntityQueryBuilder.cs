@@ -3,6 +3,7 @@
     using System.Threading;
 
     using Leap.Data.Queries;
+    using Leap.Data.Schema;
 
     class EntityQueryBuilder<TEntity> : IEntityQueryBuilder<TEntity>
         where TEntity : class {
@@ -10,9 +11,9 @@
 
         private readonly EntityQuery<TEntity> query;
 
-        public EntityQueryBuilder(Session session) {
+        public EntityQueryBuilder(Session session, Table table) {
             this.session = session;
-            this.query   = new EntityQuery<TEntity>();
+            this.query   = new EntityQuery<TEntity>(table);
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {

@@ -2,7 +2,7 @@
     using System;
     using System.Collections.Generic;
 
-    class DefaultSchemaConvention : INamingSchemaConvention, ISchemaNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
+    class DefaultSchemaConvention : INamingSchemaConvention, ICollectionNamingSchemaConvention, ISchemaNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
         public virtual string GetTableName(Type type) {
             return type.Name;
         }
@@ -17,6 +17,10 @@
 
         public virtual IEnumerable<(Type Type, string Name)> GetKeyColumns(Type keyType) {
             return new DefaultKeyColumnExtractor().Extract(keyType);
+        }
+
+        public virtual string GetCollectionName(Type type) {
+            return type.Name;
         }
     }
 }

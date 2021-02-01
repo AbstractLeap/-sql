@@ -19,10 +19,9 @@
 
         public void Write<TEntity>(EntityQuery<TEntity> query, Command command)
             where TEntity : class {
-            var table = this.schema.GetTable<TEntity>();
-
+            var table = query.Table;
             var builder = new StringBuilder("select ");
-            this.WriteColumns<TEntity>(builder);
+            this.WriteColumns<TEntity>(builder, table);
 
             builder.Append("from ");
             this.sqlDialect.AppendName(builder, table.Name);

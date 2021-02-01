@@ -3,10 +3,14 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Leap.Data.Schema;
+
     public interface IQuery {
         Guid Identifier { get; }
 
         Type EntityType { get; }
+        
+        Table Table { get; }
 
         void Accept(IQueryVisitor visitor);
 

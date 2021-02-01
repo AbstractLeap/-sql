@@ -2,9 +2,11 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Leap.Data.Schema;
+
     public class MultipleKeyQuery<TEntity, TKey> : QueryBase<TEntity>
         where TEntity : class {
-        public MultipleKeyQuery(TKey[] keys) {
+        public MultipleKeyQuery(TKey[] keys, Table table) : base(table) {
             this.Keys = keys;
         }
 

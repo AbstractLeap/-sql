@@ -6,16 +6,20 @@
 
     using Leap.Data.IdentityMap;
     using Leap.Data.Queries;
+    using Leap.Data.UnitOfWork;
 
     class IdentityMapExecutor : IQueryVisitor {
         private readonly IdentityMap identityMap;
+
+        private readonly UnitOfWork unitOfWork;
 
         private readonly ResultCache resultCache;
 
         private readonly HashSet<Guid> executedQueryIds = new();
 
-        public IdentityMapExecutor(IdentityMap identityMap) {
+        public IdentityMapExecutor(IdentityMap identityMap, UnitOfWork unitOfWork) {
             this.identityMap = identityMap;
+            this.unitOfWork  = unitOfWork;
             this.resultCache = new ResultCache();
         }
 
@@ -26,13 +30,18 @@
 
         public void VisitKeyQuery<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
-            if (this.identityMap.TryGetValue(keyQuery.Key, out IDocument<TEntity> document)) {
-                if (document.State == DocumentState.Deleted) {
-                    // we need to say that we've handled it but that we return nothing
-                    this.resultCache.Add(keyQuery, new List<IDocument<TEntity>>());
-                }
-                else {
-                    this.resultCache.Add(keyQuery, new List<IDocument<TEntity>> { document });
+            if (this.identityMap.TryGetValue(keyQuery.Key, out TEntity entity)) {
+                var state = this.unitOfWork.GetState(keyQuery.Table, entity);
+                switch (state) {
+                    case DocumentState.NotAttached:
+                        return;
+                    case DocumentState.Deleted:
+                        // we need to say that we've handled it but that we return nothing
+                        this.resultCache.Add(keyQuery, new List<TEntity>());
+                        break;
+                    default:
+                        this.resultCache.Add(keyQuery, new List<TEntity> { entity });
+                        break;
                 }
 
                 this.executedQueryIds.Add(keyQuery.Identifier);
@@ -41,17 +50,22 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            var result = new List<IDocument<TEntity>>();
+            var result = new List<TEntity>();
             foreach (var key in multipleKeyQuery.Keys) {
-                if (!this.identityMap.TryGetValue(key, out IDocument<TEntity> document)) {
+                if (!this.identityMap.TryGetValue(key, out TEntity entity)) {
                     return;
                 }
 
-                if (document.State != DocumentState.Deleted) {
-                    result.Add(document);
+                var state = this.unitOfWork.GetState(multipleKeyQuery.Table, entity);
+                if (state == DocumentState.NotAttached) {
+                    return;
+                }
+                
+                if (state != DocumentState.Deleted) {
+                    result.Add(entity);
                 }
             }
-            
+
             this.resultCache.Add(multipleKeyQuery, result);
             this.executedQueryIds.Add(multipleKeyQuery.Identifier);
         }
@@ -65,16 +79,16 @@
             return new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier)));
         }
 
-        public IAsyncEnumerable<IDocument<TEntity>> GetAsync<TEntity>(IQuery query)
+        public IAsyncEnumerable<TEntity> GetAsync<TEntity>(IQuery query)
             where TEntity : class {
             return Get<TEntity>(query).ToAsyncEnumerable();
         }
 
-        private IEnumerable<IDocument<TEntity>> Get<TEntity>(IQuery query)
+        private IEnumerable<TEntity> Get<TEntity>(IQuery query)
             where TEntity : class {
-            if (this.resultCache.TryGetValue<IDocument<TEntity>>(query, out var result)) {
-                foreach (var document in result) {
-                    yield return document;
+            if (this.resultCache.TryGetValue<TEntity>(query, out var result)) {
+                foreach (var entity in result) {
+                    yield return entity;
                 }
             }
             else {

@@ -46,9 +46,9 @@ namespace Leap.Data.Tests {
             await insertSession.SaveChangesAsync();
 
             var querySession1 = sf.StartSession();
-            var allAnimals = await querySession1.Get<Dog>().ToListAsync();
-            Assert.Contains(poodle, allAnimals);
-            Assert.Contains(terrier, allAnimals);
+            var allDogs = await querySession1.Get<Dog>().ToListAsync();
+            Assert.Contains(poodle, allDogs);
+            Assert.Contains(terrier, allDogs);
         }
 
         [Fact]
@@ -82,6 +82,10 @@ namespace Leap.Data.Tests {
 
         class Convention : DefaultSchemaConvention {
             public override string GetTableName(Type type) {
+                return "Animals";
+            }
+
+            public override string GetCollectionName(Type type) {
                 return "Animals";
             }
         }

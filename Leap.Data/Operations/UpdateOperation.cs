@@ -1,11 +1,14 @@
 ﻿namespace Leap.Data.Operations {
-    using Leap.Data.IdentityMap;
+    using Leap.Data.Schema;
 
     class UpdateOperation<TEntity> : IOperation<TEntity> {
-        public IDocument<TEntity> Document { get; }
+        public TEntity Entity { get; }
 
-        public UpdateOperation(IDocument<TEntity> document) {
-            this.Document = document;
+        public Table Table { get; }
+
+        public UpdateOperation(TEntity entity, Table table) {
+            this.Entity = entity;
+            this.Table  = table;
         }
     }
 }

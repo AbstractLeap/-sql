@@ -127,8 +127,7 @@
             where T : class {
             while (await this.dataReader.ReadAsync().ConfigureAwait(false)) {
                 // hydrate database row
-                var table = this.schema.GetTable<T>();
-                var values = new object[table.Columns.Count];
+                var values = new object[this.dataReader.VisibleFieldCount];
                 this.dataReader.GetValues(values);
                 yield return values;
             }

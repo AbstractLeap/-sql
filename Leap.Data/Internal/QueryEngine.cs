@@ -13,6 +13,7 @@
     using Leap.Data.Queries;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
+    using Leap.Data.UnitOfWork;
     using Leap.Data.Utilities;
 
     class QueryEngine : IAsyncDisposable {
@@ -20,11 +21,13 @@
 
         private readonly IdentityMap identityMap;
 
+        private readonly UnitOfWork unitOfWork;
+
         private readonly IQueryExecutor persistenceQueryExecutor;
         
         private readonly ICacheExecutor[] cacheExecutors;
 
-        private IdentityMapExecutor identityMapExecutor;
+        private readonly IdentityMapExecutor identityMapExecutor;
 
         private readonly ISerializer serializer;
 
@@ -42,15 +45,17 @@
         public QueryEngine(
             ISchema schema,
             IdentityMap identityMap,
+            UnitOfWork unitOfWork,
             IQueryExecutor persistenceQueryExecutor,
             ISerializer serializer,
             MemoryCacheExecutor memoryCacheExecutor,
             DistributedCacheExecutor distributedCacheExecutor) {
             this.schema                   = schema;
             this.identityMap              = identityMap;
+            this.unitOfWork               = unitOfWork;
             this.persistenceQueryExecutor = persistenceQueryExecutor;
             this.serializer               = serializer;
-            this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap);
+            this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap, unitOfWork);
             this.cacheExecutors           = GetNonNullCacheExecutors().ToArray();
             this.cacheExecutorQueries     = this.cacheExecutors.Select(_ => new HashSet<Guid>()).ToArray();
 
@@ -71,7 +76,6 @@
 
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
-            var table = this.schema.GetTable<T>();
             if (!this.identityMapQueries.Contains(query.Identifier) 
                 && !this.cacheExecutorQueries.Any(e => e.Contains(query.Identifier)) 
                 && !this.persistenceQueryExecutorQueries.Contains(query.Identifier)) {
@@ -82,8 +86,8 @@
 
             await this.EnsureExecutedAsync();
             if (this.identityMapQueries.Contains(query.Identifier)) {
-                await foreach (var document in this.identityMapExecutor.GetAsync<T>(query)) {
-                    yield return document.Entity;
+                await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
+                    yield return entity;
                 }
                 
                 yield break;
@@ -93,7 +97,10 @@
                 var cacheExecutor = entry.Value;
                 if (this.cacheExecutorQueries[entry.Index].Contains(query.Identifier)) {
                     await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                        yield return HydrateDocument(row);
+                        var entity = HydrateDocument(row);
+                        if (entity != null) {
+                            yield return entity;
+                        }
                     }
                     
                     yield break;
@@ -101,17 +108,26 @@
             }
 
             await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
-                yield return HydrateDocument(row);
+                var entity = HydrateDocument(row);
+                if (entity != null) {
+                    yield return entity;
+                }
             }
 
             T HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
+                var table = query.Table;
                 var id = table.KeyType.TryCreateInstance(table.Columns.Select(c => c.Name).ToArray(), row);
 
                 // TODO invalidate old versions
                 // check ID map for instance
-                if (this.identityMap.TryGetValue(table.KeyType, id, out IDocument<T> alreadyMappedDocument)) {
-                    return alreadyMappedDocument.Entity;
+                if (this.identityMap.TryGetValue(table.KeyType, id, out T entityInstance)) {
+                    if (this.unitOfWork.GetState(table, entityInstance) == DocumentState.Deleted) {
+                        return null;
+                    }
+                    
+                    this.unitOfWork.AddOrUpdate(table, entityInstance, new DatabaseRow(table, row), DocumentState.Persisted);
+                    return entityInstance;
                 }
 
                 var json = RowValueHelper.GetValue<string>(table, row, SpecialColumns.Document);
@@ -121,7 +137,8 @@
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(table.KeyType, id, new Document<T>(entity, new DatabaseRow(table, row)) { State = DocumentState.Persisted });
+                this.identityMap.Add(table.KeyType, id, entity);
+                this.unitOfWork.AddOrUpdate(table, entity, new DatabaseRow(table, row), DocumentState.Persisted);
                 return entity;
             }
         }

@@ -2,8 +2,13 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Leap.Data.Schema;
+
     public class EntityQuery<TEntity> : QueryBase<TEntity>
         where TEntity : class {
+        public EntityQuery(Table table)
+            : base(table) { }
+
         public string WhereClause { get; set; }
 
         public string OrderByClause { get; set; }

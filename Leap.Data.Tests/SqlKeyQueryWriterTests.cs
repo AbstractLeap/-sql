@@ -17,9 +17,10 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItWorks() {
-            var keyQueryWriter = new SqlServerSqlKeyQueryWriter(TestSchema.Get());
+            var schema = TestSchema.Get();
+            var keyQueryWriter = new SqlServerSqlKeyQueryWriter(schema);
             var command = new Command();
-            keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
+            keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultTable<Blog>()), command);
             this.outputHelper.WriteLine(command.Queries.First());
             Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blogs] as t where t.[Id] = @p1", command.Queries.First());
         }
@@ -34,9 +35,10 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItDelegatesKeyQuery() {
-            var writer = new SqlServerSqlQueryWriter(TestSchema.Get());
+            var schema = TestSchema.Get();
+            var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
-            writer.Write(new KeyQuery<Blog, BlogId>(new BlogId()), command);
+            writer.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultTable<Blog>()), command);
             this.outputHelper.WriteLine(command.Queries.First());
             Assert.Equal("select t.[Id], t.[Document], t.[DocumentType], t.[Version] from [Blogs] as t where t.[Id] = @p1", command.Queries.First());
         }

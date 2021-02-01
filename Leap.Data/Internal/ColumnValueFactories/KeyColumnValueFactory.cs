@@ -1,7 +1,6 @@
 ﻿namespace Leap.Data.Internal.ColumnValueFactories {
     using Fasterflect;
 
-    using Leap.Data.IdentityMap;
     using Leap.Data.Schema;
     using Leap.Data.Schema.Columns;
 
@@ -12,12 +11,12 @@
             this.table = table;
         }
 
-        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, IDocument<TEntity> document) {
+        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity) {
             var key = this.table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            return this.GetValue<TEntity, TKey, TValue>(column, key);
+            return this.GetValueUsingKey<TEntity, TKey, TValue>(column, key);
         }
 
-        public TValue GetValue<TEntity, TKey, TValue>(Column column, TKey key) {
+        public TValue GetValueUsingKey<TEntity, TKey, TValue>(Column column, TKey key) {
             return (TValue)key.TryGetValue(column.Name);
         }
     }

@@ -5,8 +5,8 @@
 
     internal static class SchemaExtensions {
         // TODO maybe delete?
-        public static Table GetTable(this ISchema schema, Type tableType) {
-            return (Table)schema.CallMethod(new[] { tableType }, nameof(ISchema.GetTable));
+        public static Table GetDefaultTable(this ISchema schema, Type tableType) {
+            return (Table)schema.CallMethod(new[] { tableType }, nameof(ISchema.GetDefaultTable));
         }
     }
 }

@@ -8,7 +8,7 @@
 
         private readonly HashSet<Type> addedTypes = new();
 
-        private readonly Dictionary<string, HashSet<Type>> addedNamedTypes = new();
+        private readonly Dictionary<(string TableName, string CollectionName), HashSet<Type>> addedNamedTypes = new();
 
         private readonly IDictionary<Type, IList<Action<Table>>> buildActions = new Dictionary<Type, IList<Action<Table>>>();
 
@@ -22,10 +22,11 @@
             return this;
         }
 
-        public SchemaBuilder AddTypes(string tableName, params Type[] types) {
-            if (!this.addedNamedTypes.TryGetValue(tableName, out var tableTypes)) {
+        public SchemaBuilder AddTypes(string tableName, string collectionName, params Type[] types) {
+            var key = (tableName, collectionName);
+            if (!this.addedNamedTypes.TryGetValue(key, out var tableTypes)) {
                 tableTypes = new HashSet<Type>();
-                this.addedNamedTypes.Add(tableName, tableTypes);
+                this.addedNamedTypes.Add(key, tableTypes);
             }
 
             tableTypes.UnionWith(types);
@@ -50,11 +51,11 @@
 
             var schema = new Schema();
             foreach (var namedType in this.addedNamedTypes) {
-                var tableName = namedType.Key;
-                var schemaName = this.GetConvention<ISchemaNamingSchemaConvention>().GetSchemaName(tableName);
-                var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(tableName, namedType.Value.AsEnumerable());
+                var names = namedType.Key;
+                var schemaName = this.GetConvention<ISchemaNamingSchemaConvention>().GetSchemaName(names.TableName);
+                var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(names.TableName, namedType.Value.AsEnumerable());
                 var keyColumns = this.GetConvention<IKeyColumnsSchemaConvention>().GetKeyColumns(keyType);
-                var table = new Table(tableName, schemaName, keyType, keyColumns);
+                var table = new Table(names.CollectionName, names.TableName, schemaName, keyType, keyColumns);
                 foreach (var entityType in namedType.Value) {
                     table.AddClassType(entityType);
                 }
@@ -63,7 +64,7 @@
             }
 
             foreach (var typeActions in this.buildActions) {
-                var table = schema.GetTable(typeActions.Key);
+                var table = schema.GetDefaultTable(typeActions.Key);
                 foreach (var buildAction in typeActions.Value) {
                     buildAction(table);
                 }
@@ -86,7 +87,8 @@
         private void AddUnnamedTypesToNamed() {
             foreach (var type in this.addedTypes) {
                 var tableName = this.GetConvention<INamingSchemaConvention>().GetTableName(type);
-                this.AddTypes(tableName, type);
+                var collectionName = this.GetConvention<ICollectionNamingSchemaConvention>().GetCollectionName(type);
+                this.AddTypes(tableName, collectionName, type);
             }
         }
     }

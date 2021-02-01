@@ -17,8 +17,7 @@
             this.schema     = schema;
         }
 
-        protected void WriteColumns<TEntity>(StringBuilder builder) {
-            var table = this.schema.GetTable<TEntity>();
+        protected void WriteColumns<TEntity>(StringBuilder builder, Table table) {
             foreach (var columnEntry in table.Columns.AsSmartEnumerable()) {
                 builder.Append("t.");
                 this.sqlDialect.AppendName(builder, columnEntry.Value.Name);
@@ -30,9 +29,8 @@
             }
         }
 
-        protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, StringBuilder builder, bool useAlias = false)
+        protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, Table table, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
-            var table = this.schema.GetTable<TEntity>();
             foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable()) {
                 var keyColumn = keyColumnEntry.Value;
                 if (useAlias) {
@@ -66,9 +64,8 @@
             }
         }
 
-        protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, StringBuilder builder, bool useAlias = false)
+        protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, Table table, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
-            var table = this.schema.GetTable<TEntity>();
             foreach (var keyEntry in keys.AsSmartEnumerable()) {
                 builder.Append("(");
                 foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable())

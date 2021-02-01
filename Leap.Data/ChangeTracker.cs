@@ -14,13 +14,13 @@
             this.schema     = schema;
         }
 
-        public bool HasEntityChanged<TEntity>(IDocument<TEntity> document) {
+        public bool HasEntityChanged(IDocument document) {
             if (document.State != DocumentState.Persisted) {
                 return false;
             }
 
-            var json = RowValueHelper.GetValue<string>(this.schema.GetTable<TEntity>(), document.Row.Values, SpecialColumns.Document);
-            return !string.Equals(this.serializer.Serialize(document.Entity), json);
+            var json = RowValueHelper.GetValue<string>(document.Table, document.Row.Values, SpecialColumns.Document);
+            return !string.Equals(this.serializer.Serialize(document.GetEntity()), json);
         }
     }
 }

@@ -1,62 +1,33 @@
 ﻿namespace Leap.Data.IdentityMap {
-    using System;
-    using System.Collections;
     using System.Collections.Generic;
 
-    using Leap.Data.Schema;
-
     class IdentityMap {
-        private readonly ISchema schema;
+        private readonly Dictionary<object, HashSet<object>> map = new();
 
-        private readonly IDictionary<Table, object> map = new Dictionary<Table, object>();
-
-        public IdentityMap(ISchema schema) {
-            this.schema = schema;
-        }
-
-        public bool TryGetValue<TEntity, TKey>(TKey key, out IDocument<TEntity> document)
+        public bool TryGetValue<TEntity, TKey>(TKey key, out TEntity entity)
             where TEntity : class {
-            var table = this.schema.GetTable<TEntity>();
-            if (this.map.TryGetValue(table, out var entityMap)) {
-                if (((IDictionary<TKey, object>)entityMap).TryGetValue(key, out var nonTypedDocument)) {
-                    if (nonTypedDocument is IDocument<TEntity> typedDocument) {
-                        document = typedDocument;
-                        return true;
-                    }
-                    else {
-                        throw new Exception($"Unable to cast document to {typeof(TEntity)}");
-                    }
+            if (!this.map.TryGetValue(key, out var entityList)) {
+                entity = null;
+                return false;
+            }
+
+            foreach (var storedDocument in entityList) {
+                if (storedDocument is TEntity typedEntity) {
+                    entity = typedEntity;
+                    return true;
                 }
             }
 
-            document = null;
+            entity = null;
             return false;
         }
 
-        public void Add<TEntity, TKey>(TKey key, IDocument<TEntity> document) {
-            var table = this.schema.GetTable<TEntity>();
-            if (this.map.TryGetValue(table, out var entityMap)) {
-                ((IDictionary<TKey, object>)entityMap).Add(key, document);
+        public void Add<TEntity, TKey>(TKey key, TEntity entity) {
+            if (this.map.TryGetValue(key, out var entityList)) {
+                entityList.Add(entity);
             }
             else {
-                var typedMap = new Dictionary<TKey, object>();
-                typedMap.Add(key, document);
-                this.map.Add(table, typedMap);
-            }
-        }
-
-        public void Remove<TEntity, TKey>(TKey key) {
-            var table = this.schema.GetTable<TEntity>();
-            if (this.map.TryGetValue(table, out var entityMap)) {
-                ((IDictionary<TKey, object>)entityMap).Remove(key);
-            }
-        }
-
-        internal IEnumerable<(Table Table, object Document, object Key)> GetAll() {
-            foreach (var o in this.map) {
-                foreach (DictionaryEntry entry in (IDictionary)o.Value) {
-                    yield return (o.Key, entry.Value, entry.Key);
-                }
+                this.map.Add(key, new HashSet<object> { entity });
             }
         }
     }

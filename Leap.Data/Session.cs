@@ -1,6 +1,4 @@
 ﻿namespace Leap.Data {
-    using System;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -9,7 +7,6 @@
     using Leap.Data.IdentityMap;
     using Leap.Data.Internal;
     using Leap.Data.Internal.Caching;
-    using Leap.Data.Operations;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
 
@@ -20,15 +17,13 @@
 
         private readonly IDistributedCache distributedCache;
 
-        private UnitOfWork.UnitOfWork unitOfWork;
+        private readonly UnitOfWork.UnitOfWork unitOfWork;
 
         private readonly IdentityMap.IdentityMap identityMap;
 
         private readonly QueryEngine queryEngine;
 
         private readonly UpdateEngine updateEngine;
-
-        private readonly ChangeTracker changeTracker;
 
         public Session(
             ISchema schema,
@@ -40,34 +35,32 @@
             this.schema           = schema;
             this.memoryCache      = memoryCache;
             this.distributedCache = distributedCache;
-            this.identityMap      = new IdentityMap.IdentityMap(schema);
+            this.identityMap      = new IdentityMap.IdentityMap();
+            this.unitOfWork   = new UnitOfWork.UnitOfWork(serializer, schema);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,
+                this.unitOfWork,
                 queryExecutor,
                 serializer,
                 memoryCache != null ? new MemoryCacheExecutor(memoryCache) : null,
                 distributedCache != null ? new DistributedCacheExecutor(distributedCache) : null);
-            this.updateEngine  = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
-            this.changeTracker = new ChangeTracker(serializer, schema);
+            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
             where TEntity : class {
-            return new QueryBuilder<TEntity>(this);
+            var table = this.schema.GetDefaultTable<TEntity>();
+            return new QueryBuilder<TEntity>(this, table);
+        }
+
+        public IQueryBuilder<TEntity> Get<TEntity>(string collectionName)
+            where TEntity : class {
+            var table = this.schema.GetTable(collectionName);
+            return new QueryBuilder<TEntity>(this, table);
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) {
-            // find changed entities, add those operations to the unit of work
-            this.EnsureUnitOfWork();
-            foreach (var tuple in this.identityMap.GetAll()) {
-                if ((bool)this.changeTracker.CallMethod(new[] { tuple.Document.GetType().GetGenericArguments().First() }, nameof(ChangeTracker.HasEntityChanged), tuple.Document)) {
-                    var updateOperation = (IOperation)typeof(UpdateOperation<>).MakeGenericType(tuple.Document.GetType().GetGenericArguments().First())
-                                                                               .CreateInstance(tuple.Document);
-                    this.unitOfWork.Add(updateOperation);
-                }
-            }
-
             // flush the queryEngine
             await this.queryEngine.EnsureExecutedAsync();
 
@@ -75,42 +68,44 @@
             await this.updateEngine.ExecuteAsync(this.unitOfWork, cancellationToken);
 
             // instantiate new unit of work
-            this.unitOfWork = new UnitOfWork.UnitOfWork();
+            this.unitOfWork.SetPersisted();
         }
 
         public void Delete<TEntity>(TEntity entity)
             where TEntity : class {
-            this.EnsureUnitOfWork();
-            var table = this.schema.GetTable<TEntity>();
-            var keyType = table.KeyType;
-            var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
-            if (!this.identityMap.TryGetValue<TEntity>(table.KeyType, key, out var document)) {
-                throw new Exception("The entity was not fetched in this session");
-            }
+            this.Delete(entity, this.schema.GetDefaultTable<TEntity>());
+        }
 
-            this.unitOfWork.Add(new DeleteOperation<TEntity>(document));
-            document.State = DocumentState.Deleted;
+        public void Delete<TEntity>(TEntity entity, string collectionName)
+            where TEntity : class {
+            this.Delete(entity, this.schema.GetTable(collectionName));
+        }
+
+        private void Delete<TEntity>(TEntity entity, Table table)
+            where TEntity : class {
+            this.unitOfWork.UpdateState(table, entity, DocumentState.Deleted);
         }
 
         public void Add<TEntity>(TEntity entity)
             where TEntity : class {
-            this.EnsureUnitOfWork();
-            this.unitOfWork.Add(new AddOperation<TEntity>(new Document<TEntity>(entity)));
-            var table = this.schema.GetTable<TEntity>();
+            this.Add(entity, this.schema.GetDefaultTable<TEntity>());
+        }
+
+        public void Add<TEntity>(TEntity entity, string collectionName)
+            where TEntity : class {
+            this.Add(entity, this.schema.GetTable(collectionName));
+        }
+
+        private void Add<TEntity>(TEntity entity, Table table) {
+            this.unitOfWork.AddOrUpdate(table, entity, null, DocumentState.New);
             var keyType = table.KeyType;
             var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
-            this.identityMap.Add(keyType, key, new Document<TEntity>(entity) { State = DocumentState.New });
+            this.identityMap.Add(keyType, key, entity);
         }
 
         public IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity)
             where TEntity : class {
-            return new EntityInspector<TEntity>(this.schema, this.identityMap, entity);
-        }
-
-        void EnsureUnitOfWork() {
-            if (this.unitOfWork == null) {
-                this.unitOfWork = new UnitOfWork.UnitOfWork();
-            }
+            return new EntityInspector<TEntity>(this.schema, this.unitOfWork, entity);
         }
 
         public QueryEngine GetEngine() {

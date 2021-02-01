@@ -1,5 +1,4 @@
 ﻿namespace Leap.Data.Internal.ColumnValueFactories {
-    using Leap.Data.IdentityMap;
     using Leap.Data.Schema.Columns;
     using Leap.Data.Serialization;
 
@@ -10,7 +9,7 @@
             this.serializer = serializer;
         }
 
-        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity, IDocument<TEntity> document) {
+        public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity) {
             return (TValue)(object)this.serializer.Serialize(entity);
         }
     }

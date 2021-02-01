@@ -18,16 +18,16 @@
 
         public void Write<TEntity, TKey>(KeyQuery<TEntity, TKey> query, Command command)
             where TEntity : class {
-            var table = this.schema.GetTable<TEntity>();
+            var table = query.Table;
 
             var builder = new StringBuilder("select ");
-            this.WriteColumns<TEntity>(builder);
+            this.WriteColumns<TEntity>(builder, table);
 
             builder.Append("from ");
             this.sqlDialect.AppendName(builder, table.Name);
             builder.Append(" as t");
             builder.Append(" where ");
-            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(query.Key, command, builder, true);
+            this.WriteWhereClauseForSingleEntity<TEntity, TKey>(query.Key, command, table, builder, true);
 
             command.AddQuery(builder.ToString());
         }

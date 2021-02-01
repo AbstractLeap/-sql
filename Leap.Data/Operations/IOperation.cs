@@ -1,9 +1,11 @@
 ﻿namespace Leap.Data.Operations {
-    using Leap.Data.IdentityMap;
+    using Leap.Data.Schema;
 
-    interface IOperation { }
-    
+    interface IOperation {
+        Table Table { get; }
+    }
+
     interface IOperation<out TEntity> : IOperation {
-        IDocument<TEntity> Document { get; }
+        TEntity Entity { get; }
     }
 }
