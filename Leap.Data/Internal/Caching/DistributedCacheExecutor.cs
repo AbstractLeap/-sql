@@ -27,16 +27,32 @@
 
         public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            var cachedRow = await this.distributedCache.GetAsync<object[]>(keyQuery.Key, cancellationToken);
+            var cachedRow = await this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Table, keyQuery.Key), cancellationToken);
             if (cachedRow != null) {
                 this.resultCache.Add(keyQuery, new List<object[]> { cachedRow });
                 this.executedQueryIds.Add(keyQuery.Identifier);
             }
         }
 
-        public ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
+        public async ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            throw new NotImplementedException();
+            var resultTasks = new List<ValueTask<object[]>>();
+            foreach (var key in multipleKeyQuery.Keys) {
+                resultTasks.Add(this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Table, key), cancellationToken));
+            }
+
+            var hasAllResults = true;
+            foreach (var resultTask in resultTasks) {
+                var result = await resultTask;
+                if (result == null) {
+                    hasAllResults = false;
+                }
+            }
+
+            if (hasAllResults) {
+                this.resultCache.Add(multipleKeyQuery, resultTasks.Select(t => t.Result).ToList());
+                this.executedQueryIds.Add(multipleKeyQuery.Identifier);
+            }
         }
 
         public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {

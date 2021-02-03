@@ -2,6 +2,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -98,8 +99,7 @@
         }
 
         private ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Table table, CancellationToken cancellationToken) {
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(deleteOperation.Entity);
-            return this.distributedCache.RemoveAsync(key, cancellationToken);
+            return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, deleteOperation.Entity), cancellationToken);
         }
 
         private void DeleteFromMemoryCache<TEntity>(DeleteOperation<TEntity> deleteOperation) {
@@ -111,8 +111,7 @@
         }
 
         private void DeleteFromMemoryCache<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Table table) {
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(deleteOperation.Entity);
-            this.memoryCache.Remove(key);
+            this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, deleteOperation.Entity));
         }
 
         #endregion
@@ -128,8 +127,7 @@
         }
 
         private void UpdateMemoryCache<TEntity, TKey>(TEntity entity, DatabaseRow row, Table table) {
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            this.memoryCache.Set(key, row.Values);
+            this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, entity), row.Values);
         }
 
         private ValueTask UpdateDistributedCacheAsync<TEntity>(TEntity entity, DatabaseRow row, CancellationToken cancellationToken) {
@@ -141,8 +139,7 @@
         }
 
         private ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Table table, CancellationToken cancellationToken) {
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            return this.distributedCache.SetAsync(key, row.Values, cancellationToken);
+            return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, entity), row.Values, cancellationToken);
         }
 
         #endregion

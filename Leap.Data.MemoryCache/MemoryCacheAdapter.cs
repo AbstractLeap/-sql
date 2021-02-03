@@ -12,15 +12,15 @@
             this.memoryCache = new MemoryCache(optionsAccessor, loggerFactory);
         }
 
-        public void Set<TItem>(object key, TItem value) {
+        public void Set<TItem>(string key, TItem value) {
             this.memoryCache.Set(key, value);
         }
 
-        public bool TryGetValue<TItem>(object key, out TItem item) {
+        public bool TryGetValue<TItem>(string key, out TItem item) {
             return this.memoryCache.TryGetValue(key, out item);
         }
 
-        public void Remove(object key) {
+        public void Remove(string key) {
             this.memoryCache.Remove(key);
         }
     }
