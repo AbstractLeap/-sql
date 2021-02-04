@@ -9,6 +9,10 @@
 
         private readonly Dictionary<Type, Table> defaultTableLookup = new();
 
+        public IEnumerable<Table> All() {
+            return this.collectionTableLookup.Values;
+        }
+
         public Table GetTable(string collectionName) {
             if (this.collectionTableLookup.TryGetValue(collectionName, out var table)) {
                 return table;
