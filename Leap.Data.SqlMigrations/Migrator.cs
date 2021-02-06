@@ -15,7 +15,7 @@
             if (diff.IsChange) {
                 var migrationCode = new Generator().CreateCode(diff, migrationNamespace, migrationName);
                 await File.WriteAllTextAsync(migrationPath, migrationCode);
-                //await new ModelWriter().WriteFileAsync(modelPath, new ModelSerializer().Serialize(newModel));
+                await new ModelWriter().WriteFileAsync(modelPath, new ModelSerializer().Serialize(newModel));
             }
         }
     }

@@ -17,13 +17,13 @@
         }
 
         public CodeStringBuilder Indent() {
-            this.indent += 4;
-            this.AppendIndent();
+            this.indent += 1;
+            this.Append4Spaces();
             return this;
         }
 
         public CodeStringBuilder Unindent() {
-            this.indent -= 4;
+            this.indent -= 1;
             if (this.indent < 0) {
                 this.indent = 0;
             }
@@ -48,7 +48,13 @@
         }
 
         private void AppendIndent() {
-            this.builder.Append(string.Join("", Enumerable.Range(1, this.indent).Select(i => " ")));
+            for (var i = 0; i < this.indent; i++) {
+                this.Append4Spaces();
+            }
+        }
+
+        private void Append4Spaces() {
+            this.builder.Append(string.Join("", Enumerable.Range(1, 4).Select(i => " ")));
         }
 
         public StringBuilder Builder => this.builder;
