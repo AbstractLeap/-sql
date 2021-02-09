@@ -4,6 +4,7 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions.Sql;
     using Leap.Data.Serialization;
 
     public abstract class SqlDeleteOperationWriter : SqlBaseWriter {
@@ -22,7 +23,7 @@
 
         public void Write(DatabaseRow databaseRow, Command command) {
             var builder = new StringBuilder("delete from ");
-            this.sqlDialect.AppendName(builder, databaseRow.Table.Name);
+            this.sqlDialect.AppendTableName(builder, databaseRow.Table.GetTableName(), databaseRow.Table.GetSchemaName());
             builder.Append(" where ");
             this.WriteWhereClauseForRow(databaseRow, command, builder);
             this.MaybeAddOptimisticConcurrencyWhereClause(builder, command, databaseRow);

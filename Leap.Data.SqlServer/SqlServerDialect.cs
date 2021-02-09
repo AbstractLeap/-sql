@@ -5,7 +5,17 @@
     using Leap.Data.Internal.QueryWriter;
 
     public class SqlServerDialect : ISqlDialect {
-        public void AppendName(StringBuilder builder, string name) {
+        public void AppendColumnName(StringBuilder builder, string columnName) {
+            this.AppendQuotedName(builder, columnName);
+        }
+
+        public void AppendTableName(StringBuilder builder, string tableName, string schema) {
+            this.AppendQuotedName(builder, schema);
+            builder.Append(".");
+            this.AppendQuotedName(builder, tableName);
+        }
+
+        private void AppendQuotedName(StringBuilder builder, string name) {
             builder.Append("[").Append(name).Append("]");
         }
 

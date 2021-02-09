@@ -2,7 +2,9 @@
     using System.Text;
 
     public interface ISqlDialect {
-        void AppendName(StringBuilder builder, string name);
+        void AppendColumnName(StringBuilder builder, string columnName);
+
+        void AppendTableName(StringBuilder builder, string tableName, string schema);
 
         void AddParameter(StringBuilder builder, string name);
 

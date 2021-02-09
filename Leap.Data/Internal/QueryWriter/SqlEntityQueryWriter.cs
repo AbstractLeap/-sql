@@ -4,6 +4,7 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions.Sql;
     using Leap.Data.Utilities;
 
     public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlEntityQueryWriter {
@@ -24,7 +25,7 @@
             this.WriteColumns<TEntity>(builder, table);
 
             builder.Append("from ");
-            this.sqlDialect.AppendName(builder, table.Name);
+            this.sqlDialect.AppendTableName(builder, table.GetTableName(), table.GetSchemaName());
             builder.Append(" as t");
 
             var whereAppended = false;
@@ -39,7 +40,7 @@
 
                     builder.Append("(");
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
-                        this.sqlDialect.AppendName(builder, table.DocumentTypeColumn.Name);
+                        this.sqlDialect.AppendColumnName(builder, table.DocumentTypeColumn.Name);
                         builder.Append(" = ");
                         var paramName = command.AddParameter(entry.Value.AssemblyQualifiedName);
                         this.sqlDialect.AddParameter(builder, paramName);

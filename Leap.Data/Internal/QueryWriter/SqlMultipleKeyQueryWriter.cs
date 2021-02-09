@@ -4,6 +4,7 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Queries;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions.Sql;
 
     public abstract class SqlMultipleKeyQueryWriter : SqlBaseWriter, ISqlMultipleKeyQueryWriter {
         private readonly ISchema schema;
@@ -24,7 +25,7 @@
             this.WriteColumns<TEntity>(builder, table);
 
             builder.Append("from ");
-            this.sqlDialect.AppendName(builder, table.Name);
+            this.sqlDialect.AppendTableName(builder, table.GetTableName(), table.GetSchemaName());
             builder.Append(" as t");
             builder.Append(" where ");
             this.WriteWhereClauseForMultipleEntities<TEntity, TKey>(query.Keys, command, table, builder, true);

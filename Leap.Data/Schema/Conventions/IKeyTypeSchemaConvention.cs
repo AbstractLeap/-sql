@@ -1,4 +1,4 @@
-﻿namespace Leap.Data.Schema {
+﻿namespace Leap.Data.Schema.Conventions {
     using System;
     using System.Collections.Generic;
 

@@ -33,7 +33,7 @@ namespace Leap.Data.Tests {
         }
 
         private static ISessionFactory MakeTarget() {
-            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person)).UseHumanizerPluralization();
+            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person)).UseHumanizerPluralization().UseSqlServerConvention();
             schemaBuilder.Setup<Person>().AddComputedColumn<string>("Email", "$.email.emailAddress");
             schemaBuilder.Setup<Person>().AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));
 

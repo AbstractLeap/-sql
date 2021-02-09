@@ -5,6 +5,7 @@ namespace Leap.Data.Tests {
 
     using Leap.Data.Configuration;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions;
     using Leap.Data.SqlServer;
 
     using Xunit;
@@ -75,16 +76,13 @@ namespace Leap.Data.Tests {
         private static ISessionFactory MakeTarget() {
             var testSchema = new SchemaBuilder().AddTypes(typeof(IAnimal), typeof(Animal), typeof(Dog), typeof(Terrier), typeof(Poodle), typeof(Cat))
                                                 .UseConvention(new Convention())
+                                                .UseSqlServerConvention()
                                                 .Build();
             var sessionFactory = new Configuration(testSchema).UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;").BuildSessionFactory();
             return sessionFactory;
         }
 
         class Convention : DefaultSchemaConvention {
-            public override string GetTableName(Type type) {
-                return "Animals";
-            }
-
             public override string GetCollectionName(Type type) {
                 return "Animals";
             }

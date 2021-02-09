@@ -27,7 +27,7 @@ namespace Leap.Data.Tests {
         
         private static ISessionFactory MakeTarget()
         {
-            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person)).UseHumanizerPluralization();
+            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Person)).UseHumanizerPluralization().UseSqlServerConvention();
 
             var testSchema = schemaBuilder.Build();
             var sessionFactory = new Configuration(testSchema).UseJsonNetFieldSerialization()

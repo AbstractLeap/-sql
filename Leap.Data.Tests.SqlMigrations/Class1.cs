@@ -7,6 +7,7 @@
 
     using Leap.Data.Schema;
     using Leap.Data.SqlMigrations;
+    using Leap.Data.SqlServer;
 
     using Microsoft.Extensions.DependencyInjection;
 
@@ -21,7 +22,7 @@
         public async Task CreateTable() {
             var migrationName = "HelloMigrations";
             var migrationPath = GetMigrationPath(migrationName);
-            var schema = new SchemaBuilder().AddTypes(typeof(Blog)).Build();
+            var schema = new SchemaBuilder().UseSqlServerConvention().AddTypes(typeof(Blog)).Build();
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
@@ -29,7 +30,7 @@
         public async Task AddColumn() {
             var migrationName = "AddColumn";
             var migrationPath = GetMigrationPath(migrationName);
-            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Blog));
+            var schemaBuilder = new SchemaBuilder().UseSqlServerConvention().AddTypes(typeof(Blog));
             schemaBuilder.Setup<Blog>().AddProjectionColumn("FirstLetter", blog => blog.Title.FirstOrDefault().ToString());
             var schema = schemaBuilder.Build();
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
@@ -39,7 +40,7 @@
         public async Task DropColumn() {
             var migrationName = "DropColumn";
             var migrationPath = GetMigrationPath(migrationName);
-            var schema = new SchemaBuilder().AddTypes(typeof(Blog)).Build();
+            var schema = new SchemaBuilder().UseSqlServerConvention().AddTypes(typeof(Blog)).Build();
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
@@ -47,7 +48,7 @@
         public async Task DropTable() {
             var migrationName = "DropTable";
             var migrationPath = GetMigrationPath(migrationName);
-            var schema = new SchemaBuilder().Build();
+            var schema = new SchemaBuilder().UseSqlServerConvention().Build();
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
@@ -55,7 +56,7 @@
             return $@"F:\Projects\leap-data\Leap.Data.Tests.SqlMigrations\{migrationName}.cs";
         }
 
-        [Fact]
+        [Fact(Skip = "Just for testing")]
         public async Task Execute() {
             var serviceProvider = CreateServices();
 

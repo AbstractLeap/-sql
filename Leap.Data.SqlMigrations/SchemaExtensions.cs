@@ -3,6 +3,7 @@
 
     using Leap.Data.Schema;
     using Leap.Data.Schema.Columns;
+    using Leap.Data.Schema.Conventions.Sql;
     using Leap.Data.SqlMigrations.Model;
 
     using Column = Leap.Data.SqlMigrations.Model.Column;
@@ -16,8 +17,8 @@
                                .Select(
                                    t => {
                                        return new Table {
-                                           Name    = t.Name,
-                                           Schema  = t.Schema,
+                                           Name    = t.GetTableName(),
+                                           Schema  = t.GetSchemaName(),
                                            Columns = t.Columns.Select(c => new Column { Name = c.Name, Type = c.Type, IsPrimaryKey = c is KeyColumn }).ToList()
                                        };
                                    })

@@ -22,12 +22,7 @@
 
         private readonly List<Type> entityTypes = new List<Type>();
 
-        /// <summary>
-        /// The name of the table that will used for storage e.g. the database table name
-        /// </summary>
-        public string Name { get; }
-
-        public string Schema { get; }
+        public ITableStorageSettings StorageSettings { get; init; }
         
         /// <summary>
         /// The name of the collection (can be different from the table name)
@@ -64,16 +59,14 @@
 
         public int GetColumnIndex(string columnName) {
             if (!this.columnIndices.TryGetValue(columnName, out var index)) {
-                throw new Exception($"column with name \"{columnName}\" not found on table {this.Name}");
+                throw new Exception($"column with name \"{columnName}\" not found on table {this.CollectionName}");
             }
 
             return index;
         }
 
-        public Table(string collectionName, string tableName, string schemaName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
-            this.Name                        = tableName;
+        public Table(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
             this.CollectionName              = collectionName;
-            this.Schema                      = schemaName;
             this.KeyType                     = keyType;
             this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this)).Cast<Column>().ToList();
             this.DocumentColumn              = new DocumentColumn(this);
@@ -117,7 +110,7 @@
         }
 
         protected bool Equals(Table other) {
-            return this.Name == other.Name && this.Schema == other.Schema;
+            return this.CollectionName == other.CollectionName;
         }
 
         public override bool Equals(object obj) {
@@ -127,8 +120,6 @@
             return this.Equals((Table)obj);
         }
 
-        public override int GetHashCode() {
-            return HashCode.Combine(this.Name, this.Schema);
-        }
+        public override int GetHashCode() => HashCode.Combine(this.CollectionName);
     }
 }

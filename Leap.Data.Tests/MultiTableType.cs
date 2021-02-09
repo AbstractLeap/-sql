@@ -63,9 +63,10 @@ namespace Leap.Data.Tests {
         }
 
         private static ISessionFactory MakeTarget() {
-            var schemaBuilder = new SchemaBuilder().AddTypes(NotApprovedCollectionName, NotApprovedCollectionName, typeof(Person))
-                                                   .AddTypes(ApprovedCollectionName, ApprovedCollectionName, typeof(Person))
-                                                   .AddTypes(ArchivedCollectionName, ArchivedCollectionName, typeof(Person))
+            var schemaBuilder = new SchemaBuilder().AddTypes(NotApprovedCollectionName, typeof(Person))
+                                                   .AddTypes(ApprovedCollectionName, typeof(Person))
+                                                   .AddTypes(ArchivedCollectionName, typeof(Person))
+                                                   .UseSqlServerConvention()
                                                    .UseHumanizerPluralization();
 
             var testSchema = schemaBuilder.Build();

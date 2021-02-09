@@ -20,7 +20,7 @@
         protected void WriteColumns<TEntity>(StringBuilder builder, Table table) {
             foreach (var columnEntry in table.Columns.AsSmartEnumerable()) {
                 builder.Append("t.");
-                this.sqlDialect.AppendName(builder, columnEntry.Value.Name);
+                this.sqlDialect.AppendColumnName(builder, columnEntry.Value.Name);
                 if (!columnEntry.IsLast) {
                     builder.Append(",");
                 }
@@ -37,7 +37,7 @@
                     builder.Append("t.");
                 }
 
-                this.sqlDialect.AppendName(builder, keyColumn.Name);
+                this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
                 var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key));
                 this.sqlDialect.AddParameter(builder, paramName);
@@ -54,7 +54,7 @@
                     builder.Append("t.");
                 }
 
-                this.sqlDialect.AppendName(builder, keyColumn.Name);
+                this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
                 var paramName = command.AddParameter(databaseRow.Values[databaseRow.Table.GetColumnIndex(keyColumn.Name)]);
                 this.sqlDialect.AddParameter(builder, paramName);
@@ -75,7 +75,7 @@
                         builder.Append("t.");
                     }
 
-                    this.sqlDialect.AppendName(builder, keyColumn.Name);
+                    this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                     builder.Append(" = ");
                     var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, keyEntry.Value));
                     this.sqlDialect.AddParameter(builder, paramName);
@@ -94,7 +94,7 @@
         protected void MaybeAddOptimisticConcurrencyWhereClause(StringBuilder builder, Command command, DatabaseRow databaseRow, bool appendWhere = false) {
             if (databaseRow.Table.OptimisticConcurrencyColumn != null) {
                 builder.Append(appendWhere ? " where " : " and ");
-                this.sqlDialect.AppendName(builder, databaseRow.Table.OptimisticConcurrencyColumn.Name);
+                this.sqlDialect.AppendColumnName(builder, databaseRow.Table.OptimisticConcurrencyColumn.Name);
                 builder.Append(" = ");
                 var paramName = command.AddParameter(
                     RowValueHelper.GetValue(databaseRow.Table.OptimisticConcurrencyColumn.Type, databaseRow.Table, databaseRow.Values, databaseRow.Table.OptimisticConcurrencyColumn.Name));

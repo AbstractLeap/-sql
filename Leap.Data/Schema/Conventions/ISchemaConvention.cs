@@ -1,3 +1,3 @@
-﻿namespace Leap.Data.Schema {
+﻿namespace Leap.Data.Schema.Conventions {
     public interface ISchemaConvention { }
 }

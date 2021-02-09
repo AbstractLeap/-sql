@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Leap.Data.SqlMigrations\Leap.Data.SqlMigrations.csproj" />
+    <ProjectReference Include="..\Leap.Data.SqlServer\Leap.Data.SqlServer.csproj" />
   </ItemGroup>
 
 </Project>

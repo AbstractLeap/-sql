@@ -5,6 +5,7 @@
     using Leap.Data.Internal.Common;
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions.Sql;
     using Leap.Data.Serialization;
     using Leap.Data.Utilities;
 
@@ -25,12 +26,12 @@
         public void Write((DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow) update, Command command) {
             var builder = new StringBuilder("update ");
             var table = update.OldDatabaseRow.Table;
-            this.sqlDialect.AppendName(builder, table.Name);
+            this.sqlDialect.AppendTableName(builder, table.GetTableName(), table.GetSchemaName());
             builder.Append(" set ");
 
             foreach (var entry in table.NonKeyNonComputedColumns.AsSmartEnumerable()) {
                 var nonKeyColumn = entry.Value;
-                this.sqlDialect.AppendName(builder, nonKeyColumn.Name);
+                this.sqlDialect.AppendColumnName(builder, nonKeyColumn.Name);
                 builder.Append(" = ");
                 var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Table.GetColumnIndex(nonKeyColumn.Name)];
                 var paramName = command.AddParameter(columnValue);

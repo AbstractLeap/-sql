@@ -1,4 +1,4 @@
-﻿namespace Leap.Data.Schema {
+﻿namespace Leap.Data.Schema.Conventions {
     using System;
 
     public interface ICollectionNamingSchemaConvention : ISchemaConvention {

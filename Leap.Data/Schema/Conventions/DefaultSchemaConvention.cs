@@ -1,16 +1,8 @@
-﻿namespace Leap.Data.Schema {
+﻿namespace Leap.Data.Schema.Conventions {
     using System;
     using System.Collections.Generic;
 
-    class DefaultSchemaConvention : INamingSchemaConvention, ICollectionNamingSchemaConvention, ISchemaNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
-        public virtual string GetTableName(Type type) {
-            return type.Name;
-        }
-
-        public virtual string GetSchemaName(string tableName) {
-            return "dbo";
-        }
-
+    public class DefaultSchemaConvention : IStorageSchemaConvention, ICollectionNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
         public virtual Type GetKeyType(string tableName, IEnumerable<Type> entityTypes) {
             return new DefaultKeyTypeExtractor().Extract(tableName, entityTypes);
         }
@@ -21,6 +13,10 @@
 
         public virtual string GetCollectionName(Type type) {
             return type.Name;
+        }
+
+        public ITableStorageSettings Configure(string collectionName, HashSet<Type> types) {
+            return null;
         }
     }
 }

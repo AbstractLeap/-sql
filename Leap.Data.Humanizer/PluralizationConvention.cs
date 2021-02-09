@@ -3,18 +3,10 @@
 
     using global::Humanizer;
 
-    using Leap.Data.Schema;
+    using Leap.Data.Schema.Conventions;
 
-    public class PluralizationConvention : INamingSchemaConvention, ICollectionNamingSchemaConvention {
-        public string GetTableName(Type type) {
-            return PluralizeTypeName(type);
-        }
-
+    public class PluralizationConvention : ICollectionNamingSchemaConvention {
         public string GetCollectionName(Type type) {
-            return PluralizeTypeName(type);
-        }
-
-        private static string PluralizeTypeName(Type type) {
             return type.Name.Pluralize();
         }
     }

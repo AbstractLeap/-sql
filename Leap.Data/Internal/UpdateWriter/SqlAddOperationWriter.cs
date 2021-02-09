@@ -4,6 +4,7 @@
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Schema;
     using Leap.Data.Schema.Columns;
+    using Leap.Data.Schema.Conventions.Sql;
     using Leap.Data.Serialization;
     using Leap.Data.Utilities;
 
@@ -22,10 +23,10 @@
 
         public void Write(DatabaseRow databaseRow, Command command) {
             var builder = new StringBuilder("insert into ");
-            this.sqlDialect.AppendName(builder, databaseRow.Table.Name);
+            this.sqlDialect.AppendTableName(builder, databaseRow.Table.GetTableName(), databaseRow.Table.GetSchemaName());
             builder.Append(" (");
             foreach (var entry in databaseRow.Table.NonComputedColumns.AsSmartEnumerable()) {
-                this.sqlDialect.AppendName(builder, entry.Value.Name);
+                this.sqlDialect.AppendColumnName(builder, entry.Value.Name);
                 if (!entry.IsLast) {
                     builder.Append(", ");
                 }
