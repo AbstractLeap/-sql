@@ -6,7 +6,7 @@
 
     public class MultipleKeyQuery<TEntity, TKey> : QueryBase<TEntity>
         where TEntity : class {
-        public MultipleKeyQuery(TKey[] keys, Table table) : base(table) {
+        public MultipleKeyQuery(TKey[] keys, Collection collection) : base(collection) {
             this.Keys = keys;
         }
 

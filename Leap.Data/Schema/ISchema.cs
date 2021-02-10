@@ -2,10 +2,10 @@
     using System.Collections.Generic;
 
     public interface ISchema {
-        IEnumerable<Table> All();
+        IEnumerable<Collection> All();
 
-        Table GetTable(string collectionName);
+        Collection GetCollection(string collectionName);
         
-        Table GetDefaultTable<TEntity>();
+        Collection GetDefaultCollection<TEntity>();
     }
 }

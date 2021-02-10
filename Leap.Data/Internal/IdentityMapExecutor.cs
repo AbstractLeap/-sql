@@ -31,7 +31,7 @@
         public void VisitKeyQuery<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
             if (this.identityMap.TryGetValue(keyQuery.Key, out TEntity entity)) {
-                var state = this.unitOfWork.GetState(keyQuery.Table, entity);
+                var state = this.unitOfWork.GetState(keyQuery.Collection, entity);
                 switch (state) {
                     case DocumentState.NotAttached:
                         return;
@@ -56,7 +56,7 @@
                     return;
                 }
 
-                var state = this.unitOfWork.GetState(multipleKeyQuery.Table, entity);
+                var state = this.unitOfWork.GetState(multipleKeyQuery.Collection, entity);
                 if (state == DocumentState.NotAttached) {
                     return;
                 }

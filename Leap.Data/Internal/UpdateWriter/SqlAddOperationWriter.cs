@@ -23,9 +23,9 @@
 
         public void Write(DatabaseRow databaseRow, Command command) {
             var builder = new StringBuilder("insert into ");
-            this.sqlDialect.AppendTableName(builder, databaseRow.Table.GetTableName(), databaseRow.Table.GetSchemaName());
+            this.sqlDialect.AppendTableName(builder, databaseRow.Collection.GetTableName(), databaseRow.Collection.GetSchemaName());
             builder.Append(" (");
-            foreach (var entry in databaseRow.Table.NonComputedColumns.AsSmartEnumerable()) {
+            foreach (var entry in databaseRow.Collection.NonComputedColumns.AsSmartEnumerable()) {
                 this.sqlDialect.AppendColumnName(builder, entry.Value.Name);
                 if (!entry.IsLast) {
                     builder.Append(", ");
@@ -33,7 +33,7 @@
             }
 
             builder.Append(") values (");
-            foreach (var entry in databaseRow.Table.NonComputedColumns.AsSmartEnumerable()) {
+            foreach (var entry in databaseRow.Collection.NonComputedColumns.AsSmartEnumerable()) {
                 AppendValue(entry.Value, databaseRow.Values);
                 if (!entry.IsLast) {
                     builder.Append(", ");
@@ -44,7 +44,7 @@
             command.AddQuery(builder.ToString());
 
             void AppendValue(Column column, object[] databaseRowValues) {
-                var paramName = command.AddParameter(databaseRowValues[databaseRow.Table.GetColumnIndex(column.Name)]);
+                var paramName = command.AddParameter(databaseRowValues[databaseRow.Collection.GetColumnIndex(column.Name)]);
                 this.sqlDialect.AddParameter(builder, paramName);
             }
         }

@@ -26,7 +26,7 @@
             
             if (candidateIdMembers.Length != 1) {
                 throw new Exception(
-                    $"Unable to determine key property or field on type {typeof(TEntity)} while extracting key values. Please override {nameof(Table.KeyExtractor)} to provide custom extraction method");
+                    $"Unable to determine key property or field on type {typeof(TEntity)} while extracting key values. Please override {nameof(Collection.KeyExtractor)} to provide custom extraction method");
             }
 
             MemberInfo = candidateIdMembers[0];

@@ -26,7 +26,7 @@
 
         public void VisitKeyQuery<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery)
             where TEntity : class {
-            if (this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Table, keyQuery.Key), out object[] row)) {
+            if (this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key), out object[] row)) {
                 this.resultCache.Add(keyQuery, new List<object[]> { row });
                 this.executedQueryIds.Add(keyQuery.Identifier);
             }
@@ -36,7 +36,7 @@
             where TEntity : class {
             var result = new List<object[]>();
             foreach (var key in multipleKeyQuery.Keys) {
-                if (!this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Table, key), out object[] row)) {
+                if (!this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), out object[] row)) {
                     return; // can't support this query as don't have all the entities cached
                 }
                 

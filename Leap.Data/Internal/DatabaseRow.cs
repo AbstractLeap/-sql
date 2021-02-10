@@ -2,12 +2,12 @@
     using Leap.Data.Schema;
 
     public class DatabaseRow {
-        public DatabaseRow(Table table, object[] values) {
-            this.Table  = table;
+        public DatabaseRow(Collection collection, object[] values) {
+            this.Collection  = collection;
             this.Values = values;
         }
 
-        public Table Table { get; }
+        public Collection Collection { get; }
 
         public object[] Values { get; }
     }

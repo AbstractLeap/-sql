@@ -4,11 +4,11 @@
     class DeleteOperation<TEntity> : IOperation<TEntity> {
         public TEntity Entity { get; }
 
-        public Table Table { get; }
+        public Collection Collection { get; }
 
-        public DeleteOperation(TEntity entity, Table table) {
+        public DeleteOperation(TEntity entity, Collection collection) {
             this.Entity = entity;
-            this.Table  = table;
+            this.Collection  = collection;
         }
     }
 }

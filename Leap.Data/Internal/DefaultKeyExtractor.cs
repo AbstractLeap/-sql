@@ -11,7 +11,7 @@
 
         public TKey Extract<TEntity, TKey>(TEntity entity) {
             var entityType = typeof(TEntity);
-            // generally you'll have one type per table so this is a hot path (and quick)
+            // generally you'll have one type per collection so this is a hot path (and quick)
             if (this.typedKeyExtractor != null && this.matchingEntityType == entityType) {
                 return ((DefaultTypedKeyExtractor<TEntity, TKey>)this.typedKeyExtractor).Extract(entity);
             }
@@ -24,7 +24,7 @@
                 return defaultTypedKeyExtractor.Extract(entity);
             }
 
-            // multiple types for this table
+            // multiple types for this collection
             if (this.extractorLookup == null) {
                 this.extractorLookup = new ConcurrentDictionary<Type, object>();
             }

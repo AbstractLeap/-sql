@@ -10,7 +10,7 @@
 
         Type EntityType { get; }
         
-        Table Table { get; }
+        Collection Collection { get; }
 
         void Accept(IQueryVisitor visitor);
 

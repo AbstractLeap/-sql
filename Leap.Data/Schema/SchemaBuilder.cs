@@ -12,7 +12,7 @@
 
         private readonly Dictionary<string, HashSet<Type>> addedNamedTypes = new();
 
-        private readonly IDictionary<Type, IList<Action<Table>>> buildActions = new Dictionary<Type, IList<Action<Table>>>();
+        private readonly IDictionary<Type, IList<Action<Collection>>> buildActions = new Dictionary<Type, IList<Action<Collection>>>();
 
         public SchemaBuilder UseConvention(ISchemaConvention convention) {
             this.schemaConventions.Add(convention);
@@ -25,25 +25,25 @@
         }
 
         public SchemaBuilder AddTypes(string collectionName, params Type[] types) {
-            if (!this.addedNamedTypes.TryGetValue(collectionName, out var tableTypes)) {
-                tableTypes = new HashSet<Type>();
-                this.addedNamedTypes.Add(collectionName, tableTypes);
+            if (!this.addedNamedTypes.TryGetValue(collectionName, out var collectionTypes)) {
+                collectionTypes = new HashSet<Type>();
+                this.addedNamedTypes.Add(collectionName, collectionTypes);
             }
 
-            tableTypes.UnionWith(types);
+            collectionTypes.UnionWith(types);
             return this;
         }
 
-        public TableBuilder<T> Setup<T>() {
+        public CollectionBuilder<T> Setup<T>() {
             return new(this);
         }
 
-        internal void AddAction<T>(Action<Table> action) {
+        internal void AddAction<T>(Action<Collection> action) {
             if (this.buildActions.TryGetValue(typeof(T), out var actions)) {
                 actions.Add(action);
             }
             else {
-                this.buildActions.Add(typeof(T), new List<Action<Table>> { action });
+                this.buildActions.Add(typeof(T), new List<Action<Collection>> { action });
             }
         }
 
@@ -53,23 +53,22 @@
             var schema = new Schema();
             foreach (var namedType in this.addedNamedTypes) {
                 var collectionName = namedType.Key;
-                //var schemaName = this.GetConvention<ISchemaNamingSchemaConvention>().GetSchemaName(names.TableName);
                 var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(collectionName, namedType.Value.AsEnumerable());
                 var keyColumns = this.GetConvention<IKeyColumnsSchemaConvention>().GetKeyColumns(keyType);
                 var storageSettings = this.GetConvention<IStorageSchemaConvention>().Configure(collectionName, namedType.Value);
-                var table = new Table(collectionName, keyType, keyColumns) { StorageSettings = storageSettings };
+                var collection = new Collection(collectionName, keyType, keyColumns) { StorageSettings = storageSettings };
 
                 foreach (var entityType in namedType.Value) {
-                    table.AddClassType(entityType);
+                    collection.AddClassType(entityType);
                 }
 
-                schema.AddTable(table);
+                schema.AddCollection(collection);
             }
 
             foreach (var typeActions in this.buildActions) {
-                var table = schema.GetDefaultTable(typeActions.Key);
+                var collection = schema.GetDefaultCollection(typeActions.Key);
                 foreach (var buildAction in typeActions.Value) {
-                    buildAction(table);
+                    buildAction(collection);
                 }
             }
 

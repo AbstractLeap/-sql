@@ -4,11 +4,11 @@
     class UpdateOperation<TEntity> : IOperation<TEntity> {
         public TEntity Entity { get; }
 
-        public Table Table { get; }
+        public Collection Collection { get; }
 
-        public UpdateOperation(TEntity entity, Table table) {
+        public UpdateOperation(TEntity entity, Collection collection) {
             this.Entity = entity;
-            this.Table  = table;
+            this.Collection  = collection;
         }
     }
 }

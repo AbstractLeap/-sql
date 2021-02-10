@@ -19,7 +19,7 @@
                 return false;
             }
 
-            var json = RowValueHelper.GetValue<string>(document.Table, document.Row.Values, SpecialColumns.Document);
+            var json = RowValueHelper.GetValue<string>(document.Collection, document.Row.Values, SpecialColumns.Document);
             return !string.Equals(this.serializer.Serialize(document.GetEntity()), json);
         }
     }

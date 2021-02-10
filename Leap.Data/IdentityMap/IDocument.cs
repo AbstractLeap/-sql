@@ -7,7 +7,7 @@
     using Leap.Data.Schema;
 
     interface IDocument {
-        Table Table { get; }
+        Collection Collection { get; }
 
         DatabaseRow Row { get; set; }
 

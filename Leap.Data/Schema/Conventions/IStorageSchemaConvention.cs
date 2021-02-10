@@ -3,6 +3,6 @@
     using System.Collections.Generic;
 
     public interface IStorageSchemaConvention : ISchemaConvention {
-        ITableStorageSettings Configure(string collectionName, HashSet<Type> types);
+        ICollectionStorageSettings Configure(string collectionName, HashSet<Type> types);
     }
 }

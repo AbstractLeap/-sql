@@ -9,7 +9,7 @@
     using Leap.Data.Utilities;
 
     internal class DefaultKeyTypeExtractor {
-        public Type Extract(string tableName, IEnumerable<Type> entityTypes) {
+        public Type Extract(string collectionName, IEnumerable<Type> entityTypes) {
             if (!entityTypes.Any()) {
                 throw new ArgumentException($"You must pass at least one type to {nameof(this.Extract)}", nameof(entityTypes));
             }
@@ -22,10 +22,10 @@
                 "Key",
                 $"{indicatorType.Name}Id",
                 $"{indicatorType.Name}Key",
-                $"{tableName}Id",
-                $"{tableName}Key");
+                $"{collectionName}Id",
+                $"{collectionName}Key");
             if (possibleMembers.Count != 1) {
-                throw new Exception($"Unable to determine type of identifier for table {tableName} using indicator type {indicatorType}");
+                throw new Exception($"Unable to determine type of identifier for collection {collectionName} using indicator type {indicatorType}");
             }
 
             return possibleMembers[0].PropertyOrFieldType();

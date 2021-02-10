@@ -1,3 +1,3 @@
 ﻿namespace Leap.Data.Schema.Columns {
-    public record DocumentColumn(Table Table) : Column(typeof(string), SpecialColumns.Document, Table);
+    public record DocumentColumn(Collection Collection) : Column(typeof(string), SpecialColumns.Document, Collection);
 }

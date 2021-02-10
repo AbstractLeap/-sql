@@ -2,7 +2,7 @@
     using Leap.Data.Schema;
 
     interface IOperation {
-        Table Table { get; }
+        Collection Collection { get; }
     }
 
     interface IOperation<out TEntity> : IOperation {

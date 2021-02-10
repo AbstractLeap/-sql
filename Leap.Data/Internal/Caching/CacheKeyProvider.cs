@@ -5,15 +5,15 @@
     using Leap.Data.Schema;
 
     static class CacheKeyProvider {
-        public static string GetCacheKey<TEntity, TKey>(Table table, TEntity entity) {
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(entity);
-            return GetCacheKey<TEntity, TKey>(table, key);
+        public static string GetCacheKey<TEntity, TKey>(Collection collection, TEntity entity) {
+            var key = collection.KeyExtractor.Extract<TEntity, TKey>(entity);
+            return GetCacheKey<TEntity, TKey>(collection, key);
         }
 
-        public static string GetCacheKey<TEntity, TKey>(Table table, TKey key) {
-            var cacheKey = new StringBuilder(table.CollectionName);
-            foreach (var keyColumn in table.KeyColumns) {
-                var value = table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key);
+        public static string GetCacheKey<TEntity, TKey>(Collection collection, TKey key) {
+            var cacheKey = new StringBuilder(collection.CollectionName);
+            foreach (var keyColumn in collection.KeyColumns) {
+                var value = collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key);
                 cacheKey.Append("|").Append(value);
             }
 

@@ -13,7 +13,7 @@
 
         public IColumnValueFactory GetFactory(Column column) {
             if (column is KeyColumn) {
-                return new KeyColumnValueFactory(column.Table);
+                return new KeyColumnValueFactory(column.Collection);
             } else if (column is DocumentColumn) {
                 return new DocumentColumnValueFactory(this.serializer);
             } else if (column is DocumentTypeColumn) {

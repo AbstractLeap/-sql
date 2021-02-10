@@ -5,14 +5,14 @@
     using Leap.Data.Schema.Columns;
 
     class KeyColumnValueFactory : IKeyColumnValueFactory {
-        private readonly Table table;
+        private readonly Collection collection;
 
-        public KeyColumnValueFactory(Table table) {
-            this.table = table;
+        public KeyColumnValueFactory(Collection collection) {
+            this.collection = collection;
         }
 
         public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity) {
-            var key = this.table.KeyExtractor.Extract<TEntity, TKey>(entity);
+            var key = this.collection.KeyExtractor.Extract<TEntity, TKey>(entity);
             return this.GetValueUsingKey<TEntity, TKey, TValue>(column, key);
         }
 

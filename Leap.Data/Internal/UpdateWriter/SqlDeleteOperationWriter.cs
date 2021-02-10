@@ -23,7 +23,7 @@
 
         public void Write(DatabaseRow databaseRow, Command command) {
             var builder = new StringBuilder("delete from ");
-            this.sqlDialect.AppendTableName(builder, databaseRow.Table.GetTableName(), databaseRow.Table.GetSchemaName());
+            this.sqlDialect.AppendTableName(builder, databaseRow.Collection.GetTableName(), databaseRow.Collection.GetSchemaName());
             builder.Append(" where ");
             this.WriteWhereClauseForRow(databaseRow, command, builder);
             this.MaybeAddOptimisticConcurrencyWhereClause(builder, command, databaseRow);

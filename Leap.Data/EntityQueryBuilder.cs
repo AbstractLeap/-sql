@@ -11,9 +11,9 @@
 
         private readonly EntityQuery<TEntity> query;
 
-        public EntityQueryBuilder(Session session, Table table) {
+        public EntityQueryBuilder(Session session, Collection collection) {
             this.session = session;
-            this.query   = new EntityQuery<TEntity>(table);
+            this.query   = new EntityQuery<TEntity>(collection);
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {

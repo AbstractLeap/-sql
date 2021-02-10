@@ -17,8 +17,8 @@
             this.schema     = schema;
         }
 
-        protected void WriteColumns<TEntity>(StringBuilder builder, Table table) {
-            foreach (var columnEntry in table.Columns.AsSmartEnumerable()) {
+        protected void WriteColumns<TEntity>(StringBuilder builder, Collection collection) {
+            foreach (var columnEntry in collection.Columns.AsSmartEnumerable()) {
                 builder.Append("t.");
                 this.sqlDialect.AppendColumnName(builder, columnEntry.Value.Name);
                 if (!columnEntry.IsLast) {
@@ -29,9 +29,9 @@
             }
         }
 
-        protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, Table table, StringBuilder builder, bool useAlias = false)
+        protected void WriteWhereClauseForSingleEntity<TEntity, TKey>(TKey key, Command command, Collection collection, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
-            foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable()) {
+            foreach (var keyColumnEntry in collection.KeyColumns.AsSmartEnumerable()) {
                 var keyColumn = keyColumnEntry.Value;
                 if (useAlias) {
                     builder.Append("t.");
@@ -39,7 +39,7 @@
 
                 this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key));
+                var paramName = command.AddParameter(collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key));
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -48,7 +48,7 @@
         }
 
         protected void WriteWhereClauseForRow(DatabaseRow databaseRow, Command command, StringBuilder builder, bool useAlias = false) {
-            foreach (var keyColumnEntry in databaseRow.Table.KeyColumns.AsSmartEnumerable()) {
+            foreach (var keyColumnEntry in databaseRow.Collection.KeyColumns.AsSmartEnumerable()) {
                 var keyColumn = keyColumnEntry.Value;
                 if (useAlias) {
                     builder.Append("t.");
@@ -56,7 +56,7 @@
 
                 this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(databaseRow.Values[databaseRow.Table.GetColumnIndex(keyColumn.Name)]);
+                var paramName = command.AddParameter(databaseRow.Values[databaseRow.Collection.GetColumnIndex(keyColumn.Name)]);
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -64,11 +64,11 @@
             }
         }
 
-        protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, Table table, StringBuilder builder, bool useAlias = false)
+        protected void WriteWhereClauseForMultipleEntities<TEntity, TKey>(TKey[] keys, Command command, Collection collection, StringBuilder builder, bool useAlias = false)
             where TEntity : class {
             foreach (var keyEntry in keys.AsSmartEnumerable()) {
                 builder.Append("(");
-                foreach (var keyColumnEntry in table.KeyColumns.AsSmartEnumerable())
+                foreach (var keyColumnEntry in collection.KeyColumns.AsSmartEnumerable())
                 {
                     var keyColumn = keyColumnEntry.Value;
                     if (useAlias) {
@@ -77,7 +77,7 @@
 
                     this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                     builder.Append(" = ");
-                    var paramName = command.AddParameter(table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, keyEntry.Value));
+                    var paramName = command.AddParameter(collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, keyEntry.Value));
                     this.sqlDialect.AddParameter(builder, paramName);
                     if (!keyColumnEntry.IsLast) {
                         builder.Append(" and ");
@@ -92,12 +92,12 @@
         }
 
         protected void MaybeAddOptimisticConcurrencyWhereClause(StringBuilder builder, Command command, DatabaseRow databaseRow, bool appendWhere = false) {
-            if (databaseRow.Table.OptimisticConcurrencyColumn != null) {
+            if (databaseRow.Collection.OptimisticConcurrencyColumn != null) {
                 builder.Append(appendWhere ? " where " : " and ");
-                this.sqlDialect.AppendColumnName(builder, databaseRow.Table.OptimisticConcurrencyColumn.Name);
+                this.sqlDialect.AppendColumnName(builder, databaseRow.Collection.OptimisticConcurrencyColumn.Name);
                 builder.Append(" = ");
                 var paramName = command.AddParameter(
-                    RowValueHelper.GetValue(databaseRow.Table.OptimisticConcurrencyColumn.Type, databaseRow.Table, databaseRow.Values, databaseRow.Table.OptimisticConcurrencyColumn.Name));
+                    RowValueHelper.GetValue(databaseRow.Collection.OptimisticConcurrencyColumn.Type, databaseRow.Collection, databaseRow.Values, databaseRow.Collection.OptimisticConcurrencyColumn.Name));
                 this.sqlDialect.AddParameter(builder, paramName);
             }
         }

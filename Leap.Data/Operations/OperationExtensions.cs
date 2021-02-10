@@ -33,25 +33,25 @@
 
         public static DatabaseRow GetNewDatabaseRow<TEntity>(this IOperation<TEntity> operation, ISchema schema, ColumnValueFactoryFactory columnValueFactoryFactory) {
             return (DatabaseRow)typeof(OperationExtensions).CallMethod(
-                new[] { typeof(TEntity), operation.Table.KeyType },
+                new[] { typeof(TEntity), operation.Collection.KeyType },
                 nameof(GetNewDatabaseRow),
                 operation,
                 columnValueFactoryFactory);
         }
 
         public static DatabaseRow GetNewDatabaseRow<TEntity, TKey>(this IOperation<TEntity> operation, ColumnValueFactoryFactory columnValueFactoryFactory) {
-            var table = operation.Table;
-            var key = table.KeyExtractor.Extract<TEntity, TKey>(operation.Entity);
-            var values = new object[table.Columns.Count];
-            foreach (var keyColumn in table.KeyColumns) {
-                values[table.GetColumnIndex(keyColumn.Name)] = table.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key);
+            var collection = operation.Collection;
+            var key = collection.KeyExtractor.Extract<TEntity, TKey>(operation.Entity);
+            var values = new object[collection.Columns.Count];
+            foreach (var keyColumn in collection.KeyColumns) {
+                values[collection.GetColumnIndex(keyColumn.Name)] = collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key);
             }
 
-            foreach (var nonKeyColumn in table.NonKeyColumns) {
-                values[table.GetColumnIndex(nonKeyColumn.Name)] = columnValueFactoryFactory.GetFactory(nonKeyColumn).GetValue<TEntity, TKey>(nonKeyColumn, operation.Entity);
+            foreach (var nonKeyColumn in collection.NonKeyColumns) {
+                values[collection.GetColumnIndex(nonKeyColumn.Name)] = columnValueFactoryFactory.GetFactory(nonKeyColumn).GetValue<TEntity, TKey>(nonKeyColumn, operation.Entity);
             }
 
-            return new DatabaseRow(table, values);
+            return new DatabaseRow(collection, values);
         }
     }
 }

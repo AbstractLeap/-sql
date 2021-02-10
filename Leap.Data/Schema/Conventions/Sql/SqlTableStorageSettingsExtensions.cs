@@ -2,16 +2,16 @@
     using System;
 
     public static class SqlTableStorageSettingsExtensions {
-        public static string GetTableName(this Table table) {
-            return GetSetting(table.StorageSettings, settings => settings.TableName);
+        public static string GetTableName(this Collection collection) {
+            return GetSetting(collection.StorageSettings, settings => settings.TableName);
         }
 
-        public static string GetSchemaName(this Table table) {
-            return GetSetting(table.StorageSettings, settings => settings.SchemaName);
+        public static string GetSchemaName(this Collection collection) {
+            return GetSetting(collection.StorageSettings, settings => settings.SchemaName);
         }
 
-        private static TResult GetSetting<TResult>(this ITableStorageSettings tableStorageSettings, Func<SqlTableStorageSettings, TResult> accessor) {
-            if (tableStorageSettings is SqlTableStorageSettings sqlTableStorageSettings) {
+        private static TResult GetSetting<TResult>(this ICollectionStorageSettings collectionStorageSettings, Func<SqlCollectionStorageSettings, TResult> accessor) {
+            if (collectionStorageSettings is SqlCollectionStorageSettings sqlTableStorageSettings) {
                 return accessor(sqlTableStorageSettings);
             }
 

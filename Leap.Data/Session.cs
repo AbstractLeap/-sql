@@ -50,14 +50,12 @@
 
         public IQueryBuilder<TEntity> Get<TEntity>()
             where TEntity : class {
-            var table = this.schema.GetDefaultTable<TEntity>();
-            return new QueryBuilder<TEntity>(this, table);
+            return new QueryBuilder<TEntity>(this, this.schema.GetDefaultCollection<TEntity>());
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>(string collectionName)
             where TEntity : class {
-            var table = this.schema.GetTable(collectionName);
-            return new QueryBuilder<TEntity>(this, table);
+            return new QueryBuilder<TEntity>(this, this.schema.GetCollection(collectionName));
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) {
@@ -73,33 +71,33 @@
 
         public void Delete<TEntity>(TEntity entity)
             where TEntity : class {
-            this.Delete(entity, this.schema.GetDefaultTable<TEntity>());
+            this.Delete(entity, this.schema.GetDefaultCollection<TEntity>());
         }
 
         public void Delete<TEntity>(TEntity entity, string collectionName)
             where TEntity : class {
-            this.Delete(entity, this.schema.GetTable(collectionName));
+            this.Delete(entity, this.schema.GetCollection(collectionName));
         }
 
-        private void Delete<TEntity>(TEntity entity, Table table)
+        private void Delete<TEntity>(TEntity entity, Collection collection)
             where TEntity : class {
-            this.unitOfWork.UpdateState(table, entity, DocumentState.Deleted);
+            this.unitOfWork.UpdateState(collection, entity, DocumentState.Deleted);
         }
 
         public void Add<TEntity>(TEntity entity)
             where TEntity : class {
-            this.Add(entity, this.schema.GetDefaultTable<TEntity>());
+            this.Add(entity, this.schema.GetDefaultCollection<TEntity>());
         }
 
         public void Add<TEntity>(TEntity entity, string collectionName)
             where TEntity : class {
-            this.Add(entity, this.schema.GetTable(collectionName));
+            this.Add(entity, this.schema.GetCollection(collectionName));
         }
 
-        private void Add<TEntity>(TEntity entity, Table table) {
-            this.unitOfWork.AddOrUpdate(table, entity, null, DocumentState.New);
-            var keyType = table.KeyType;
-            var key = table.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
+        private void Add<TEntity>(TEntity entity, Collection collection) {
+            this.unitOfWork.AddOrUpdate(collection, entity, null, DocumentState.New);
+            var keyType = collection.KeyType;
+            var key = collection.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
             this.identityMap.Add(keyType, key, entity);
         }
 

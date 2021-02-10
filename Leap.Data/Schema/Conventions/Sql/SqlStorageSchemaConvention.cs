@@ -9,10 +9,10 @@
             this.builder = builder;
         }
 
-        public ITableStorageSettings Configure(string collectionName, HashSet<Type> types) {
+        public ICollectionStorageSettings Configure(string collectionName, HashSet<Type> types) {
             var tableName = this.builder.GetConvention<ITableNamingSchemaConvention>().GetTableName(collectionName);
             var schemaName = this.builder.GetConvention<ISchemaNamingSchemaConvention>().GetSchemaName(tableName);
-            var settings = new SqlTableStorageSettings { TableName = tableName, SchemaName = schemaName };
+            var settings = new SqlCollectionStorageSettings { TableName = tableName, SchemaName = schemaName };
             return settings;
         }
     }

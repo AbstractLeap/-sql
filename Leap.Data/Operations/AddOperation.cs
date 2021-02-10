@@ -2,13 +2,13 @@
     using Leap.Data.Schema;
 
     class AddOperation<TEntity> : IOperation<TEntity> {
-        public Table Table { get; }
+        public Collection Collection { get; }
 
         public TEntity Entity { get; }
 
-        public AddOperation(TEntity entity, Table table) {
+        public AddOperation(TEntity entity, Collection collection) {
             this.Entity = entity;
-            this.Table  = table;
+            this.Collection  = collection;
         }
     }
 }

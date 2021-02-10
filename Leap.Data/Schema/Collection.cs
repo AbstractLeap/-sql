@@ -11,7 +11,7 @@
     /// <summary>
     ///     metadata
     /// </summary>
-    public class Table {
+    public class Collection {
         private readonly List<Column> nonKeyColumns;
 
         private readonly List<Column> keyColumns;
@@ -22,10 +22,10 @@
 
         private readonly List<Type> entityTypes = new List<Type>();
 
-        public ITableStorageSettings StorageSettings { get; init; }
+        public ICollectionStorageSettings StorageSettings { get; init; }
         
         /// <summary>
-        /// The name of the collection (can be different from the table name)
+        /// The name of the collection (can be different from the collection name)
         /// </summary>
         public string CollectionName { get; }
 
@@ -59,13 +59,13 @@
 
         public int GetColumnIndex(string columnName) {
             if (!this.columnIndices.TryGetValue(columnName, out var index)) {
-                throw new Exception($"column with name \"{columnName}\" not found on table {this.CollectionName}");
+                throw new Exception($"column with name \"{columnName}\" not found on collection {this.CollectionName}");
             }
 
             return index;
         }
 
-        public Table(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
+        public Collection(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
             this.CollectionName              = collectionName;
             this.KeyType                     = keyType;
             this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this)).Cast<Column>().ToList();
@@ -86,7 +86,7 @@
             else {
                 var commonBase = this.entityTypes.FindAssignableWith();
                 if (commonBase == null || commonBase == typeof(object)) {
-                    throw new Exception("All of the classes inside a single table must have a common base class or interface");
+                    throw new Exception("All of the classes inside a single collection must have a common base class or interface");
                 }
 
                 this.BaseEntityType        = commonBase;
@@ -109,7 +109,7 @@
             this.columnIndices = this.allColumns.Select((c, i) => new { c, i }).ToDictionary(c => c.c.Name, c => c.i);
         }
 
-        protected bool Equals(Table other) {
+        protected bool Equals(Collection other) {
             return this.CollectionName == other.CollectionName;
         }
 
@@ -117,7 +117,7 @@
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return this.Equals((Table)obj);
+            return this.Equals((Collection)obj);
         }
 
         public override int GetHashCode() => HashCode.Combine(this.CollectionName);

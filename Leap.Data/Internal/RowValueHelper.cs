@@ -6,13 +6,13 @@
     using Leap.Data.Schema;
 
     public static class RowValueHelper {
-        public static T GetValue<T>(Table table, object[] row, string columnName) {
-            var index = table.GetColumnIndex(columnName);
+        public static T GetValue<T>(Collection collection, object[] row, string columnName) {
+            var index = collection.GetColumnIndex(columnName);
             return (T)row[index];
         }
 
-        public static object GetValue(Type valueType, Table table, object[] row, string columnName) {
-            return typeof(RowValueHelper).CallMethod(new[] { valueType }, nameof(GetValue), new[] { typeof(Table), typeof(object[]), typeof(string) }, table, row, columnName);
+        public static object GetValue(Type valueType, Collection collection, object[] row, string columnName) {
+            return typeof(RowValueHelper).CallMethod(new[] { valueType }, nameof(GetValue), new[] { typeof(Collection), typeof(object[]), typeof(string) }, collection, row, columnName);
         }
     }
 }

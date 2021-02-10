@@ -59,24 +59,24 @@
                     inserts.Add(newDatabaseRow);
                     postPersistDocumentUpdates.Add(
                         async () => {
-                            unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Table, operation.GetEntity(), newDatabaseRow);
+                            unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
                             await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateDistributedCacheAsync), operation.GetEntity(), newDatabaseRow, cancellationToken);
                         });
                 } else if (operation.IsUpdateOperation()) {
                     // need to provide existing row and new row (e.g. to support optimistic concurrency
                     var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.columnValueFactoryFactory);
-                    updates.Add((unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Table, operation.GetEntity()), newDatabaseRow));
+                    updates.Add((unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity()), newDatabaseRow));
                     postPersistDocumentUpdates.Add(
                         async () => {
-                            unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Table, operation.GetEntity(), newDatabaseRow);
+                            unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
                             await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateDistributedCacheAsync), operation.GetEntity(), newDatabaseRow, cancellationToken);
                         });
                 }
                 else {
                     // don't have a new row so just the old one
-                    deletes.Add(unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Table, operation.GetEntity()));
+                    deletes.Add(unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity()));
                 }
             }
             
@@ -95,11 +95,11 @@
                 return ValueTask.CompletedTask;
             }
             
-            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), deleteOperation.Table.KeyType }, nameof(this.DeleteFromDistributedCacheAsync), deleteOperation, deleteOperation.Table);
+            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), deleteOperation.Collection.KeyType }, nameof(this.DeleteFromDistributedCacheAsync), deleteOperation, deleteOperation.Collection);
         }
 
-        private ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Table table, CancellationToken cancellationToken) {
-            return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, deleteOperation.Entity), cancellationToken);
+        private ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection, CancellationToken cancellationToken) {
+            return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity), cancellationToken);
         }
 
         private void DeleteFromMemoryCache<TEntity>(DeleteOperation<TEntity> deleteOperation) {
@@ -107,11 +107,11 @@
                 return;
             }
             
-            this.CallMethod(new[] { typeof(TEntity), deleteOperation.Table.KeyType }, nameof(DeleteFromMemoryCache), deleteOperation, deleteOperation.Table);
+            this.CallMethod(new[] { typeof(TEntity), deleteOperation.Collection.KeyType }, nameof(DeleteFromMemoryCache), deleteOperation, deleteOperation.Collection);
         }
 
-        private void DeleteFromMemoryCache<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Table table) {
-            this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, deleteOperation.Entity));
+        private void DeleteFromMemoryCache<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection) {
+            this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity));
         }
 
         #endregion
@@ -123,11 +123,11 @@
                 return;
             }
             
-            this.CallMethod(new[] { typeof(TEntity), row.Table.KeyType }, nameof(UpdateMemoryCache), entity, row, row.Table);
+            this.CallMethod(new[] { typeof(TEntity), row.Collection.KeyType }, nameof(UpdateMemoryCache), entity, row, row.Collection);
         }
 
-        private void UpdateMemoryCache<TEntity, TKey>(TEntity entity, DatabaseRow row, Table table) {
-            this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, entity), row.Values);
+        private void UpdateMemoryCache<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection) {
+            this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values);
         }
 
         private ValueTask UpdateDistributedCacheAsync<TEntity>(TEntity entity, DatabaseRow row, CancellationToken cancellationToken) {
@@ -135,11 +135,11 @@
                 return ValueTask.CompletedTask;
             }
             
-            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), row.Table.KeyType }, nameof(UpdateDistributedCacheAsync), entity, row, row.Table, cancellationToken);
+            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), row.Collection.KeyType }, nameof(UpdateDistributedCacheAsync), entity, row, row.Collection, cancellationToken);
         }
 
-        private ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Table table, CancellationToken cancellationToken) {
-            return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(table, entity), row.Values, cancellationToken);
+        private ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection, CancellationToken cancellationToken) {
+            return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values, cancellationToken);
         }
 
         #endregion

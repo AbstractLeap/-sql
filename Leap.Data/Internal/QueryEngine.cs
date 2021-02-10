@@ -117,29 +117,29 @@
 
             T HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
-                var table = query.Table;
-                var id = table.KeyType.TryCreateInstance(table.Columns.Select(c => c.Name).ToArray(), row);
+                var collection = query.Collection;
+                var id = collection.KeyType.TryCreateInstance(collection.Columns.Select(c => c.Name).ToArray(), row);
 
                 // TODO invalidate old versions
                 // check ID map for instance
-                if (this.identityMap.TryGetValue(table.KeyType, id, out T entityInstance)) {
-                    if (this.unitOfWork.GetState(table, entityInstance) == DocumentState.Deleted) {
+                if (this.identityMap.TryGetValue(collection.KeyType, id, out T entityInstance)) {
+                    if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.Deleted) {
                         return null;
                     }
                     
-                    this.unitOfWork.AddOrUpdate(table, entityInstance, new DatabaseRow(table, row), DocumentState.Persisted);
+                    this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), DocumentState.Persisted);
                     return entityInstance;
                 }
 
-                var json = RowValueHelper.GetValue<string>(table, row, SpecialColumns.Document);
-                var typeName = RowValueHelper.GetValue<string>(table, row, SpecialColumns.DocumentType);
+                var json = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.Document);
+                var typeName = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.DocumentType);
                 var documentType = Type.GetType(typeName); // TODO better type handling across assemblies
                 if (!(this.serializer.Deserialize(documentType, json) is T entity)) {
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(table.KeyType, id, entity);
-                this.unitOfWork.AddOrUpdate(table, entity, new DatabaseRow(table, row), DocumentState.Persisted);
+                this.identityMap.Add(collection.KeyType, id, entity);
+                this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), DocumentState.Persisted);
                 return entity;
             }
         }

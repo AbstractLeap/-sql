@@ -25,15 +25,15 @@
 
         public void Write((DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow) update, Command command) {
             var builder = new StringBuilder("update ");
-            var table = update.OldDatabaseRow.Table;
-            this.sqlDialect.AppendTableName(builder, table.GetTableName(), table.GetSchemaName());
+            var collection = update.OldDatabaseRow.Collection;
+            this.sqlDialect.AppendTableName(builder, collection.GetTableName(), collection.GetSchemaName());
             builder.Append(" set ");
 
-            foreach (var entry in table.NonKeyNonComputedColumns.AsSmartEnumerable()) {
+            foreach (var entry in collection.NonKeyNonComputedColumns.AsSmartEnumerable()) {
                 var nonKeyColumn = entry.Value;
                 this.sqlDialect.AppendColumnName(builder, nonKeyColumn.Name);
                 builder.Append(" = ");
-                var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Table.GetColumnIndex(nonKeyColumn.Name)];
+                var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Collection.GetColumnIndex(nonKeyColumn.Name)];
                 var paramName = command.AddParameter(columnValue);
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!entry.IsLast) {

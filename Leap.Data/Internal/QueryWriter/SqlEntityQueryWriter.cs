@@ -20,19 +20,19 @@
 
         public void Write<TEntity>(EntityQuery<TEntity> query, Command command)
             where TEntity : class {
-            var table = query.Table;
+            var collection = query.Collection;
             var builder = new StringBuilder("select ");
-            this.WriteColumns<TEntity>(builder, table);
+            this.WriteColumns<TEntity>(builder, collection);
 
             builder.Append("from ");
-            this.sqlDialect.AppendTableName(builder, table.GetTableName(), table.GetSchemaName());
+            this.sqlDialect.AppendTableName(builder, collection.GetTableName(), collection.GetSchemaName());
             builder.Append(" as t");
 
             var whereAppended = false;
-            if (table.ContainsTypeHierarchy) {
-                if (typeof(TEntity) != table.BaseEntityType) {
+            if (collection.ContainsTypeHierarchy) {
+                if (typeof(TEntity) != collection.BaseEntityType) {
                     // we're querying for some of the derived types only
-                    var assignableTypes = typeof(TEntity).GetAssignableTypes(table.EntityTypes);
+                    var assignableTypes = typeof(TEntity).GetAssignableTypes(collection.EntityTypes);
                     if (!whereAppended) {
                         builder.Append(" where ");
                         whereAppended = true;
@@ -40,7 +40,7 @@
 
                     builder.Append("(");
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
-                        this.sqlDialect.AppendColumnName(builder, table.DocumentTypeColumn.Name);
+                        this.sqlDialect.AppendColumnName(builder, collection.DocumentTypeColumn.Name);
                         builder.Append(" = ");
                         var paramName = command.AddParameter(entry.Value.AssemblyQualifiedName);
                         this.sqlDialect.AddParameter(builder, paramName);

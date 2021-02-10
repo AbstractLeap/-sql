@@ -3,8 +3,8 @@
     using System.Collections.Generic;
 
     public class DefaultSchemaConvention : IStorageSchemaConvention, ICollectionNamingSchemaConvention, IKeyTypeSchemaConvention, IKeyColumnsSchemaConvention {
-        public virtual Type GetKeyType(string tableName, IEnumerable<Type> entityTypes) {
-            return new DefaultKeyTypeExtractor().Extract(tableName, entityTypes);
+        public virtual Type GetKeyType(string collectionName, IEnumerable<Type> entityTypes) {
+            return new DefaultKeyTypeExtractor().Extract(collectionName, entityTypes);
         }
 
         public virtual IEnumerable<(Type Type, string Name)> GetKeyColumns(Type keyType) {
@@ -15,7 +15,7 @@
             return type.Name;
         }
 
-        public ITableStorageSettings Configure(string collectionName, HashSet<Type> types) {
+        public ICollectionStorageSettings Configure(string collectionName, HashSet<Type> types) {
             return null;
         }
     }

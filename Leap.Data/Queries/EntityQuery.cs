@@ -6,8 +6,8 @@
 
     public class EntityQuery<TEntity> : QueryBase<TEntity>
         where TEntity : class {
-        public EntityQuery(Table table)
-            : base(table) { }
+        public EntityQuery(Collection collection)
+            : base(collection) { }
 
         public string WhereClause { get; set; }
 

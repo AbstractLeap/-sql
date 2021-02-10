@@ -3,20 +3,20 @@
     using Leap.Data.Schema;
 
     internal class Document<TEntity> : IDocument<TEntity> {
-        public Document(TEntity entity, Table table) {
+        public Document(TEntity entity, Collection collection) {
             this.Entity = entity;
-            this.Table  = table;
+            this.Collection  = collection;
         }
 
         public Document(TEntity entity, DatabaseRow row) {
             this.Entity = entity;
             this.Row    = row;
-            this.Table  = row.Table;
+            this.Collection  = row.Collection;
         }
 
         public TEntity Entity { get; }
 
-        public Table Table { get; }
+        public Collection Collection { get; }
 
         public DatabaseRow Row { get; set; }
 

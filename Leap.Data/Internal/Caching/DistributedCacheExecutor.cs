@@ -27,7 +27,7 @@
 
         public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            var cachedRow = await this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Table, keyQuery.Key), cancellationToken);
+            var cachedRow = await this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key), cancellationToken);
             if (cachedRow != null) {
                 this.resultCache.Add(keyQuery, new List<object[]> { cachedRow });
                 this.executedQueryIds.Add(keyQuery.Identifier);
@@ -38,7 +38,7 @@
             where TEntity : class {
             var resultTasks = new List<ValueTask<object[]>>();
             foreach (var key in multipleKeyQuery.Keys) {
-                resultTasks.Add(this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Table, key), cancellationToken));
+                resultTasks.Add(this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), cancellationToken));
             }
 
             var hasAllResults = true;

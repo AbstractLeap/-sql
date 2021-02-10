@@ -7,8 +7,8 @@
 
     public abstract class QueryBase<TEntity> : IQuery<TEntity>, IQuery
         where TEntity : class {
-        public QueryBase(Table table) {
-            this.Table      = table;
+        public QueryBase(Collection collection) {
+            this.Collection      = collection;
             this.Identifier = Guid.NewGuid();
         }
 
@@ -16,7 +16,7 @@
 
         public virtual Type EntityType => typeof(TEntity);
 
-        public Table Table { get; }
+        public Collection Collection { get; }
 
         public abstract void Accept(IQueryVisitor visitor);
 

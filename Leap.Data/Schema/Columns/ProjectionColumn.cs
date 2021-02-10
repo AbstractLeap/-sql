@@ -2,7 +2,7 @@
     using System;
 
     public record ProjectionColumn<TEntity, TColumn> : Column {
-        public ProjectionColumn(Table table, string name, Func<TEntity, TColumn> projectionFunc) : base(typeof(TColumn), name, table) {
+        public ProjectionColumn(Collection collection, string name, Func<TEntity, TColumn> projectionFunc) : base(typeof(TColumn), name, collection) {
             this.ProjectionFunc = projectionFunc ?? throw new ArgumentNullException(nameof(projectionFunc));
         }
         
