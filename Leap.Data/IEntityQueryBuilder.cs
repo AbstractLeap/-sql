@@ -2,7 +2,9 @@
     using System.Collections.Generic;
 
     public interface IEntityQueryBuilder<TEntity> : IAsyncEnumerable<TEntity> {
-        IEntityQueryBuilder<TEntity> Where(string whereClause);
+        IEntityQueryBuilder<TEntity> Where(string whereClause, IDictionary<string, object> parameters = null);
+        
+        IEntityQueryBuilder<TEntity> Where(string whereClause, object parameters);
 
         IEntityQueryBuilder<TEntity> OrderBy(string orderByClause);
 

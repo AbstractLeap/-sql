@@ -65,6 +65,12 @@
                 builder.Append("(");
                 builder.Append(query.WhereClause);
                 builder.Append(")");
+
+                if (query.WhereClauseParameters != null) {
+                    foreach (var parameter in query.WhereClauseParameters) {
+                        command.AddParameter(parameter.Key, parameter.Value);
+                    }
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(query.OrderByClause)) {

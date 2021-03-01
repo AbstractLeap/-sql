@@ -7,26 +7,27 @@
     public class Generator {
         public string CreateCode(Difference diff, string migrationNamespace, string migrationName) {
             var builder = new CodeStringBuilder();
-            builder.Append("namespace ").Append(migrationNamespace).Append(" {").AppendLine();
-            builder.Indent();
-            builder.Append("using System;").AppendLine();
-            builder.Append("using FluentMigrator;").AppendLine().AppendLine();
-            builder.Append("[Migration(").Append(DateTime.Now.ToString("yyyyMMddHHmm")).Append(")]").AppendLine();
-            builder.Append("public class ").Append(migrationName).Append(" : Migration {").AppendLine();
-            builder.Indent();
-            builder.Append("public override void Up() {").AppendLine();
-            builder.Indent();
+            builder.Append("namespace ").Append(migrationNamespace).Append(" {").NewLine();
+            builder.IncreaseIndent();
+            builder.Append("using System;").NewLine();
+            builder.Append("using FluentMigrator;").NewLine().NewLine();
+            builder.Append("[Migration(").Append(DateTime.Now.ToString("yyyyMMddHHmm")).Append(")]").NewLine();
+            builder.Append("public class ").Append(migrationName).Append(" : Migration {").NewLine();
+            builder.IncreaseIndent();
+            builder.Append("public override void Up() {").NewLine();
+            builder.IncreaseIndent();
             var upBuilder = new CodeStringBuilder(builder.GetIndent());
             var downBuilder = new CodeStringBuilder(builder.GetIndent());
             ProcessDiff(diff, upBuilder, downBuilder);
-            builder.Append(upBuilder).Unindent().AppendLine();
-            builder.Append("}").AppendLine().AppendLine();
-            builder.Append("public override void Down() {").AppendLine();
-            builder.Indent();
-            builder.Append(downBuilder).Unindent().AppendLine();
-            builder.Append("}").Unindent().AppendLine();
-            builder.Append("}").Unindent().AppendLine();
-            builder.Append("}").AppendLine();
+            builder.Append(upBuilder);
+            builder.DecreaseIndent();
+            builder.Append("}").NewLine().NewLine();
+            builder.Append("public override void Down() {").NewLine();
+            builder.IncreaseIndent();
+            builder.Append(downBuilder).DecreaseIndent();
+            builder.Append("}").DecreaseIndent().NewLine();
+            builder.Append("}").DecreaseIndent().NewLine();
+            builder.Append("}").NewLine();
             return builder.ToString();
         }
 
@@ -58,25 +59,25 @@
 
             createBuilder.Append("Alter.Table(\"").Append(table.Name).Append("\").AddColumn(\"").Append(column.Name).Append("\")");
             AppendColumnSpec(createBuilder, table, column);
-            createBuilder.Append(";").Unindent();
+            createBuilder.Append(";").DecreaseIndent();
         }
 
         private static void WriteCreateTable(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table) {
             // easy :-)
-            dropBuilder.Append("Delete.Table(\"").Append(table.Name).Append("\");").AppendLine();
+            dropBuilder.Append("Delete.Table(\"").Append(table.Name).Append("\");").NewLine();
 
             // hmm
-            createBuilder.Append("Create.Table(\"").Append(table.Name).Append("\")").AppendLine();
-            createBuilder.Indent();
-            createBuilder.Append(".InSchema(\"").Append(table.Schema).Append("\")").AppendLine();
+            createBuilder.Append("Create.Table(\"").Append(table.Name).Append("\")").NewLine();
+            createBuilder.IncreaseIndent();
+            createBuilder.Append(".InSchema(\"").Append(table.Schema).Append("\")").NewLine();
             foreach (var column in table.Columns) {
                 createBuilder.Append(".WithColumn(\"").Append(column.Name).Append("\")");
                 AppendColumnSpec(createBuilder, table, column);
-                createBuilder.AppendLine();
+                createBuilder.NewLine();
             }
 
             createBuilder.Append(";");
-            createBuilder.Unindent();
+            createBuilder.DecreaseIndent().NewLine();
         }
 
         private static void AppendColumnSpec(CodeStringBuilder builder, Table table, Column column) {

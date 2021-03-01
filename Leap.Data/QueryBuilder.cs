@@ -50,9 +50,15 @@
             return queryEngine.GetResult<TEntity>(query).GetAsyncEnumerator(cancellationToken);
         }
 
-        public IEntityQueryBuilder<TEntity> Where(string whereClause) {
+        public IEntityQueryBuilder<TEntity> Where(string whereClause, IDictionary<string, object> parameters = null) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
-            entityQueryBuilder.Where(whereClause);
+            entityQueryBuilder.Where(whereClause, parameters);
+            return entityQueryBuilder;
+        }
+        
+        public IEntityQueryBuilder<TEntity> Where(string whereClause, object parameters) {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.Where(whereClause, parameters);
             return entityQueryBuilder;
         }
 

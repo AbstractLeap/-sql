@@ -5,24 +5,26 @@
     public class CodeStringBuilder {
         private int indent;
 
-        private StringBuilder builder;
+        private readonly StringBuilder builder;
+
+        private bool isStartOfLine;
 
         public int GetIndent() {
             return this.indent;
         }
 
         public CodeStringBuilder(int initialIndent = 0) {
-            this.builder = new StringBuilder();
-            this.indent  = initialIndent;
+            this.builder       = new StringBuilder();
+            this.indent        = initialIndent;
+            this.isStartOfLine = true;
         }
 
-        public CodeStringBuilder Indent() {
+        public CodeStringBuilder IncreaseIndent() {
             this.indent += 1;
-            this.Append4Spaces();
             return this;
         }
 
-        public CodeStringBuilder Unindent() {
+        public CodeStringBuilder DecreaseIndent() {
             this.indent -= 1;
             if (this.indent < 0) {
                 this.indent = 0;
@@ -37,13 +39,18 @@
         }
 
         public CodeStringBuilder Append(string value) {
+            if (this.isStartOfLine) {
+                this.AppendIndent();
+                this.isStartOfLine = false;
+            }
+            
             this.builder.Append(value);
             return this;
         }
 
-        public CodeStringBuilder AppendLine() {
+        public CodeStringBuilder NewLine() {
             this.builder.AppendLine();
-            this.AppendIndent();
+            this.isStartOfLine = true;
             return this;
         }
 

@@ -4,6 +4,7 @@
 
     using Leap.Data.Queries;
     using Leap.Data.Schema;
+    using Leap.Data.Utilities;
 
     class EntityQueryBuilder<TEntity> : IEntityQueryBuilder<TEntity>
         where TEntity : class {
@@ -21,9 +22,19 @@
             return queryEngine.GetResult<TEntity>(this.query).GetAsyncEnumerator(cancellationToken);
         }
 
-        public IEntityQueryBuilder<TEntity> Where(string whereClause) {
+        public IEntityQueryBuilder<TEntity> Where(string whereClause, IDictionary<string, object> parameters = null) {
             // TODO multiple invocations?
+            this.query.WhereClause           = whereClause;
+            this.query.WhereClauseParameters = parameters;
+            return this;
+        }
+
+        public IEntityQueryBuilder<TEntity> Where(string whereClause, object parameters) {
             this.query.WhereClause = whereClause;
+            if (parameters != null) {
+                this.query.WhereClauseParameters = parameters.ToDictionary();
+            }
+
             return this;
         }
 
