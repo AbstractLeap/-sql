@@ -118,7 +118,13 @@
             T HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
                 var collection = query.Collection;
-                var id = collection.KeyType.TryCreateInstance(collection.Columns.Select(c => c.Name).ToArray(), row);
+                object id;
+                if (collection.KeyType.IsValueType || collection.KeyType == typeof(string)) {
+                    id = row[0];
+                }
+                else {
+                    id = collection.KeyType.TryCreateInstance(collection.Columns.Select(c => c.Name).ToArray(), row);
+                }
 
                 // TODO invalidate old versions
                 // check ID map for instance
