@@ -17,6 +17,10 @@
         }
 
         public TValue GetValueUsingKey<TEntity, TKey, TValue>(Column column, TKey key) {
+            if (typeof(TKey).IsValueType || typeof(TKey) == typeof(string)) {
+                return (TValue)(dynamic)key;
+            }
+            
             return (TValue)key.TryGetValue(column.Name);
         }
     }

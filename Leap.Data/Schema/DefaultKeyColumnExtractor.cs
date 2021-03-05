@@ -10,6 +10,10 @@
 
     internal class DefaultKeyColumnExtractor {
         public IEnumerable<(Type, string)> Extract(Type keyType) {
+            if (keyType.IsValueType || keyType == typeof(string)) {
+                return new [] {(keyType, "id")};
+            }
+            
             var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
                           .Where(m => m.Name != "EqualityContract") // compiler generated for records
                           .Select(m => (m.PropertyOrFieldType(), m.Name))

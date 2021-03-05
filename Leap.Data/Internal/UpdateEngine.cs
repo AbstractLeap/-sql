@@ -2,15 +2,12 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
     using Fasterflect;
 
-    using Leap.Data.IdentityMap;
     using Leap.Data.Internal.Caching;
-    using Leap.Data.Internal.ColumnValueFactories;
     using Leap.Data.Operations;
     using Leap.Data.Schema;
     using Leap.Data.Serialization;
@@ -25,14 +22,14 @@
 
         private readonly ISchema schema;
 
-        private readonly ColumnValueFactoryFactory columnValueFactoryFactory;
+        private readonly DatabaseRowFactory databaseRowFactory;
 
         public UpdateEngine(IUpdateExecutor persistenceUpdateExecutor, IMemoryCache memoryCache, IDistributedCache distributedCache, ISchema schema, ISerializer serializer) {
             this.persistenceUpdateExecutor = persistenceUpdateExecutor;
             this.memoryCache               = memoryCache;
             this.distributedCache          = distributedCache;
             this.schema                    = schema;
-            this.columnValueFactoryFactory        = new ColumnValueFactoryFactory(serializer);
+            this.databaseRowFactory        = new DatabaseRowFactory(serializer);
         }
 
         public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
@@ -55,23 +52,34 @@
             foreach (var operation in unitOfWork.Operations) {
                 if (operation.IsAddOperation()) {
                     // only have an entity, need to generate database row
-                    var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.columnValueFactoryFactory);
+                    var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.databaseRowFactory);
                     inserts.Add(newDatabaseRow);
                     postPersistDocumentUpdates.Add(
                         async () => {
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
-                            await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateDistributedCacheAsync), operation.GetEntity(), newDatabaseRow, cancellationToken);
+                            await (ValueTask)this.CallMethod(
+                                operation.GetType().GenericTypeArguments,
+                                nameof(UpdateDistributedCacheAsync),
+                                operation.GetEntity(),
+                                newDatabaseRow,
+                                cancellationToken);
                         });
-                } else if (operation.IsUpdateOperation()) {
+                }
+                else if (operation.IsUpdateOperation()) {
                     // need to provide existing row and new row (e.g. to support optimistic concurrency
-                    var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.columnValueFactoryFactory);
+                    var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.databaseRowFactory);
                     updates.Add((unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity()), newDatabaseRow));
                     postPersistDocumentUpdates.Add(
                         async () => {
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
-                            await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateDistributedCacheAsync), operation.GetEntity(), newDatabaseRow, cancellationToken);
+                            await (ValueTask)this.CallMethod(
+                                operation.GetType().GenericTypeArguments,
+                                nameof(UpdateDistributedCacheAsync),
+                                operation.GetEntity(),
+                                newDatabaseRow,
+                                cancellationToken);
                         });
                 }
                 else {
@@ -79,9 +87,9 @@
                     deletes.Add(unitOfWork.GetRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity()));
                 }
             }
-            
+
             await this.persistenceUpdateExecutor.ExecuteAsync(inserts, updates, deletes, cancellationToken);
-            
+
             // execute the document updates
             foreach (var postPersistDocumentUpdate in postPersistDocumentUpdates) {
                 await postPersistDocumentUpdate();
@@ -94,8 +102,12 @@
             if (this.distributedCache == null) {
                 return ValueTask.CompletedTask;
             }
-            
-            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), deleteOperation.Collection.KeyType }, nameof(this.DeleteFromDistributedCacheAsync), deleteOperation, deleteOperation.Collection);
+
+            return (ValueTask)this.CallMethod(
+                new[] { typeof(TEntity), deleteOperation.Collection.KeyType },
+                nameof(this.DeleteFromDistributedCacheAsync),
+                deleteOperation,
+                deleteOperation.Collection);
         }
 
         private ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection, CancellationToken cancellationToken) {
@@ -106,7 +118,7 @@
             if (this.memoryCache == null) {
                 return;
             }
-            
+
             this.CallMethod(new[] { typeof(TEntity), deleteOperation.Collection.KeyType }, nameof(DeleteFromMemoryCache), deleteOperation, deleteOperation.Collection);
         }
 
@@ -122,7 +134,7 @@
             if (this.memoryCache == null) {
                 return;
             }
-            
+
             this.CallMethod(new[] { typeof(TEntity), row.Collection.KeyType }, nameof(UpdateMemoryCache), entity, row, row.Collection);
         }
 
@@ -134,8 +146,14 @@
             if (this.distributedCache == null) {
                 return ValueTask.CompletedTask;
             }
-            
-            return (ValueTask)this.CallMethod(new[] { typeof(TEntity), row.Collection.KeyType }, nameof(UpdateDistributedCacheAsync), entity, row, row.Collection, cancellationToken);
+
+            return (ValueTask)this.CallMethod(
+                new[] { typeof(TEntity), row.Collection.KeyType },
+                nameof(UpdateDistributedCacheAsync),
+                entity,
+                row,
+                row.Collection,
+                cancellationToken);
         }
 
         private ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection, CancellationToken cancellationToken) {
