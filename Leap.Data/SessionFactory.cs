@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data {
     using System;
 
+    using Leap.Data.Events;
     using Leap.Data.Internal;
     using Leap.Data.Internal.Caching;
     using Leap.Data.Schema;
@@ -19,23 +20,34 @@
 
         private readonly IDistributedCache distributedCache;
 
+        private readonly ISaveChangesEventListener saveChangesEventListener;
+
         public SessionFactory(
             ISchema schema,
             ISerializer serializer,
             Func<IQueryExecutor> queryExecutorFactory,
             Func<IUpdateExecutor> updateExecutorFactory,
             IMemoryCache memoryCache,
-            IDistributedCache distributedCache) {
-            this.schema                = schema;
-            this.serializer            = serializer;
-            this.queryExecutorFactory  = queryExecutorFactory;
-            this.updateExecutorFactory = updateExecutorFactory;
-            this.memoryCache           = memoryCache;
-            this.distributedCache      = distributedCache;
+            IDistributedCache distributedCache,
+            ISaveChangesEventListener saveChangesEventListener) {
+            this.schema                   = schema;
+            this.serializer               = serializer;
+            this.queryExecutorFactory     = queryExecutorFactory;
+            this.updateExecutorFactory    = updateExecutorFactory;
+            this.memoryCache              = memoryCache;
+            this.distributedCache         = distributedCache;
+            this.saveChangesEventListener = saveChangesEventListener;
         }
 
         public ISession StartSession() {
-            return new Session(this.schema, this.serializer, this.queryExecutorFactory(), this.updateExecutorFactory(), this.memoryCache, this.distributedCache);
+            return new Session(
+                this.schema,
+                this.serializer,
+                this.queryExecutorFactory(),
+                this.updateExecutorFactory(),
+                this.memoryCache,
+                this.distributedCache,
+                this.saveChangesEventListener);
         }
     }
 }

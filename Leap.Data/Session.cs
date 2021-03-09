@@ -4,6 +4,7 @@
 
     using Fasterflect;
 
+    using Leap.Data.Events;
     using Leap.Data.IdentityMap;
     using Leap.Data.Internal;
     using Leap.Data.Internal.Caching;
@@ -16,6 +17,8 @@
         private readonly IMemoryCache memoryCache;
 
         private readonly IDistributedCache distributedCache;
+
+        private readonly ISaveChangesEventListener saveChangesEventListener;
 
         private readonly UnitOfWork.UnitOfWork unitOfWork;
 
@@ -31,12 +34,14 @@
             IQueryExecutor queryExecutor,
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
-            IDistributedCache distributedCache) {
-            this.schema           = schema;
-            this.memoryCache      = memoryCache;
-            this.distributedCache = distributedCache;
-            this.identityMap      = new IdentityMap.IdentityMap();
-            this.unitOfWork   = new UnitOfWork.UnitOfWork(serializer, schema);
+            IDistributedCache distributedCache,
+            ISaveChangesEventListener saveChangesEventListener) {
+            this.schema                   = schema;
+            this.memoryCache              = memoryCache;
+            this.distributedCache         = distributedCache;
+            this.saveChangesEventListener = saveChangesEventListener;
+            this.identityMap              = new IdentityMap.IdentityMap();
+            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,
@@ -55,10 +60,14 @@
 
         public IQueryBuilder<TEntity> Get<TEntity>(string collectionName)
             where TEntity : class {
-            return new QueryBuilder<TEntity>(this, this.schema.GetCollection(collectionName));
+            return new QueryBuilder<TEntity>(this, this.schema.GetCollection<TEntity>(collectionName));
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) {
+            if (this.saveChangesEventListener != null) {
+                await this.saveChangesEventListener.OnBeforeSaveChangesAsync(this);
+            }
+
             // flush the queryEngine
             await this.queryEngine.EnsureExecutedAsync();
 
@@ -76,7 +85,7 @@
 
         public void Delete<TEntity>(TEntity entity, string collectionName)
             where TEntity : class {
-            this.Delete(entity, this.schema.GetCollection(collectionName));
+            this.Delete(entity, this.schema.GetCollection<TEntity>(collectionName));
         }
 
         private void Delete<TEntity>(TEntity entity, Collection collection)
@@ -91,7 +100,7 @@
 
         public void Add<TEntity>(TEntity entity, string collectionName)
             where TEntity : class {
-            this.Add(entity, this.schema.GetCollection(collectionName));
+            this.Add(entity, this.schema.GetCollection<TEntity>(collectionName));
         }
 
         private void Add<TEntity>(TEntity entity, Collection collection) {

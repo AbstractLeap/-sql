@@ -1,6 +1,7 @@
 ﻿namespace Leap.Data.Configuration {
     using System;
 
+    using Leap.Data.Events;
     using Leap.Data.Internal;
     using Leap.Data.Internal.Caching;
     using Leap.Data.Schema;
@@ -23,8 +24,17 @@
         
         public IDistributedCache DistributedCache { get; set; }
 
+        public ISaveChangesEventListener SaveChangesEventListener { get; set; }
+
         public ISessionFactory BuildSessionFactory() {
-            return new SessionFactory(this.Schema, this.Serializer, this.QueryExecutorFactory, this.UpdateExecutorFactory, this.MemoryCache, this.DistributedCache);
+            return new SessionFactory(
+                this.Schema,
+                this.Serializer,
+                this.QueryExecutorFactory,
+                this.UpdateExecutorFactory,
+                this.MemoryCache,
+                this.DistributedCache,
+                this.SaveChangesEventListener);
         }
     }
 }

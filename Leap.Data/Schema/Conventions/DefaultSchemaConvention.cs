@@ -12,6 +12,11 @@
         }
 
         public virtual string GetCollectionName(Type type) {
+            if (type.IsGenericTypeDefinition) {
+                var backTickIdx = type.Name.IndexOf('`');
+                return backTickIdx > -1 ? type.Name.Remove(backTickIdx) : type.Name;
+            }
+
             return type.Name;
         }
 

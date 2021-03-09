@@ -13,12 +13,16 @@
             return this.collectionNameLookup.Values;
         }
 
-        public Collection GetCollection(string collectionName) {
+        public Collection GetCollection<TEntity>(string collectionName) {
+            if (string.IsNullOrWhiteSpace(collectionName)) {
+                return this.GetDefaultCollection<TEntity>();
+            }
+
             if (this.collectionNameLookup.TryGetValue(collectionName, out var collection)) {
                 return collection;
             }
 
-            return null; // TODO should this throw?
+            throw new ArgumentOutOfRangeException(nameof(collectionName), $"Unable to find a collection named {collectionName}");
         }
 
         public Collection GetDefaultCollection<TEntity>() {
@@ -39,6 +43,10 @@
             }
             
             return null; // TODO should this throw?
+        }
+
+        public void SetDefaultCollectionName(Type entityType, Collection defaultCollection) {
+            this.defaultCollectionLookup[entityType] = defaultCollection;
         }
 
         public void AddCollection(Collection collection) {

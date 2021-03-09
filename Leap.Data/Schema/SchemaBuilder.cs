@@ -10,7 +10,7 @@
 
         private readonly HashSet<Type> addedTypes = new();
 
-        private readonly Dictionary<string, HashSet<Type>> addedNamedTypes = new();
+        private readonly Dictionary<string, (bool IsDefault, HashSet<Type> Types)> addedNamedTypes = new();
 
         private readonly IDictionary<Type, IList<Action<Collection>>> buildActions = new Dictionary<Type, IList<Action<Collection>>>();
 
@@ -25,13 +25,24 @@
         }
 
         public SchemaBuilder AddTypes(string collectionName, params Type[] types) {
+            return this.AddTypes(collectionName, false, types);
+        }
+
+        private SchemaBuilder AddTypes(string collectionName, bool isDefault, params Type[] types) {
             if (!this.addedNamedTypes.TryGetValue(collectionName, out var collectionTypes)) {
-                collectionTypes = new HashSet<Type>();
+                collectionTypes = (isDefault, new HashSet<Type>());
                 this.addedNamedTypes.Add(collectionName, collectionTypes);
             }
 
-            collectionTypes.UnionWith(types);
+            collectionTypes.Types.UnionWith(types);
             return this;
+        }
+
+        private void AddUnnamedTypesToNamed() {
+            foreach (var type in this.addedTypes) {
+                var collectionName = this.GetConvention<ICollectionNamingSchemaConvention>().GetCollectionName(type);
+                this.AddTypes(collectionName, true, type);
+            }
         }
 
         public CollectionBuilder<T> Setup<T>() {
@@ -53,16 +64,21 @@
             var schema = new Schema();
             foreach (var namedType in this.addedNamedTypes) {
                 var collectionName = namedType.Key;
-                var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(collectionName, namedType.Value.AsEnumerable());
+                var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(collectionName, namedType.Value.Types.AsEnumerable());
                 var keyColumns = this.GetConvention<IKeyColumnsSchemaConvention>().GetKeyColumns(keyType);
-                var storageSettings = this.GetConvention<IStorageSchemaConvention>().Configure(collectionName, namedType.Value);
+                var storageSettings = this.GetConvention<IStorageSchemaConvention>().Configure(collectionName, namedType.Value.Types);
                 var collection = new Collection(collectionName, keyType, keyColumns) { StorageSettings = storageSettings };
 
-                foreach (var entityType in namedType.Value) {
+                foreach (var entityType in namedType.Value.Types) {
                     collection.AddClassType(entityType);
                 }
 
                 schema.AddCollection(collection);
+                if (namedType.Value.IsDefault) {
+                    foreach (var entityType in namedType.Value.Types) {
+                        schema.SetDefaultCollectionName(entityType, collection);
+                    }
+                }
             }
 
             foreach (var typeActions in this.buildActions) {
@@ -84,13 +100,6 @@
             }
 
             throw new Exception($"Unable to find convention of type {typeof(TConvention)}");
-        }
-
-        private void AddUnnamedTypesToNamed() {
-            foreach (var type in this.addedTypes) {
-                var collectionName = this.GetConvention<ICollectionNamingSchemaConvention>().GetCollectionName(type);
-                this.AddTypes(collectionName, type);
-            }
         }
     }
 }
