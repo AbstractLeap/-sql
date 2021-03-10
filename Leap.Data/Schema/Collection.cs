@@ -65,10 +65,10 @@
             return index;
         }
 
-        public Collection(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency = true) {
+        public Collection(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency, bool isKeyComputed) {
             this.CollectionName              = collectionName;
             this.KeyType                     = keyType;
-            this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this)).Cast<Column>().ToList();
+            this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this) { IsComputed = isKeyComputed }).Cast<Column>().ToList();
             this.DocumentColumn              = new DocumentColumn(this);
             this.DocumentTypeColumn          = new DocumentTypeColumn(this);
             this.OptimisticConcurrencyColumn = useOptimisticConcurrency ? new OptimisticConcurrencyColumn(this) : null;

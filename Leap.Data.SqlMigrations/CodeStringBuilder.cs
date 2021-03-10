@@ -38,6 +38,14 @@
             return this;
         }
 
+        public CodeStringBuilder FormatOff() {
+            return this.Append("// @formatter:off").NewLine();
+        }
+        
+        public CodeStringBuilder FormatOn() {
+            return this.Append("// @formatter:on").NewLine();
+        }   
+
         public CodeStringBuilder Append(string value) {
             if (this.isStartOfLine) {
                 this.AppendIndent();

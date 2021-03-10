@@ -9,7 +9,7 @@ namespace Leap.Data.JsonNet {
     ///     Stores dictionaries with complex keys in to an array of key value pairs
     /// </summary>
     public class ComplexKeyDictionaryConverter : JsonConverter {
-        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
             var dictionary = (IDictionary)value;
 
             writer.WriteStartArray();
@@ -31,9 +31,9 @@ namespace Leap.Data.JsonNet {
             writer.WriteEndArray();
         }
 
-        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer) {
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
             if (!this.CanConvert(objectType))
-                throw new Exception(string.Format("This converter is not for {0}.", objectType));
+                throw new Exception($"This converter is not for {objectType}.");
 
             var keyType = objectType.GetGenericArguments()[0];
             var valueType = objectType.GetGenericArguments()[1];

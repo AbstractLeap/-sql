@@ -26,23 +26,28 @@
         }
 
         public Collection GetDefaultCollection<TEntity>() {
-            var entityType = typeof(TEntity);
-            if (this.defaultCollectionLookup.TryGetValue(entityType, out var collection)) {
+            var collectionType = typeof(TEntity);
+            if (collectionType.IsGenericType) {
+                collectionType = collectionType.GetGenericTypeDefinition();
+            }
+
+            if (this.defaultCollectionLookup.TryGetValue(collectionType, out var collection)) {
                 return collection;
             }
 
-            if (this.typeLookup.TryGetValue(entityType, out var collections)) {
+            if (this.typeLookup.TryGetValue(collectionType, out var collections)) {
                 if (collections.Count == 1) {
-                    this.defaultCollectionLookup.Add(entityType, collections[0]); // to speed up future requests
+                    this.defaultCollectionLookup.Add(collectionType, collections[0]); // to speed up future requests
                     return collections[0];
                 }
 
                 if (collections.Count > 1) {
-                    throw new Exception($"Unable to determine default collection for {entityType}. You should specify the default collection as you have multiple collections of this type.");
+                    throw new Exception(
+                        $"Unable to determine default collection for {collectionType}. You should specify the default collection as you have multiple collections of this type.");
                 }
             }
-            
-            return null; // TODO should this throw?
+
+            throw new Exception($"Unable to determine the default collection for type {collectionType}");
         }
 
         public void SetDefaultCollectionName(Type entityType, Collection defaultCollection) {

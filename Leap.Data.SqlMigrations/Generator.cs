@@ -19,12 +19,17 @@
             var upBuilder = new CodeStringBuilder(builder.GetIndent());
             var downBuilder = new CodeStringBuilder(builder.GetIndent());
             ProcessDiff(diff, upBuilder, downBuilder);
+            builder.FormatOff();
             builder.Append(upBuilder);
+            builder.FormatOn();
             builder.DecreaseIndent();
             builder.Append("}").NewLine().NewLine();
             builder.Append("public override void Down() {").NewLine();
             builder.IncreaseIndent();
-            builder.Append(downBuilder).DecreaseIndent();
+            builder.FormatOff();
+            builder.Append(downBuilder);
+            builder.FormatOn();
+            builder.DecreaseIndent();
             builder.Append("}").DecreaseIndent().NewLine();
             builder.Append("}").DecreaseIndent().NewLine();
             builder.Append("}").NewLine();

@@ -66,8 +66,11 @@
                 var collectionName = namedType.Key;
                 var keyType = this.GetConvention<IKeyTypeSchemaConvention>().GetKeyType(collectionName, namedType.Value.Types.AsEnumerable());
                 var keyColumns = this.GetConvention<IKeyColumnsSchemaConvention>().GetKeyColumns(keyType);
+                var useOptimisticConcurrency = this.GetConvention<IOptimisticConcurrencySchemaConvention>()
+                                                   .UseOptimisticConcurrency(collectionName, namedType.Value.Types.AsEnumerable());
+                var isKeyComputed = this.GetConvention<IKeyComputedSchemaConvention>().IsKeyComputed(collectionName, namedType.Value.Types.AsEnumerable());
                 var storageSettings = this.GetConvention<IStorageSchemaConvention>().Configure(collectionName, namedType.Value.Types);
-                var collection = new Collection(collectionName, keyType, keyColumns) { StorageSettings = storageSettings };
+                var collection = new Collection(collectionName, keyType, keyColumns, useOptimisticConcurrency, isKeyComputed) { StorageSettings = storageSettings };
 
                 foreach (var entityType in namedType.Value.Types) {
                     collection.AddClassType(entityType);
