@@ -1,4 +1,6 @@
 ﻿namespace Leap.Data.Internal.UpdateWriter {
+    using System;
+    using System.Linq;
     using System.Text;
 
     using Leap.Data.Internal.QueryWriter;
@@ -22,7 +24,18 @@
         }
 
         public void Write(DatabaseRow databaseRow, Command command) {
-            var builder = new StringBuilder("insert into ");
+            var computedKeyColumns = databaseRow.Collection.KeyColumns.Where(c => c.IsComputed).ToArray();
+            // TODO support multiple computed key columns
+            if (computedKeyColumns.Length > 1) {
+                throw new NotImplementedException("We don't support multiple computed key columns yet");
+            }
+
+            var builder = new StringBuilder(string.Empty);
+            if (computedKeyColumns.Length == 1) {
+                builder.Append(this.sqlDialect.PreparePatchIdAndReturn(computedKeyColumns[0]));
+            }
+
+            builder.Append("insert into ");
             this.sqlDialect.AppendTableName(builder, databaseRow.Collection.GetTableName(), databaseRow.Collection.GetSchemaName());
             builder.Append(" (");
             foreach (var entry in databaseRow.Collection.NonComputedColumns.AsSmartEnumerable()) {
@@ -32,7 +45,13 @@
                 }
             }
 
-            builder.Append(") values (");
+            builder.Append(") ");
+
+            if (computedKeyColumns.Length == 1) {
+                builder.Append(this.sqlDialect.OutputId(computedKeyColumns[0]));
+            }
+
+            builder.Append(" values (");
             foreach (var entry in databaseRow.Collection.NonComputedColumns.AsSmartEnumerable()) {
                 AppendValue(entry.Value, databaseRow.Values);
                 if (!entry.IsLast) {
@@ -41,6 +60,11 @@
             }
 
             builder.Append(")");
+
+            if (computedKeyColumns.Length == 1) {
+                builder.Append(";").Append(this.sqlDialect.PatchIdAndReturn(computedKeyColumns[0]));
+            }
+
             command.AddQuery(builder.ToString());
 
             void AppendValue(Column column, object[] databaseRowValues) {

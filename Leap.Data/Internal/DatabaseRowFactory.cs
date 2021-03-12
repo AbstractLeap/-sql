@@ -11,10 +11,10 @@
         }
 
         public DatabaseRow Create<TEntity, TKey>(Collection collection, TEntity entity) {
-            var key = collection.KeyExtractor.Extract<TEntity, TKey>(entity);
+            var key = (TKey)collection.GetKey<TEntity, TKey>(entity);
             var values = new object[collection.Columns.Count];
             foreach (var keyColumn in collection.KeyColumns) {
-                values[collection.GetColumnIndex(keyColumn.Name)] = collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key);
+                values[collection.GetColumnIndex(keyColumn.Name)] = collection.GetKeyColumnValue<TEntity, TKey>(key, keyColumn);
             }
 
             foreach (var nonKeyColumn in collection.NonKeyColumns) {

@@ -106,7 +106,7 @@
         private void Add<TEntity>(TEntity entity, Collection collection) {
             this.unitOfWork.AddOrUpdate(collection, entity, null, DocumentState.New);
             var keyType = collection.KeyType;
-            var key = collection.KeyExtractor.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IKeyExtractor.Extract), entity);
+            var key = collection.CallMethod(new[] { typeof(TEntity), keyType }, nameof(Collection.GetKey), entity);
             this.identityMap.Add(keyType, key, entity);
         }
 

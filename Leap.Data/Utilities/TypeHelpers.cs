@@ -5,6 +5,10 @@
     using System.Reflection;
 
     static class TypeHelpers {
+        public static bool IsPrimitiveKeyType(this Type keyType) {
+            return keyType.IsValueType || keyType == typeof(string);
+        }
+        
         public static Type PropertyOrFieldType(this MemberInfo memberInfo) {
             if (memberInfo is FieldInfo fieldInfo) {
                 return fieldInfo.FieldType;

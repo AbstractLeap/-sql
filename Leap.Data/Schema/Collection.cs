@@ -2,9 +2,10 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
 
-    using Leap.Data.Internal;
-    using Leap.Data.Internal.ColumnValueFactories;
+    using Fasterflect;
+    
     using Leap.Data.Schema.Columns;
     using Leap.Data.Utilities;
 
@@ -14,14 +15,14 @@
     public class Collection {
         private readonly List<Column> nonKeyColumns;
 
-        private readonly List<Column> keyColumns;
+        private readonly List<KeyColumn> keyColumns;
 
         private List<Column> allColumns;
 
         private Dictionary<string, int> columnIndices;
 
         private readonly List<Type> entityTypes = new List<Type>();
-
+        
         public ICollectionStorageSettings StorageSettings { get; init; }
         
         /// <summary>
@@ -41,7 +42,7 @@
 
         public IReadOnlyList<Column> Columns => this.allColumns;
 
-        public IEnumerable<Column> KeyColumns => this.keyColumns;
+        public IEnumerable<KeyColumn> KeyColumns => this.keyColumns;
 
         public IEnumerable<Column> NonKeyColumns => this.nonKeyColumns;
 
@@ -49,9 +50,11 @@
 
         public IEnumerable<Column> NonKeyNonComputedColumns => this.nonKeyColumns.Where(c => !c.IsComputed);
 
-        public IKeyColumnValueFactory KeyColumnValueExtractor { get; set; }
+        //public IKeyColumnValueFactory KeyColumnValueExtractor { get; set; }
 
-        public IKeyExtractor KeyExtractor { get; set; }
+        //public IKeyExtractor KeyExtractor { get; set; }
+
+        public MemberInfo KeyMember { get; set; }
 
         public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
 
@@ -65,17 +68,43 @@
             return index;
         }
 
-        public Collection(string collectionName, Type keyType, IEnumerable<(Type Type, string Name)> keyColumns, bool useOptimisticConcurrency, bool isKeyComputed) {
+        public Collection(string collectionName, MemberInfo keyMember, bool useOptimisticConcurrency, bool isKeyComputed) {
+            this.IsKeyComputed               = isKeyComputed;
             this.CollectionName              = collectionName;
-            this.KeyType                     = keyType;
-            this.keyColumns                  = keyColumns.Select(tuple => new KeyColumn(tuple.Type, tuple.Name, this) { IsComputed = isKeyComputed }).Cast<Column>().ToList();
+            this.KeyMember                   = keyMember;
+            this.KeyType                     = keyMember.PropertyOrFieldType();
+            this.keyColumns                  = this.ResolveKeyColumns(isKeyComputed).ToList();
             this.DocumentColumn              = new DocumentColumn(this);
             this.DocumentTypeColumn          = new DocumentTypeColumn(this);
             this.OptimisticConcurrencyColumn = useOptimisticConcurrency ? new OptimisticConcurrencyColumn(this) : null;
             this.nonKeyColumns               = new Column[] { this.DocumentColumn, this.DocumentTypeColumn, this.OptimisticConcurrencyColumn }.Where(c => c != null).ToList();
-            this.KeyColumnValueExtractor     = new KeyColumnValueFactory(this);
-            this.KeyExtractor                = new DefaultKeyExtractor();
             this.RecalculateColumns();
+        }
+
+        public bool IsKeyComputed { get; }
+        
+        public void SetKey<TEntity, TKey>(TEntity entity, TKey key) {
+            ReflectionUtils.SetMemberValue(this.KeyMember, entity, key);
+        }
+
+        public TKey GetKey<TEntity, TKey>(TEntity entity) {
+            return (TKey)ReflectionUtils.GetMemberValue(this.KeyMember, entity);
+        }
+
+        public object GetKeyColumnValue<TEntity, TKey>(TKey key, KeyColumn keyColumn) {
+            if (keyColumn.MemberInfo == null) { // equivalent to primitive key type (See Below)
+                return key;
+            }
+
+            return ReflectionUtils.GetMemberValue(keyColumn.MemberInfo, key);
+        }
+
+        private IEnumerable<KeyColumn> ResolveKeyColumns(bool isKeyComputed = false) {
+            if (this.KeyType.IsPrimitiveKeyType()) {
+                return new List<KeyColumn> { new KeyColumn(this.KeyType, this.KeyMember.Name, this, null) { IsComputed = isKeyComputed } };
+            }
+            
+            return new DefaultKeyTypeMemberExtractor().Extract(this.KeyType).Select(m => new KeyColumn(m.PropertyOrFieldType(), m.Name, this, m) { IsComputed = isKeyComputed });
         }
 
         public void AddClassType(Type entityType) {

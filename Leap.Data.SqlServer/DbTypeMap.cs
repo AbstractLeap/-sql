@@ -1,12 +1,12 @@
-﻿namespace Leap.Data.SqlMigrations {
+﻿namespace Leap.Data.SqlServer {
     using System;
     using System.Collections.Generic;
     using System.Data;
 
-    public static class TypeMap {
+    public static class DbTypeMap {
         private static readonly Dictionary<Type, DbType> typeMap = new Dictionary<Type, DbType>();
 
-        static TypeMap() {
+        static DbTypeMap() {
             typeMap[typeof(byte)]            = DbType.Byte;
             typeMap[typeof(sbyte)]           = DbType.SByte;
             typeMap[typeof(short)]           = DbType.Int16;
@@ -47,8 +47,8 @@
             typeMap[type] = dbType;
         }
 
-        public static DbType GetDbType(this Type type) {
-            return typeMap[type];
+        public static bool TryGetValue(Type type, out DbType dbType) {
+            return typeMap.TryGetValue(type, out dbType);
         }
     }
 }

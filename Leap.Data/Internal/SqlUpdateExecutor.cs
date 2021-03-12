@@ -45,6 +45,7 @@ namespace Leap.Data.Internal {
                 };
                 
                 foreach (var databaseRow in inserts) {
+                    returnsData = returnsData || databaseRow.Collection.IsKeyComputed;
                     this.updateWriter.WriteInsert(databaseRow, command);
                 }
 
@@ -66,12 +67,22 @@ namespace Leap.Data.Internal {
 
                 await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
                     List<Exception> exceptions = new();
+                    foreach (var insert in inserts) {
+                        if (!insert.Collection.IsKeyComputed) {
+                            continue;
+                        }
+                        
+                        await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                        insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
+                        await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                    
                     foreach (var update in updates) {
-                        await ReadResultAsync(dbReader, update.OldDatabaseRow, exceptions);
+                        await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
                     }
 
                     foreach (var databaseRow in deletes) {
-                        await ReadResultAsync(dbReader, databaseRow, exceptions);
+                        await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
                     }
 
                     if (exceptions.Any()) {
@@ -82,7 +93,7 @@ namespace Leap.Data.Internal {
                 await transaction.CommitAsync(cancellationToken);
             }
 
-            async Task ReadResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
+            async Task ReadOptimisticConcurrencyResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
                 if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
                     exceptions.Add(new OptimisticConcurrencyException(databaseRow));
                 }

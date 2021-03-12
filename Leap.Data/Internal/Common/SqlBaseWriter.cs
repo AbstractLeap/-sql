@@ -39,7 +39,7 @@
 
                 this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, key));
+                var paramName = command.AddParameter(collection.GetKeyColumnValue<TEntity, TKey>(key, keyColumn));
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -77,7 +77,7 @@
 
                     this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                     builder.Append(" = ");
-                    var paramName = command.AddParameter(collection.KeyColumnValueExtractor.GetValue<TEntity, TKey>(keyColumn, keyEntry.Value));
+                    var paramName = command.AddParameter(collection.GetKeyColumnValue<TEntity, TKey>(keyEntry.Value, keyColumn));
                     this.sqlDialect.AddParameter(builder, paramName);
                     if (!keyColumnEntry.IsLast) {
                         builder.Append(" and ");

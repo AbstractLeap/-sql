@@ -22,6 +22,8 @@
 
         private readonly ISchema schema;
 
+        private readonly ISerializer serializer;
+
         private readonly DatabaseRowFactory databaseRowFactory;
 
         public UpdateEngine(IUpdateExecutor persistenceUpdateExecutor, IMemoryCache memoryCache, IDistributedCache distributedCache, ISchema schema, ISerializer serializer) {
@@ -29,6 +31,7 @@
             this.memoryCache               = memoryCache;
             this.distributedCache          = distributedCache;
             this.schema                    = schema;
+            this.serializer                = serializer;
             this.databaseRowFactory        = new DatabaseRowFactory(serializer);
         }
 
@@ -56,6 +59,13 @@
                     inserts.Add(newDatabaseRow);
                     postPersistDocumentUpdates.Add(
                         async () => {
+                            if (operation.Collection.IsKeyComputed) {
+                                var entity = operation.GetEntity();
+                                var computedKey = newDatabaseRow.Values[operation.Collection.GetColumnIndex(operation.Collection.KeyColumns.First().Name)];
+                                operation.Collection.CallMethod(new[] { entity.GetType(), operation.Collection.KeyType }, nameof(Collection.SetKey), entity, computedKey);
+                                newDatabaseRow.Values[operation.Collection.GetColumnIndex(SpecialColumns.Document)] = this.serializer.Serialize(entity);
+                            }
+                            
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
                             await (ValueTask)this.CallMethod(
