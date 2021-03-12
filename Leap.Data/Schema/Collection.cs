@@ -4,8 +4,6 @@
     using System.Linq;
     using System.Reflection;
 
-    using Fasterflect;
-    
     using Leap.Data.Schema.Columns;
     using Leap.Data.Utilities;
 
@@ -61,7 +59,8 @@
         public bool ContainsTypeHierarchy { get; private set; }
 
         public int GetColumnIndex(string columnName) {
-            if (!this.columnIndices.TryGetValue(columnName, out var index)) {
+            if (columnName == null) throw new ArgumentNullException(nameof(columnName));
+            if (!this.columnIndices.TryGetValue(columnName.ToLowerInvariant(), out var index)) {
                 throw new Exception($"column with name \"{columnName}\" not found on collection {this.CollectionName}");
             }
 
@@ -135,7 +134,7 @@
 
         private void RecalculateColumns() {
             this.allColumns    = this.keyColumns.Union(this.nonKeyColumns).ToList();
-            this.columnIndices = this.allColumns.Select((c, i) => new { c, i }).ToDictionary(c => c.c.Name, c => c.i);
+            this.columnIndices = this.allColumns.Select((c, i) => new { c, i }).ToDictionary(c => c.c.Name.ToLowerInvariant(), c => c.i);
         }
 
         protected bool Equals(Collection other) {

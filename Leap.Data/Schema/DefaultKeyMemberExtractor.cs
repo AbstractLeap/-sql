@@ -35,6 +35,15 @@
                 return endingInIdNamedMembers[0];
             }
 
+            if (endingInIdNamedMembers.Length > 1) {
+                var grouped = endingInIdNamedMembers.GroupBy(m => m.Name.ToLowerInvariant());
+                if (grouped.Count() != 1) {
+                    throw new Exception($"Unable to determine type of identifier for collection {collectionName} using indicator type {indicatorType}");
+                }
+
+                return grouped.First().OrderByDescending(m => m.MemberType == MemberTypes.Field).First();
+            }
+
             throw new Exception($"Unable to determine the field or property that contains the id for collection {collectionName}");
         }
     }
