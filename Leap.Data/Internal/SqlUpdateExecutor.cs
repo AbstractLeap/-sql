@@ -31,67 +31,66 @@ namespace Leap.Data.Internal {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
-            await using (var dbCommand = connection.CreateCommand()) {
-                dbCommand.Transaction = transaction;
-                var command = new Command();
-                var wrapSqlWithAffectedRowsCount = false;
-                var returnsData = false;
-                command.OnQueryAdded += (sender, args) => {
-                    if (wrapSqlWithAffectedRowsCount) {
-                        args.Query  = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
-                        returnsData = true;
-                    }
-                };
-                
-                foreach (var databaseRow in inserts) {
-                    returnsData = returnsData || databaseRow.Collection.IsKeyComputed;
-                    this.updateWriter.WriteInsert(databaseRow, command);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            await using var dbCommand = connection.CreateCommand();
+            dbCommand.Transaction = transaction;
+            var command = new Command();
+            var wrapSqlWithAffectedRowsCount = false;
+            var returnsData = false;
+            command.OnQueryAdded += (sender, args) => {
+                if (wrapSqlWithAffectedRowsCount) {
+                    args.Query  = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
+                    returnsData = true;
                 }
+            };
 
-                wrapSqlWithAffectedRowsCount = true;
-                foreach (var update in updates) {
-                    this.updateWriter.WriteUpdate(update, command);
-                }
-
-                foreach (var databaseRow in deletes) {
-                    this.updateWriter.WriteDelete(databaseRow, command);
-                }
-                
-                command.WriteToDbCommand(dbCommand);
-                if (!returnsData) {
-                    await dbCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                    await transaction.CommitAsync(cancellationToken);
-                    return;
-                }
-
-                await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
-                    List<Exception> exceptions = new();
-                    foreach (var insert in inserts) {
-                        if (!insert.Collection.IsKeyComputed) {
-                            continue;
-                        }
-                        
-                        await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                        insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
-                        await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-                    }
-                    
-                    foreach (var update in updates) {
-                        await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
-                    }
-
-                    foreach (var databaseRow in deletes) {
-                        await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
-                    }
-
-                    if (exceptions.Any()) {
-                        throw new AggregateException(exceptions);
-                    }
-                }
-
-                await transaction.CommitAsync(cancellationToken);
+            foreach (var databaseRow in inserts) {
+                returnsData = returnsData || databaseRow.Collection.IsKeyComputed;
+                this.updateWriter.WriteInsert(databaseRow, command);
             }
+
+            wrapSqlWithAffectedRowsCount = true;
+            foreach (var update in updates) {
+                this.updateWriter.WriteUpdate(update, command);
+            }
+
+            foreach (var databaseRow in deletes) {
+                this.updateWriter.WriteDelete(databaseRow, command);
+            }
+
+            command.WriteToDbCommand(dbCommand);
+            if (!returnsData) {
+                await dbCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await transaction.CommitAsync(cancellationToken);
+                return;
+            }
+
+            await using var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            List<Exception> exceptions = new();
+            foreach (var insert in inserts) {
+                if (!insert.Collection.IsKeyComputed) {
+                    continue;
+                }
+
+                await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
+                await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            foreach (var update in updates) {
+                await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
+            }
+
+            foreach (var databaseRow in deletes) {
+                await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
+            }
+
+            if (exceptions.Any()) {
+                throw new AggregateException(exceptions);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            await connection.CloseAsync();
 
             async Task ReadOptimisticConcurrencyResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
                 if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {

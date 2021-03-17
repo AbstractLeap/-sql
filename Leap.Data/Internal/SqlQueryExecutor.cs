@@ -115,6 +115,7 @@
             await this.dataReader.CloseAsync();
             await this.dataReader.DisposeAsync();
             await this.command.DisposeAsync();
+            await this.connection.CloseAsync();
             await this.connection.DisposeAsync();
         }
 
