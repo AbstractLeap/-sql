@@ -69,7 +69,7 @@
             }
 
             // flush the queryEngine
-            await this.queryEngine.EnsureExecutedAsync();
+            await this.queryEngine.EnsureCleanAsync(cancellationToken);
 
             // execute against caches and persistence
             await this.updateEngine.ExecuteAsync(this.unitOfWork, cancellationToken);

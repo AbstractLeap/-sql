@@ -65,28 +65,29 @@ namespace Leap.Data.Internal {
                 return;
             }
 
-            await using var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-            List<Exception> exceptions = new();
-            foreach (var insert in inserts) {
-                if (!insert.Collection.IsKeyComputed) {
-                    continue;
+            await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
+                List<Exception> exceptions = new();
+                foreach (var insert in inserts) {
+                    if (!insert.Collection.IsKeyComputed) {
+                        continue;
+                    }
+
+                    await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                    insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
+                    await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
                 }
 
-                await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
-                await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-            }
+                foreach (var update in updates) {
+                    await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
+                }
 
-            foreach (var update in updates) {
-                await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
-            }
+                foreach (var databaseRow in deletes) {
+                    await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
+                }
 
-            foreach (var databaseRow in deletes) {
-                await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
-            }
-
-            if (exceptions.Any()) {
-                throw new AggregateException(exceptions);
+                if (exceptions.Any()) {
+                    throw new AggregateException(exceptions);
+                }
             }
 
             await transaction.CommitAsync(cancellationToken);

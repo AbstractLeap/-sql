@@ -100,6 +100,10 @@
             this.resultCache.Add(nonCompleteQuery, queryResults);
         }
 
+        /// <summary>
+        ///     Reads all result sets from the command in to memory
+        /// </summary>
+        /// <returns></returns>
         public async ValueTask FlushAsync() {
             while (this.notReadQueries.TryDequeue(out var query)) {
                 await this.ReadResultIntoCacheAsync(query);

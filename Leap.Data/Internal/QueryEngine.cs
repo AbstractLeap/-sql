@@ -1,6 +1,5 @@
 ﻿namespace Leap.Data.Internal {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -84,7 +83,7 @@
                 this.Add(query);
             }
 
-            await this.EnsureExecutedAsync();
+            await this.ExecuteAsync();
             if (this.identityMapQueries.Contains(query.Identifier)) {
                 await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
                     yield return entity;
@@ -150,19 +149,33 @@
             }
         }
 
-        public async ValueTask EnsureExecutedAsync() {
-            if (this.queriesToExecute.Any()) {
-                await this.ExecuteAsync();
-            }
+        public async ValueTask EnsureCleanAsync(CancellationToken cancellationToken = default) {
+            await this.FlushAsync(); // clear out any non-read queries
+            await this.ExecuteAsync(cancellationToken); // execute any non-executed queries
+            await this.FlushAsync(); // ensure that they're also read
         }
 
+        /// <summary>
+        ///     Ensures that no further processing needs to be done by the persistence
+        ///     (makes the persistence ready to accept new requests)
+        /// </summary>
+        /// <returns></returns>
         private async ValueTask FlushAsync() {
             if (this.persistenceQueryExecutor != null) {
                 await this.persistenceQueryExecutor.FlushAsync();
             }
         }
 
+        /// <summary>
+        ///     Executes the queries against the various caches and the persistent layer
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private async Task ExecuteAsync(CancellationToken cancellationToken = default) {
+            if (!this.queriesToExecute.Any()) {
+                return;
+            }
+
             IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
             var identityMapExecutionResult = this.identityMapExecutor.Execute(queriesStillToExecute, cancellationToken);
             foreach (var executedQuery in identityMapExecutionResult.ExecutedQueries) {
