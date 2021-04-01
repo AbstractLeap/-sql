@@ -1,7 +1,6 @@
 ﻿namespace Leap.Data.JsonNet {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Reflection;
     using System.Runtime.Serialization;
 
@@ -11,7 +10,15 @@
     public class FieldsOnlyContractResolver: DefaultContractResolver
     {
         protected override List<MemberInfo> GetSerializableMembers(Type objectType) {
-            return objectType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Cast<MemberInfo>().ToList();
+            var members = new List<MemberInfo>();
+            members.AddRange(objectType.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
+            var baseType = objectType.BaseType;
+            while (baseType != null && baseType != typeof(object)) {
+                members.AddRange(baseType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)); // NOTE we don't get the public ones here as they're already returned above.
+                baseType = baseType.BaseType;
+            }
+
+            return members;
         }
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
