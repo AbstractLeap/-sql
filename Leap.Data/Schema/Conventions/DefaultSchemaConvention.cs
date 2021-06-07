@@ -8,7 +8,7 @@
                                            ICollectionNamingSchemaConvention,
                                            IKeyMemberSchemaConvention,
                                            IKeyComputedSchemaConvention {
-        public virtual MemberInfo GetKeyMember(string collectionName, IEnumerable<Type> entityTypes) {
+        public virtual MemberInfo[] GetKeyMember(string collectionName, IEnumerable<Type> entityTypes) {
             return new DefaultKeyMemberExtractor().GetKeyMember(collectionName, entityTypes);
         }
 

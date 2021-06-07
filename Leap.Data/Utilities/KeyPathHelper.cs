@@ -5,8 +5,8 @@
 
     public static class KeyPathHelper {
         public static string GetKeyPath(this Collection collection) {
-            if (collection.KeyMember.PropertyOrFieldType().IsPrimitiveKeyType()) {
-                return collection.KeyMember.Name;
+            if (collection.KeyMembers.Length == 1 && collection.KeyMembers[0].PropertyOrFieldType().IsPrimitiveType()) {
+                return collection.KeyMembers[0].Name;
             }
 
             throw new NotSupportedException();

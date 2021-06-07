@@ -4,6 +4,8 @@
     using System.Linq;
     using System.Reflection;
 
+    using Fasterflect;
+
     using Leap.Data.Schema.Columns;
     using Leap.Data.Utilities;
 
@@ -14,6 +16,8 @@
         private readonly List<Column> nonKeyColumns;
 
         private readonly List<KeyColumn> keyColumns;
+
+        private readonly IDictionary<KeyColumn, IKeyColumnValueAccessor> keyColumnValueAccessors;
 
         private List<Column> allColumns;
 
@@ -52,7 +56,7 @@
 
         //public IKeyExtractor KeyExtractor { get; set; }
 
-        public MemberInfo KeyMember { get; set; }
+        public MemberInfo[] KeyMembers { get; set; }
 
         public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
 
@@ -67,12 +71,14 @@
             return index;
         }
 
-        public Collection(string collectionName, MemberInfo keyMember, bool useOptimisticConcurrency, bool isKeyComputed) {
+        public Collection(string collectionName, MemberInfo[] keyMembers, bool useOptimisticConcurrency, bool isKeyComputed) {
             this.IsKeyComputed               = isKeyComputed;
             this.CollectionName              = collectionName;
-            this.KeyMember                   = keyMember;
-            this.KeyType                     = keyMember.PropertyOrFieldType();
-            this.keyColumns                  = this.ResolveKeyColumns(isKeyComputed).ToList();
+            this.KeyMembers                  = keyMembers;
+            this.KeyType                     = ResolveKeyType(keyMembers);
+            var keyColumnsAndAccessors = this.ResolveKeyColumns(isKeyComputed).ToList();
+            this.keyColumns                  = keyColumnsAndAccessors.Select(t => t.Item1).ToList();
+            this.keyColumnValueAccessors     = keyColumnsAndAccessors.ToDictionary(t => t.Item1, t => t.Item2);
             this.DocumentColumn              = new DocumentColumn(this);
             this.DocumentTypeColumn          = new DocumentTypeColumn(this);
             this.OptimisticConcurrencyColumn = useOptimisticConcurrency ? new OptimisticConcurrencyColumn(this) : null;
@@ -80,30 +86,107 @@
             this.RecalculateColumns();
         }
 
+        private static Type ResolveKeyType(MemberInfo[] keyMembers) {
+            if (keyMembers.Length == 1) {
+                return keyMembers[0].PropertyOrFieldType();
+            }
+
+            Type openType;
+            switch (keyMembers.Length) {
+                case 2:
+                    openType = typeof(ValueTuple<,>);
+                    break;
+
+                case 3:
+                    openType = typeof(ValueTuple<,,>);
+                    break;
+
+                case 4:
+                    openType = typeof(ValueTuple<,,,>);
+                    break;
+
+                case 5:
+                    openType = typeof(ValueTuple<,,,,>);
+                    break;
+
+                case 6:
+                    openType = typeof(ValueTuple<,,,,,>);
+                    break;
+
+                default:
+                    throw new NotImplementedException("What kind of primary key is this? :-)");
+            }
+
+            return openType.MakeGenericType(keyMembers.Select(m => m.PropertyOrFieldType()).ToArray());
+        }
+
         public bool IsKeyComputed { get; }
         
         public void SetKey<TEntity, TKey>(TEntity entity, TKey key) {
-            ReflectionUtils.SetMemberValue(this.KeyMember, entity, key);
+            foreach (var memberInfo in this.KeyMembers) {
+                ReflectionUtils.SetMemberValue(memberInfo, entity, key);
+            }
         }
 
         public TKey GetKey<TEntity, TKey>(TEntity entity) {
-            return (TKey)ReflectionUtils.GetMemberValue(this.KeyMember, entity);
+            if (this.KeyMembers.Length == 1) {
+                return (TKey)ReflectionUtils.GetMemberValue(this.KeyMembers[0], entity);
+            }
+
+            var keyValues = this.KeyMembers.Select(mi => ReflectionUtils.GetMemberValue(mi, entity)).ToArray();
+            return (TKey)this.KeyType.CreateInstance(keyValues);
         }
 
         public object GetKeyColumnValue<TEntity, TKey>(TKey key, KeyColumn keyColumn) {
-            if (keyColumn.MemberInfo == null) { // equivalent to primitive key type (See Below)
-                return key;
-            }
-
-            return ReflectionUtils.GetMemberValue(keyColumn.MemberInfo, key);
+            return this.keyColumnValueAccessors[keyColumn].GetValue(key);
         }
 
-        private IEnumerable<KeyColumn> ResolveKeyColumns(bool isKeyComputed = false) {
-            if (this.KeyType.IsPrimitiveKeyType()) {
-                return new List<KeyColumn> { new KeyColumn(this.KeyType, this.KeyMember.Name, this, null) { IsComputed = isKeyComputed } };
+        private IEnumerable<(KeyColumn, IKeyColumnValueAccessor)> ResolveKeyColumns(bool isKeyComputed = false) {
+            if (this.KeyType.IsPrimitiveType()) {
+                if (this.KeyMembers.Length > 1) {
+                    throw new NotSupportedException();
+                }
+
+                yield return (new KeyColumn(this.KeyType, this.KeyMembers[0].Name, this, this.KeyMembers[0], null) { IsComputed = isKeyComputed },
+                                 new PrimitiveKeyColumnValueAccessor());
+                yield break;
             }
-            
-            return new DefaultKeyTypeMemberExtractor().Extract(this.KeyType).Select(m => new KeyColumn(m.PropertyOrFieldType(), m.Name, this, m) { IsComputed = isKeyComputed });
+
+            if (this.KeyMembers.Length == 1) {
+                var members = GetKeyMemberInfos(this.KeyType);
+                foreach (var memberInfo in members) {
+                    yield return (new KeyColumn(memberInfo.PropertyOrFieldType(), memberInfo.Name, this, this.KeyMembers[0], memberInfo),
+                                     new SingleKeyMemberColumnValueAccessor(memberInfo));
+                }
+
+                yield break;
+            }
+
+            foreach (var entry in this.KeyMembers.AsSmartEnumerable()) {
+                var keyMemberInfo = entry.Value;
+                var memberType = keyMemberInfo.PropertyOrFieldType();
+                if (memberType.IsPrimitiveType()) {
+                    yield return (new KeyColumn(memberType, keyMemberInfo.Name, this, keyMemberInfo, null), new MultipleKeyMemberColumnValueAccessor(entry.Index, null));
+                }
+                else {
+                    var members = GetKeyMemberInfos(memberType);
+                    foreach (var memberInfo in members) {
+                        yield return (new KeyColumn(memberInfo.PropertyOrFieldType(), $"{keyMemberInfo.Name}_{memberInfo.Name}", this, keyMemberInfo, memberInfo),
+                                         new MultipleKeyMemberColumnValueAccessor(entry.Index, memberInfo));
+                    }
+                }
+            }
+
+            MemberInfo[] GetKeyMemberInfos(Type keyType) {
+                var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
+                                     .Where(m => m.Name != "EqualityContract") // compiler generated for records
+                                     .ToArray();
+                if (members.Length == 2 && members.Select(m => m.Name.ToUpperInvariant()).Distinct().Count() == 1) {
+                    members = members.Take(1).ToArray();
+                }
+
+                return members;
+            }
         }
 
         public void AddClassType(Type entityType) {

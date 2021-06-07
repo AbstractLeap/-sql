@@ -3,10 +3,11 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using System.Runtime.CompilerServices;
 
     static class TypeHelpers {
-        public static bool IsPrimitiveKeyType(this Type keyType) {
-            return keyType.IsValueType || keyType == typeof(string);
+        public static bool IsPrimitiveType(this Type keyType) {
+            return (keyType.IsValueType && !keyType.IsAssignableTo(typeof(ITuple))) || keyType == typeof(string);
         }
         
         public static Type PropertyOrFieldType(this MemberInfo memberInfo) {

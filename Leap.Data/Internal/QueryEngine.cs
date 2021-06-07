@@ -117,13 +117,7 @@
             T HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
                 var collection = query.Collection;
-                object id;
-                if (collection.KeyType.IsValueType || collection.KeyType == typeof(string)) {
-                    id = row[0];
-                }
-                else {
-                    id = collection.KeyType.TryCreateInstance(collection.Columns.Select(c => c.Name).ToArray(), row);
-                }
+                var id = CreateIdInstance<T>(collection, row);
 
                 // TODO invalidate old versions
                 // check ID map for instance
@@ -139,7 +133,7 @@
                 var json = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.Document);
                 var typeName = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.DocumentType);
                 var documentType = Type.GetType(typeName); // TODO better type handling across assemblies
-                if (!(this.serializer.Deserialize(documentType, json) is T entity)) {
+                if (this.serializer.Deserialize(documentType, json) is not T entity) {
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
@@ -147,6 +141,37 @@
                 this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), DocumentState.Persisted);
                 return entity;
             }
+        }
+
+        private static object CreateIdInstance<T>(Collection collection, object[] row)
+            where T : class {
+            object id;
+            if (collection.KeyType.IsPrimitiveType()) {
+                id = row[0];
+            }
+            else if (collection.KeyMembers.Length == 1) {
+                // TODO make this not use all of the columns
+                id = collection.KeyType.TryCreateInstance(collection.Columns.Select(c => c.Name).ToArray(), row);
+            }
+            else {
+                // tuple type keys
+                var compositeKeys = new object[collection.KeyMembers.Length];
+                foreach (var entry in collection.KeyMembers.AsSmartEnumerable()) {
+                    var keyMember = entry.Value;
+                    if (keyMember.PropertyOrFieldType().IsPrimitiveType()) {
+                        compositeKeys[entry.Index] = RowValueHelper.GetValue(keyMember.PropertyOrFieldType(), collection, row, keyMember.Name);
+                    }
+                    else {
+                        var keyMemberKeyColumns = collection.KeyColumns.Where(c => c.KeyMemberInfo.Equals(keyMember)).ToArray();
+                        var columnValues = keyMemberKeyColumns.Select(c => RowValueHelper.GetValue(c.Type, collection, row, c.Name)).ToArray();
+                        compositeKeys[entry.Index] = keyMember.PropertyOrFieldType().TryCreateInstance(keyMemberKeyColumns.Select(c => c.Name).ToArray(), columnValues);
+                    }
+                }
+
+                id = collection.KeyType.TryCreateInstance(collection.KeyMembers.Select((m, i) => $"item{i + 1}").ToArray(), compositeKeys);
+            }
+
+            return id;
         }
 
         public async ValueTask EnsureCleanAsync(CancellationToken cancellationToken = default) {

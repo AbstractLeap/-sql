@@ -4,6 +4,6 @@
     using System.Reflection;
 
     public interface IKeyMemberSchemaConvention : ISchemaConvention {
-        MemberInfo GetKeyMember(string collectionName, IEnumerable<Type> entityTypes);
+        MemberInfo[] GetKeyMember(string collectionName, IEnumerable<Type> entityTypes);
     }
 }
