@@ -155,8 +155,18 @@
             if (this.KeyMembers.Length == 1) {
                 var members = GetKeyMemberInfos(this.KeyType);
                 foreach (var memberInfo in members) {
-                    yield return (new KeyColumn(memberInfo.PropertyOrFieldType(), memberInfo.Name, this, this.KeyMembers[0], memberInfo),
-                                     new SingleKeyMemberColumnValueAccessor(memberInfo));
+                    var memberType = memberInfo.PropertyOrFieldType();
+                    if (memberType.IsPrimitiveType()) {
+                        yield return (new KeyColumn(memberType, memberInfo.Name, this, this.KeyMembers[0], memberInfo), new SingleKeyMemberColumnValueAccessor(memberInfo));
+                    }
+                    else {
+                        var innerKeyMemberInfos = GetKeyMemberInfos(memberType);
+                        foreach (var innerKeyMemberInfo in innerKeyMemberInfos) {
+                            yield return
+                                (new KeyColumn(innerKeyMemberInfo.PropertyOrFieldType(), $"{this.KeyMembers[0].Name}_{memberInfo.Name}", this, this.KeyMembers[0], innerKeyMemberInfo),
+                                    new SingleKeyMemberNestedColumnValueAccessor(memberInfo, innerKeyMemberInfo));
+                        }
+                    }
                 }
 
                 yield break;
@@ -181,8 +191,12 @@
                 var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
                                      .Where(m => m.Name != "EqualityContract") // compiler generated for records
                                      .ToArray();
-                if (members.Length == 2 && members.Select(m => m.Name.ToUpperInvariant()).Distinct().Count() == 1) {
-                    members = members.Take(1).ToArray();
+
+                var fields = members.Where(m => m.MemberType == MemberTypes.Field).ToArray();
+                var properties = members.Where(m => m.MemberType == MemberTypes.Property).ToArray();
+
+                if (fields.Length == properties.Length && fields.All(fi => properties.Any(pi => string.Equals(fi.Name, pi.Name, StringComparison.OrdinalIgnoreCase)))) {
+                    members = fields;
                 }
 
                 return members;
