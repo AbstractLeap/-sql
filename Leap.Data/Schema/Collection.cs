@@ -76,7 +76,8 @@
             this.CollectionName              = collectionName;
             this.KeyMembers                  = keyMembers;
             this.KeyType                     = ResolveKeyType(keyMembers);
-            var keyColumnsAndAccessors = this.ResolveKeyColumns(isKeyComputed).ToList();
+            var keyColumnResolver = new KeyColumnResolver(this.KeyType, this.KeyMembers, this);
+            var keyColumnsAndAccessors = keyColumnResolver.ResolveKeyColumns(isKeyComputed).ToList();
             this.keyColumns                  = keyColumnsAndAccessors.Select(t => t.Item1).ToList();
             this.keyColumnValueAccessors     = keyColumnsAndAccessors.ToDictionary(t => t.Item1, t => t.Item2);
             this.DocumentColumn              = new DocumentColumn(this);
@@ -139,68 +140,6 @@
 
         public object GetKeyColumnValue<TEntity, TKey>(TKey key, KeyColumn keyColumn) {
             return this.keyColumnValueAccessors[keyColumn].GetValue(key);
-        }
-
-        private IEnumerable<(KeyColumn, IKeyColumnValueAccessor)> ResolveKeyColumns(bool isKeyComputed = false) {
-            if (this.KeyType.IsPrimitiveType()) {
-                if (this.KeyMembers.Length > 1) {
-                    throw new NotSupportedException();
-                }
-
-                yield return (new KeyColumn(this.KeyType, this.KeyMembers[0].Name, this, this.KeyMembers[0], null) { IsComputed = isKeyComputed },
-                                 new PrimitiveKeyColumnValueAccessor());
-                yield break;
-            }
-
-            if (this.KeyMembers.Length == 1) {
-                var members = GetKeyMemberInfos(this.KeyType);
-                foreach (var memberInfo in members) {
-                    var memberType = memberInfo.PropertyOrFieldType();
-                    if (memberType.IsPrimitiveType()) {
-                        yield return (new KeyColumn(memberType, memberInfo.Name, this, this.KeyMembers[0], memberInfo), new SingleKeyMemberColumnValueAccessor(memberInfo));
-                    }
-                    else {
-                        var innerKeyMemberInfos = GetKeyMemberInfos(memberType);
-                        foreach (var innerKeyMemberInfo in innerKeyMemberInfos) {
-                            yield return
-                                (new KeyColumn(innerKeyMemberInfo.PropertyOrFieldType(), $"{this.KeyMembers[0].Name}_{memberInfo.Name}", this, this.KeyMembers[0], innerKeyMemberInfo),
-                                    new SingleKeyMemberNestedColumnValueAccessor(memberInfo, innerKeyMemberInfo));
-                        }
-                    }
-                }
-
-                yield break;
-            }
-
-            foreach (var entry in this.KeyMembers.AsSmartEnumerable()) {
-                var keyMemberInfo = entry.Value;
-                var memberType = keyMemberInfo.PropertyOrFieldType();
-                if (memberType.IsPrimitiveType()) {
-                    yield return (new KeyColumn(memberType, keyMemberInfo.Name, this, keyMemberInfo, null), new MultipleKeyMemberColumnValueAccessor(entry.Index, null));
-                }
-                else {
-                    var members = GetKeyMemberInfos(memberType);
-                    foreach (var memberInfo in members) {
-                        yield return (new KeyColumn(memberInfo.PropertyOrFieldType(), $"{keyMemberInfo.Name}_{memberInfo.Name}", this, keyMemberInfo, memberInfo),
-                                         new MultipleKeyMemberColumnValueAccessor(entry.Index, memberInfo));
-                    }
-                }
-            }
-
-            MemberInfo[] GetKeyMemberInfos(Type keyType) {
-                var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
-                                     .Where(m => m.Name != "EqualityContract") // compiler generated for records
-                                     .ToArray();
-
-                var fields = members.Where(m => m.MemberType == MemberTypes.Field).ToArray();
-                var properties = members.Where(m => m.MemberType == MemberTypes.Property).ToArray();
-
-                if (fields.Length == properties.Length && fields.All(fi => properties.Any(pi => string.Equals(fi.Name, pi.Name, StringComparison.OrdinalIgnoreCase)))) {
-                    members = fields;
-                }
-
-                return members;
-            }
         }
 
         public void AddClassType(Type entityType) {
