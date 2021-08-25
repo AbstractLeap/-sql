@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Leap.Data.Tests
 {
-    using Fasterflect;
-
-    using Leap.Data.Internal;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     public record BlogId
     {
@@ -15,7 +11,11 @@ namespace Leap.Data.Tests
     {
         this.Id = Guid.NewGuid();
     }
-        
+
+        public BlogId(Guid id) {
+            this.Id = id;
+        }
+
         public Guid Id { get; init; }
     }
 

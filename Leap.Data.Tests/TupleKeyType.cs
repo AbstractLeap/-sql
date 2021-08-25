@@ -42,6 +42,10 @@ namespace Leap.Data.Tests {
             public OneId() {
                 this.id = Guid.NewGuid();
             }
+
+            public OneId(Guid id) {
+                this.id = id;
+            }
         }
 
         record TwoId {
@@ -49,6 +53,10 @@ namespace Leap.Data.Tests {
 
             public TwoId() {
                 this.id = Guid.NewGuid();
+            }
+
+            public TwoId(Guid id) {
+                this.id = id;
             }
         }
 

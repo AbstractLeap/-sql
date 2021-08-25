@@ -7,6 +7,7 @@
     using Fasterflect;
 
     using Leap.Data.Schema.Columns;
+    using Leap.Data.Schema.KeyFactories;
     using Leap.Data.Utilities;
 
     /// <summary>
@@ -33,6 +34,8 @@
         public string CollectionName { get; }
 
         public Type KeyType { get; }
+
+        public IKeyFactory KeyFactory { get; }
 
         public Type BaseEntityType { get; private set; }
 
@@ -85,6 +88,9 @@
             this.OptimisticConcurrencyColumn = useOptimisticConcurrency ? new OptimisticConcurrencyColumn(this) : null;
             this.nonKeyColumns               = new Column[] { this.DocumentColumn, this.DocumentTypeColumn, this.OptimisticConcurrencyColumn }.Where(c => c != null).ToList();
             this.RecalculateColumns();
+            this.KeyFactory = this.KeyMembers.Length > 1
+                                  ? new TupleKeyFactory(this.keyColumns.ToArray(), this.KeyType)
+                                  : (this.KeyType.IsPrimitiveType() ? new PrimitiveKeyFactory() : new MultipleKeyFactory(this.keyColumns.ToArray(), this.KeyType));
         }
 
         private static Type ResolveKeyType(MemberInfo[] keyMembers) {

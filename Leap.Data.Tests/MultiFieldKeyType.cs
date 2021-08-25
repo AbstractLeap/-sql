@@ -60,6 +60,11 @@ namespace Leap.Data.Tests {
                 this.rightId = Guid.NewGuid();
             }
 
+            public MultiFieldId(Guid leftId, Guid rightId) {
+                this.leftId  = leftId;
+                this.rightId = rightId;
+            }
+
             public Guid LeftId => this.leftId;
 
             public Guid RightId => this.rightId;
@@ -87,6 +92,10 @@ namespace Leap.Data.Tests {
                 this.id = Guid.NewGuid();
             }
 
+            public InsideId(Guid id) {
+                this.id = id;
+            }
+
             public Guid Id => this.id;
         }
 
@@ -98,6 +107,11 @@ namespace Leap.Data.Tests {
             public MultiNonPrimitiveId() {
                 this.leftId  = new InsideId();
                 this.rightId = new InsideId();
+            }
+
+            public MultiNonPrimitiveId(InsideId leftId, InsideId rightId) {
+                this.leftId  = leftId;
+                this.rightId = rightId;
             }
 
             public InsideId LeftId => this.leftId;

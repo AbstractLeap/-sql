@@ -93,6 +93,10 @@ namespace Leap.Data.Tests {
                 this.Id = Guid.NewGuid();
             }
 
+            public AnimalId(Guid id) {
+                this.Id = id;
+            }
+
             public Guid Id { get; init; }
         }
 

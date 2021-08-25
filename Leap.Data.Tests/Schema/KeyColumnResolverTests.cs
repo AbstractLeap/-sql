@@ -78,7 +78,7 @@
         public void TupleResolves() {
             var keyMembers = typeof(TupleEntity).GetProperties().Where(p => p.Name.EndsWith("Id")).ToArray();
             var collection = new Collection("Foo", keyMembers, true, false);
-            var keyColumnResolver = new KeyColumnResolver(typeof(Tuple<SingleStrongTypeEntityId, SingleStrongTypeEntityId>), keyMembers, collection);
+            var keyColumnResolver = new KeyColumnResolver(typeof(ValueTuple<SingleStrongTypeEntityId, SingleStrongTypeEntityId>), keyMembers, collection);
 
             var keyColumns = keyColumnResolver.ResolveKeyColumns().ToArray();
 

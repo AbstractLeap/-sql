@@ -35,13 +35,18 @@
 
             foreach (var entry in this.keyMembers.AsSmartEnumerable()) {
                 var keyMemberInfo = entry.Value;
-                foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, keyMemberInfo, new List<MemberInfo>(), this.keyMembers.Length == 1)) {
+                foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, entry.Index, keyMemberInfo, new List<MemberInfo>(), this.keyMembers.Length == 1)) {
                     yield return keyColumn;
                 }
             }
         }
 
-        IEnumerable<(KeyColumn, IKeyColumnValueAccessor)> ResolveKeyColumns(MemberInfo keyMemberInfo, MemberInfo memberInfo, ICollection<MemberInfo> memberAccessors, bool single) {
+        IEnumerable<(KeyColumn, IKeyColumnValueAccessor)> ResolveKeyColumns(
+            MemberInfo keyMemberInfo,
+            int keyMemberIdx,
+            MemberInfo memberInfo,
+            ICollection<MemberInfo> memberAccessors,
+            bool single) {
             var memberType = memberInfo.PropertyOrFieldType();
             if (memberType.IsPrimitiveType()) {
                 var name = single
@@ -53,14 +58,20 @@
                 //                      ? string.Join("_", memberAccessors.Skip(1).Union(new[] { memberInfo }).Select(m => m.Name))
                 //                      : string.Join("_", memberAccessors.Select(m => m.Name)))
                 //               : string.Join("_", memberAccessors.Union(new[] { memberInfo }).Select(m => m.Name));
-                var resultantMemberAccessors = memberAccessors.Skip(1).Union(new[] { memberInfo }).ToArray();
-                yield return (new KeyColumn(memberType, name, this.collection, keyMemberInfo, resultantMemberAccessors),
-                                 new NestedKeyColumnValueAccessor(resultantMemberAccessors));
+                var resultantMemberAccessors = new List<MemberInfo>();
+                if (this.keyMembers.Length > 1) {
+                    // the first accessor is from a tuple matching the keytype
+                    resultantMemberAccessors.Add(this.keyType.GetFields()[keyMemberIdx]);
+                }
+
+                resultantMemberAccessors.AddRange(memberAccessors.Skip(1).Union(new[] { memberInfo }));
+                yield return (new KeyColumn(memberType, name, this.collection, keyMemberInfo, resultantMemberAccessors.ToArray()),
+                                 new NestedKeyColumnValueAccessor(resultantMemberAccessors.ToArray()));
             }
             else {
                 var members = GetKeyMemberInfos(memberType);
                 foreach (var member in members) {
-                    foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, member, memberAccessors.Union(new[] { memberInfo }).ToList(), members.Length == 1)) {
+                    foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, keyMemberIdx, member, memberAccessors.Union(new[] { memberInfo }).ToList(), members.Length == 1)) {
                         yield return keyColumn;
                     }
                 }
