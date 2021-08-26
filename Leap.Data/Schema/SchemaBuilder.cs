@@ -2,6 +2,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
 
     using Leap.Data.Schema.Conventions;
 
@@ -49,6 +50,12 @@
             return new(this);
         }
 
+        private readonly Dictionary<Type, MemberInfo[]> explicitKeyMembers = new();
+
+        public void AddKeyMembers(Type type, MemberInfo[] members) {
+            this.explicitKeyMembers.Add(type, members);
+        }
+
         internal void AddAction<T>(Action<Collection> action) {
             if (this.buildActions.TryGetValue(typeof(T), out var actions)) {
                 actions.Add(action);
@@ -64,12 +71,21 @@
             var schema = new Schema();
             foreach (var namedType in this.addedNamedTypes) {
                 var collectionName = namedType.Key;
-                var keyMember = this.GetConvention<IKeyMemberSchemaConvention>().GetKeyMember(collectionName, namedType.Value.Types.AsEnumerable());
+
+                MemberInfo[] keyMembers;
+                var explicitKeyMemberType = namedType.Value.Types.FirstOrDefault(t => this.explicitKeyMembers.ContainsKey(t));
+                if (explicitKeyMemberType != null) {
+                    keyMembers = this.explicitKeyMembers[explicitKeyMemberType];
+                }
+                else {
+                    keyMembers = this.GetConvention<IKeyMemberSchemaConvention>().GetKeyMember(collectionName, namedType.Value.Types.AsEnumerable());
+                }
+
                 var useOptimisticConcurrency = this.GetConvention<IOptimisticConcurrencySchemaConvention>()
                                                    .UseOptimisticConcurrency(collectionName, namedType.Value.Types.AsEnumerable());
                 var isKeyComputed = this.GetConvention<IKeyComputedSchemaConvention>().IsKeyComputed(collectionName, namedType.Value.Types.AsEnumerable());
                 var storageSettings = this.GetConvention<IStorageSchemaConvention>().Configure(collectionName, namedType.Value.Types);
-                var collection = new Collection(collectionName, keyMember, useOptimisticConcurrency, isKeyComputed) { StorageSettings = storageSettings };
+                var collection = new Collection(collectionName, keyMembers, useOptimisticConcurrency, isKeyComputed) { StorageSettings = storageSettings };
 
                 foreach (var entityType in namedType.Value.Types) {
                     collection.AddClassType(entityType);

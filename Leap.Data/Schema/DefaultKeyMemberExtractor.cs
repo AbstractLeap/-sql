@@ -6,8 +6,6 @@
 
     using Fasterflect;
 
-    using Leap.Data.Utilities;
-
     public class DefaultKeyMemberExtractor {
         public MemberInfo[] GetKeyMember(string collectionName, IEnumerable<Type> entityTypes) {
             if (!entityTypes.Any()) {
@@ -43,11 +41,6 @@
                     // multiple property primary key support via tuples
                     var groupedByMemberType =
                         endingInIdNamedMembers.GroupBy(m => m.MemberType).OrderByDescending(m => m.Key == MemberTypes.Field).ToArray(); // favour fields over properties
-                    if (groupedByMemberType.First().GroupBy(m => m.PropertyOrFieldType()).Any(g => g.Count() > 1)) {
-                        throw new Exception(
-                            $"Unable to determine the fields or properties that constitute the id for collection {collectionName}. If this is using multiple properties, for use as a Tuple typed key, you must explicitly specify them as you have multiple members of the same type that look like an id");
-                    }
-
                     return groupedByMemberType.First().ToArray();
                 }
 

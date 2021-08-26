@@ -86,11 +86,7 @@
             var fields = members.Where(m => m.MemberType == MemberTypes.Field).ToArray();
             var properties = members.Where(m => m.MemberType == MemberTypes.Property).ToArray();
 
-            if (fields.Length == properties.Length && fields.All(fi => properties.Any(pi => string.Equals(fi.Name, pi.Name, StringComparison.OrdinalIgnoreCase)))) {
-                members = fields;
-            }
-
-            return members;
+            return fields.Any() ? fields : properties;
         }
     }
 }
