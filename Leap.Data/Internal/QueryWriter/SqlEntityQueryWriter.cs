@@ -1,4 +1,6 @@
 ﻿namespace Leap.Data.Internal.QueryWriter {
+    using System.Collections;
+    using System.Linq;
     using System.Text;
 
     using Leap.Data.Internal.Common;
@@ -54,6 +56,7 @@
             }
 
             if (!string.IsNullOrWhiteSpace(query.WhereClause)) {
+                var whereClause = query.WhereClause;
                 if (!whereAppended) {
                     builder.Append(" where ");
                     whereAppended = true;
@@ -62,15 +65,31 @@
                     builder.Append(" and ");
                 }
 
-                builder.Append("(");
-                builder.Append(query.WhereClause);
-                builder.Append(")");
-
                 if (query.WhereClauseParameters != null) {
                     foreach (var parameter in query.WhereClauseParameters) {
-                        command.AddParameter(parameter.Key, parameter.Value);
+                        var enumerable = parameter.Value as IEnumerable;
+                        if (enumerable != null && parameter.Value.GetType() != typeof(string)) {
+                            // expand the enumerable
+                            var values = 0;
+                            foreach (var val in enumerable) {
+                                values++;
+                                command.AddParameter(parameter.Key + "_" + values, val);
+                            }
+
+                            var sb = new StringBuilder();
+                            this.sqlDialect.AddParameter(sb, parameter.Key);
+                            var paramName = sb.ToString();
+                            whereClause = whereClause.Replace(paramName, $"({string.Join(",", Enumerable.Range(1, values).Select(i => $"{paramName}_{i}"))})");
+                        }
+                        else {
+                            command.AddParameter(parameter.Key, parameter.Value);
+                        }
                     }
                 }
+
+                builder.Append("(");
+                builder.Append(whereClause);
+                builder.Append(")");
             }
 
             if (!string.IsNullOrWhiteSpace(query.OrderByClause)) {
