@@ -36,12 +36,13 @@
         }
 
         public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
-            if (!unitOfWork.Operations.Any()) {
+            var operations = unitOfWork.Operations.ToArray();
+            if (!operations.Any()) {
                 return;
             }
 
             // we delete from cache now, as failure on the persistence is ok
-            foreach (var operation in unitOfWork.Operations) {
+            foreach (var operation in operations) {
                 if (operation.IsDeleteOperation()) {
                     this.CallMethod(operation.GetType().GenericTypeArguments, nameof(DeleteFromMemoryCache), operation);
                     await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(this.DeleteFromDistributedCacheAsync), operation, cancellationToken);
@@ -52,7 +53,7 @@
             var updates = new List<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)>(); // both the old row and the new row
             var deletes = new List<DatabaseRow>(); // just the old row
             var postPersistDocumentUpdates = new List<Func<ValueTask>>();
-            foreach (var operation in unitOfWork.Operations) {
+            foreach (var operation in operations) {
                 if (operation.IsAddOperation()) {
                     // only have an entity, need to generate database row
                     var newDatabaseRow = operation.GetNewDatabaseRow(this.schema, this.databaseRowFactory);
@@ -65,7 +66,7 @@
                                 operation.Collection.CallMethod(new[] { entity.GetType(), operation.Collection.KeyType }, nameof(Collection.SetKey), entity, computedKey);
                                 newDatabaseRow.Values[operation.Collection.GetColumnIndex(SpecialColumns.Document)] = this.serializer.Serialize(entity);
                             }
-                            
+
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
                             this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
                             await (ValueTask)this.CallMethod(
