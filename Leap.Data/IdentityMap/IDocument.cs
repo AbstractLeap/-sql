@@ -26,5 +26,9 @@
         public static object GetEntity(this IDocument document) {
             return document.GetPropertyValue(nameof(IDocument<string>.Entity));
         }
+
+        public static IDocument Create(object entity, Collection collection) {
+            return (IDocument)typeof(Document<>).MakeGenericType(entity.GetType()).CreateInstance(entity, collection);
+        }
     }
 }
