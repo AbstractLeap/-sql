@@ -17,10 +17,20 @@
 
         private readonly ISerializer serializer;
 
+        private ushort idCounter;
+
+        public ushort IdCounter {
+            get => this.idCounter;
+            set {
+                this.idCounter = value >= 1 ? value : (ushort)1;
+            }
+        }
+
         protected SqlAddOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer) {
             this.schema     = schema;
             this.sqlDialect = sqlDialect;
             this.serializer = serializer;
+            this.idCounter  = 1;
         }
 
         public void Write(DatabaseRow databaseRow, Command command) {
@@ -32,7 +42,7 @@
 
             var builder = new StringBuilder(string.Empty);
             if (computedKeyColumns.Length == 1) {
-                builder.Append(this.sqlDialect.PreparePatchIdAndReturn(computedKeyColumns[0]));
+                builder.Append(this.sqlDialect.PreparePatchIdAndReturn(computedKeyColumns[0], this.IdCounter));
             }
 
             builder.Append("insert into ");
@@ -48,7 +58,7 @@
             builder.Append(") ");
 
             if (computedKeyColumns.Length == 1) {
-                builder.Append(this.sqlDialect.OutputId(computedKeyColumns[0]));
+                builder.Append(this.sqlDialect.OutputId(computedKeyColumns[0], this.IdCounter));
             }
 
             builder.Append(" values (");
@@ -62,7 +72,7 @@
             builder.Append(")");
 
             if (computedKeyColumns.Length == 1) {
-                builder.Append(";").Append(this.sqlDialect.PatchIdAndReturn(computedKeyColumns[0]));
+                builder.Append(";").Append(this.sqlDialect.PatchIdAndReturn(computedKeyColumns[0], this.IdCounter++));
             }
 
             command.AddQuery(builder.ToString());

@@ -14,10 +14,10 @@
 
         string AddAffectedRowsCount(string sql, Command command);
 
-        string PatchIdAndReturn(Column computedKeyColumn);
+        string PatchIdAndReturn(Column computedKeyColumn, ushort idCounter);
 
-        string PreparePatchIdAndReturn(Column computedKeyColumn);
+        string PreparePatchIdAndReturn(Column computedKeyColumn, ushort idCounter);
 
-        string OutputId(Column computedKeyColumn);
+        string OutputId(Column computedKeyColumn, ushort idCounter);
     }
 }
