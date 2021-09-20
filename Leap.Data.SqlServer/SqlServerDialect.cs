@@ -38,7 +38,7 @@
             return sql + "; select @@ROWCOUNT";
         }
 
-        public string PreparePatchIdAndReturn(Column computedKeyColumn, ushort idCounter) {
+        public string PreparePatchIdAndReturn(Column computedKeyColumn, uint idCounter) {
             if (!DbTypeSqlMap.TryGetValue(computedKeyColumn.Type, out var dbTypeName)) {
                 throw new InvalidOperationException($"Unable to get dbTypeName from {computedKeyColumn.Type}");
             }
@@ -46,11 +46,11 @@
             return $"declare @Id{idCounter} table (id {dbTypeName});";
         }
 
-        public string OutputId(Column computedKeyColumn, ushort idCounter) {
+        public string OutputId(Column computedKeyColumn, uint idCounter) {
             return $"output inserted.{computedKeyColumn.Name} into @Id{idCounter}";
         }
 
-        public string PatchIdAndReturn(Column computedKeyColumn, ushort idCounter) {
+        public string PatchIdAndReturn(Column computedKeyColumn, uint idCounter) {
             var builder = new StringBuilder("update t set ");
             this.AppendColumnName(builder, computedKeyColumn.Collection.DocumentColumn.Name);
             builder.Append(" = JSON_MODIFY(");

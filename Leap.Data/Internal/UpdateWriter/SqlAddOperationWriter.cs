@@ -2,6 +2,7 @@
     using System;
     using System.Linq;
     using System.Text;
+    using System.Threading;
 
     using Leap.Data.Internal.QueryWriter;
     using Leap.Data.Schema;
@@ -17,14 +18,7 @@
 
         private readonly ISerializer serializer;
 
-        private ushort idCounter;
-
-        public ushort IdCounter {
-            get => this.idCounter;
-            set {
-                this.idCounter = value >= 1 ? value : (ushort)1;
-            }
-        }
+        private uint idCounter;
 
         protected SqlAddOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer) {
             this.schema     = schema;
@@ -34,6 +28,8 @@
         }
 
         public void Write(DatabaseRow databaseRow, Command command) {
+            var counter = Interlocked.Increment(ref this.idCounter);
+
             var computedKeyColumns = databaseRow.Collection.KeyColumns.Where(c => c.IsComputed).ToArray();
             // TODO support multiple computed key columns
             if (computedKeyColumns.Length > 1) {
@@ -42,7 +38,7 @@
 
             var builder = new StringBuilder(string.Empty);
             if (computedKeyColumns.Length == 1) {
-                builder.Append(this.sqlDialect.PreparePatchIdAndReturn(computedKeyColumns[0], this.IdCounter));
+                builder.Append(this.sqlDialect.PreparePatchIdAndReturn(computedKeyColumns[0], counter));
             }
 
             builder.Append("insert into ");
@@ -58,7 +54,7 @@
             builder.Append(") ");
 
             if (computedKeyColumns.Length == 1) {
-                builder.Append(this.sqlDialect.OutputId(computedKeyColumns[0], this.IdCounter));
+                builder.Append(this.sqlDialect.OutputId(computedKeyColumns[0], counter));
             }
 
             builder.Append(" values (");
@@ -72,7 +68,7 @@
             builder.Append(")");
 
             if (computedKeyColumns.Length == 1) {
-                builder.Append(";").Append(this.sqlDialect.PatchIdAndReturn(computedKeyColumns[0], this.IdCounter++));
+                builder.Append(";").Append(this.sqlDialect.PatchIdAndReturn(computedKeyColumns[0], counter++));
             }
 
             command.AddQuery(builder.ToString());
