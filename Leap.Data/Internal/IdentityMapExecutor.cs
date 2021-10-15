@@ -15,7 +15,7 @@
 
         private readonly ResultCache resultCache;
 
-        private readonly HashSet<Guid> executedQueryIds = new();
+        private readonly HashSet<IQuery> executedQueries = new();
 
         public IdentityMapExecutor(IdentityMap identityMap, UnitOfWork unitOfWork) {
             this.identityMap = identityMap;
@@ -44,7 +44,7 @@
                         break;
                 }
 
-                this.executedQueryIds.Add(keyQuery.Identifier);
+                this.executedQueries.Add(keyQuery);
             }
         }
 
@@ -67,16 +67,16 @@
             }
 
             this.resultCache.Add(multipleKeyQuery, result);
-            this.executedQueryIds.Add(multipleKeyQuery.Identifier);
+            this.executedQueries.Add(multipleKeyQuery);
         }
 
         public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
-            this.executedQueryIds.Clear();
+            this.executedQueries.Clear();
             foreach (var query in queries) {
                 query.Accept(this);
             }
 
-            return new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier)));
+            return new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q)));
         }
 
         public IAsyncEnumerable<TEntity> GetAsync<TEntity>(IQuery query)

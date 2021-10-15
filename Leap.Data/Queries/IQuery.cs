@@ -6,8 +6,6 @@
     using Leap.Data.Schema;
 
     public interface IQuery {
-        Guid Identifier { get; }
-
         Type EntityType { get; }
         
         Collection Collection { get; }

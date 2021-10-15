@@ -12,7 +12,7 @@
 
         private readonly ResultCache resultCache;
 
-        private readonly HashSet<Guid> executedQueryIds = new();
+        private readonly HashSet<IQuery> executedQueries = new();
 
         public MemoryCacheExecutor(IMemoryCache memoryCache) {
             this.memoryCache = memoryCache;
@@ -28,7 +28,7 @@
             where TEntity : class {
             if (this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key), out object[] row)) {
                 this.resultCache.Add(keyQuery, new List<object[]> { row });
-                this.executedQueryIds.Add(keyQuery.Identifier);
+                this.executedQueries.Add(keyQuery);
             }
         }
 
@@ -44,17 +44,16 @@
             }
 
             this.resultCache.Add(multipleKeyQuery, result);
-            this.executedQueryIds.Add(multipleKeyQuery.Identifier);
+            this.executedQueries.Add(multipleKeyQuery);
         }
 
         public ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
-            this.executedQueryIds.Clear();
+            this.executedQueries.Clear();
             foreach (var query in queries) {
                 query.Accept(this);
             }
 
-            return ValueTask.FromResult(
-                new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier))));
+            return ValueTask.FromResult(new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q))));
         }
 
         public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)

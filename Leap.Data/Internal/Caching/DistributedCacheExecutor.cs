@@ -12,7 +12,7 @@
 
         private readonly ResultCache resultCache;
 
-        private readonly HashSet<Guid> executedQueryIds = new();
+        private readonly HashSet<IQuery> executedQueries = new();
 
         public DistributedCacheExecutor(IDistributedCache distributedCache) {
             this.distributedCache = distributedCache;
@@ -30,7 +30,7 @@
             var cachedRow = await this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key), cancellationToken);
             if (cachedRow != null) {
                 this.resultCache.Add(keyQuery, new List<object[]> { cachedRow });
-                this.executedQueryIds.Add(keyQuery.Identifier);
+                this.executedQueries.Add(keyQuery);
             }
         }
 
@@ -51,17 +51,17 @@
 
             if (hasAllResults) {
                 this.resultCache.Add(multipleKeyQuery, resultTasks.Select(t => t.Result).ToList());
-                this.executedQueryIds.Add(multipleKeyQuery.Identifier);
+                this.executedQueries.Add(multipleKeyQuery);
             }
         }
 
         public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
-            this.executedQueryIds.Clear();
+            this.executedQueries.Clear();
             foreach (var query in queries) {
                 await query.AcceptAsync(this, cancellationToken);
             }
 
-            return new ExecuteResult(queries.Where(q => this.executedQueryIds.Contains(q.Identifier)), queries.Where(q => !this.executedQueryIds.Contains(q.Identifier)));
+            return new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q)));
         }
 
         public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)

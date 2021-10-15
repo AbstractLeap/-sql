@@ -79,7 +79,7 @@
 
             // we don't have the result, so we must go through the reader until we do.
             var nonCompleteQuery = this.notReadQueries.Dequeue();
-            while (nonCompleteQuery != null && nonCompleteQuery.Identifier != query.Identifier) {
+            while (nonCompleteQuery != null && !nonCompleteQuery.Equals(query)) {
                 await this.ReadResultIntoCacheAsync(nonCompleteQuery);
                 await this.dataReader.NextResultAsync();
                 nonCompleteQuery = this.notReadQueries.Dequeue();
