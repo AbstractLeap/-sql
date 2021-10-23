@@ -69,8 +69,7 @@ namespace Leap.Data.Tests {
             var session = sf.StartSession();
             var poodle = new Cat("Paul");
             session.Add(poodle);
-
-            await Assert.ThrowsAsync<Exception>(async () => await session.Get<Dog>().SingleAsync(poodle.Id));
+            Assert.Null(await session.Get<Dog>().SingleAsync(poodle.Id));
         }
 
         private static ISessionFactory MakeTarget() {
