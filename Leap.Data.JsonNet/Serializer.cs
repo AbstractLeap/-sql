@@ -14,6 +14,10 @@ namespace Leap.Data.JsonNet
             this.jsonSerializerSettings = jsonSerializerSettings;
         }
 
+        public void Configure(Action<JsonSerializerSettings> action) {
+            action(this.jsonSerializerSettings);
+        }
+
         public string Serialize(object obj) {
             return JsonConvert.SerializeObject(obj, this.jsonSerializerSettings);
         }
