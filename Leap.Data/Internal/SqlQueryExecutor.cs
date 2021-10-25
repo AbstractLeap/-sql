@@ -90,6 +90,8 @@
                 yield return row;
             }
 
+            await this.dataReader.NextResultAsync();
+
             if (this.notReadQueries.Count == 0) {
                 await this.CleanUpCommandAsync();
             }
