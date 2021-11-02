@@ -28,7 +28,7 @@
         }
 
         public void AppendPaging(StringBuilder builder, int? queryOffset, int? queryLimit) {
-            builder.Append("offset ").Append(queryOffset ?? 0).Append(" rows ");
+            builder.Append(" offset ").Append(queryOffset ?? 0).Append(" rows ");
             if (queryLimit.HasValue) {
                 builder.Append(" fetch next ").Append(queryLimit.Value).Append(" rows only");
             }
