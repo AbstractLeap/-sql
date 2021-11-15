@@ -3,6 +3,8 @@ namespace Leap.Data.Tests {
     using System.Linq;
     using System.Threading.Tasks;
 
+    using Leap.Data.Tests.TestDomain.Blog;
+
     public class Api {
         /// <summary>
         ///     This method simply gives a "feeling" of how to use the api

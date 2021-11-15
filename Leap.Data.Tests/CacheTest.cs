@@ -6,6 +6,7 @@
     using Leap.Data.Configuration;
     using Leap.Data.Internal;
     using Leap.Data.MemoryCache;
+    using Leap.Data.Tests.TestDomain.Blog;
 
     using Moq;
 
@@ -27,7 +28,7 @@
         }
 
         private static ISessionFactory MakeTarget() {
-            var testSchema = TestSchema.Get();
+            var testSchema = TestSchemaBuilder.Build();
             var configuration = new Configuration(testSchema).UseMemoryCache();
 
             // should never get called

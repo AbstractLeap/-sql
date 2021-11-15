@@ -6,6 +6,7 @@ namespace Leap.Data.Tests {
     using Leap.Data.Internal;
     using Leap.Data.Queries;
     using Leap.Data.SqlServer.QueryWriter;
+    using Leap.Data.Tests.TestDomain.Blog;
 
     using Xunit;
     using Xunit.Abstractions;
@@ -19,7 +20,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItWorks() {
-            var schema = TestSchema.Get();
+            var schema = TestSchemaBuilder.Build();
             var keyQueryWriter = new SqlServerSqlKeyQueryWriter(schema);
             var command = new Command();
             keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
@@ -37,7 +38,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void ItDelegatesKeyQuery() {
-            var schema = TestSchema.Get();
+            var schema = TestSchemaBuilder.Build();
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
@@ -47,7 +48,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void WhereClauseEnumerableExpanded() {
-            var schema = TestSchema.Get();
+            var schema = TestSchemaBuilder.Build();
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(
@@ -62,7 +63,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public void WhereClauseStringNotExpanded() {
-            var schema = TestSchema.Get();
+            var schema = TestSchemaBuilder.Build();
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(

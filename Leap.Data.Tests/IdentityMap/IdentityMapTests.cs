@@ -2,6 +2,7 @@ namespace Leap.Data.Tests {
     using System;
 
     using Leap.Data.IdentityMap;
+    using Leap.Data.Tests.TestDomain.Blog;
 
     using Xunit;
 

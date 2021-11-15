@@ -3,16 +3,14 @@ namespace Leap.Data.Tests {
     using System.Linq;
     using System.Threading.Tasks;
 
-    using Leap.Data.Configuration;
-    using Leap.Data.JsonNet;
-    using Leap.Data.SqlServer;
+    using Leap.Data.Tests.TestDomain.Blog;
 
     using Xunit;
 
     public class Playground {
         [Fact]
         public async Task QueryWorks() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var insertSession = sessionFactory.StartSession();
             var blogTitle = $"Query Blog from {DateTime.UtcNow}";
             var newBlog = new Blog(blogTitle);
@@ -26,7 +24,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task MultipleWorks() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var insertSession = sessionFactory.StartSession();
             var blogTitle = $"Blog from {DateTime.UtcNow}";
             var newBlog = new Blog(blogTitle);
@@ -53,7 +51,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task ItRoundTrips() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var session = sessionFactory.StartSession();
             var blog = new Blog("My blog");
             session.Add(blog);
@@ -70,7 +68,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task ItWorks() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var insertSession = sessionFactory.StartSession();
             var blogTitle = $"Blog from {DateTime.UtcNow}";
             var newBlog = new Blog(blogTitle);
@@ -84,7 +82,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task FutureKeyWorks() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var session = sessionFactory.StartSession();
             var blogFuture = session.Get<Blog>().SingleFuture(new BlogId { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
             var blogNow = await session.Get<Blog>().SingleAsync(new BlogId { Id = Guid.Parse("77b55913-d2b6-488d-8860-3e8e70cb5146") });
@@ -94,7 +92,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task AllTheOperationsInOne() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var firstSession = sessionFactory.StartSession();
             var firstBlog = new Blog("My first blog");
             firstSession.Add(firstBlog);
@@ -123,7 +121,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task DeletedShouldBeRemovedCompletely() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var insertSession = sessionFactory.StartSession();
             var addedBlog = new Blog("Blog to be deleted");
             insertSession.Add(addedBlog);
@@ -140,7 +138,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task OptimisticConcurrenyFail() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var addedBlog = await AddBlog(sessionFactory, "Pessimistic blog");
 
             var session1 = sessionFactory.StartSession();
@@ -159,7 +157,7 @@ namespace Leap.Data.Tests {
 
         [Fact]
         public async Task NonExecutedFuturesExecutedBeforeUpdate() {
-            var sessionFactory = MakeTarget();
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             var toBeBlog = await AddBlog(sessionFactory, "Future");
             var nowBlog = await AddBlog(sessionFactory, "Now");
 
@@ -178,14 +176,6 @@ namespace Leap.Data.Tests {
             insertSession.Add(addedBlog);
             await insertSession.SaveChangesAsync();
             return addedBlog;
-        }
-
-        private static ISessionFactory MakeTarget() {
-            var testSchema = TestSchema.Get();
-            var sessionFactory = new Configuration(testSchema).UseJsonNetFieldSerialization()
-                                                              .UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
-                                                              .BuildSessionFactory();
-            return sessionFactory;
         }
     }
 }
