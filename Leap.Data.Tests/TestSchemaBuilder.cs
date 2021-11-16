@@ -62,10 +62,10 @@
     }
 
     class TestSessionFactoryBuilder {
+        public const string SqlServerConnectionString = "Server=.;Database=leap-data;Trusted_Connection=True;";
+
         public static ISessionFactory Build(ISchema schema) {
-            var sessionFactory = new Configuration(schema).UseSqlServer("Server=.;Database=leap-data;Trusted_Connection=True;")
-                                                          .UseJsonNetFieldSerialization()
-                                                          .BuildSessionFactory();
+            var sessionFactory = new Configuration(schema).UseSqlServer(SqlServerConnectionString).UseJsonNetFieldSerialization().BuildSessionFactory();
             return sessionFactory;
         }
     }
