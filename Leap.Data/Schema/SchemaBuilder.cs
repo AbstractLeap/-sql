@@ -13,7 +13,8 @@
 
         private readonly Dictionary<string, (bool IsDefault, HashSet<Type> Types)> addedNamedTypes = new();
 
-        private readonly IDictionary<Type, IList<Action<Collection>>> buildActions = new Dictionary<Type, IList<Action<Collection>>>();
+        private readonly IDictionary<Type, IList<(Action<Collection> Action, string CollectionName)>> buildActions =
+            new Dictionary<Type, IList<(Action<Collection> Action, string CollectionName)>>();
 
         public SchemaBuilder UseConvention(ISchemaConvention convention) {
             this.schemaConventions.Add(convention);
@@ -46,8 +47,8 @@
             }
         }
 
-        public CollectionBuilder<T> Setup<T>() {
-            return new(this);
+        public CollectionBuilder<T> Setup<T>(string collectionName = "") {
+            return new(this, collectionName);
         }
 
         private readonly Dictionary<Type, MemberInfo[]> explicitKeyMembers = new();
@@ -56,12 +57,12 @@
             this.explicitKeyMembers.Add(type, members);
         }
 
-        internal void AddAction<T>(Action<Collection> action) {
+        internal void AddAction<T>(Action<Collection> action, string collectionName) {
             if (this.buildActions.TryGetValue(typeof(T), out var actions)) {
-                actions.Add(action);
+                actions.Add((action, collectionName));
             }
             else {
-                this.buildActions.Add(typeof(T), new List<Action<Collection>> { action });
+                this.buildActions.Add(typeof(T), new List<(Action<Collection>, string)> { (action, collectionName) });
             }
         }
 
@@ -101,8 +102,8 @@
 
             foreach (var typeActions in this.buildActions) {
                 foreach (var collection in schema.GetCollections(typeActions.Key)) {
-                    foreach (var buildAction in typeActions.Value) {
-                        buildAction(collection);
+                    foreach (var buildAction in typeActions.Value.Where(a => a.CollectionName == null || string.Equals(a.CollectionName, collection.CollectionName))) {
+                        buildAction.Action(collection);
                     }
                 }
             }

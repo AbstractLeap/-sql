@@ -6,17 +6,20 @@
     public class CollectionBuilder<TEntity> {
         private readonly SchemaBuilder schemaBuilder;
 
-        public CollectionBuilder(SchemaBuilder schemaBuilder) {
-            this.schemaBuilder = schemaBuilder;
+        private readonly string collectionName;
+
+        public CollectionBuilder(SchemaBuilder schemaBuilder, string collectionName) {
+            this.schemaBuilder  = schemaBuilder;
+            this.collectionName = collectionName;
         }
 
         public SchemaBuilder AddComputedColumn<TColumn>(string name, string formula) {
-            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddComputedColumn<TColumn>(name, formula));
+            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddComputedColumn<TColumn>(name, formula), this.collectionName);
             return this.schemaBuilder;
         }
 
         public SchemaBuilder AddProjectionColumn<TColumn>(string name, Func<TEntity, TColumn> projectionFunc) {
-            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddProjectionColumn(name, projectionFunc));
+            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddProjectionColumn(name, projectionFunc), this.collectionName);
             return this.schemaBuilder;
         }
 
