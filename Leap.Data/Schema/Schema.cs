@@ -13,6 +13,14 @@
             return this.collectionNameLookup.Values;
         }
 
+        public IEnumerable<Collection> GetCollections<TEntity>() {
+            return this.GetCollections(typeof(TEntity));
+        }
+
+        public IEnumerable<Collection> GetCollections(Type entityType) {
+            return this.typeLookup[entityType].AsReadOnly();
+        }
+
         public Collection GetCollection<TEntity>(string collectionName) {
             if (string.IsNullOrWhiteSpace(collectionName)) {
                 return this.GetDefaultCollection<TEntity>();

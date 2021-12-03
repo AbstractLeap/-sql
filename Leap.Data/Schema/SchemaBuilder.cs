@@ -100,9 +100,10 @@
             }
 
             foreach (var typeActions in this.buildActions) {
-                var collection = schema.GetDefaultCollection(typeActions.Key);
-                foreach (var buildAction in typeActions.Value) {
-                    buildAction(collection);
+                foreach (var collection in schema.GetCollections(typeActions.Key)) {
+                    foreach (var buildAction in typeActions.Value) {
+                        buildAction(collection);
+                    }
                 }
             }
 
