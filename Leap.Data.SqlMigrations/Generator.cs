@@ -69,7 +69,7 @@
 
         private static void WriteCreateTable(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table) {
             // easy :-)
-            dropBuilder.Append("Delete.Table(\"").Append(table.Name).Append("\");").NewLine();
+            dropBuilder.Append("Delete.Table(\"").Append(table.Name).Append("\").InSchema(\"").Append(table.Schema).Append("\");").NewLine();
 
             // hmm
             createBuilder.Append("Create.Table(\"").Append(table.Name).Append("\")").NewLine();
