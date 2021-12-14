@@ -24,7 +24,8 @@
             }
 
             if (column.Type == typeof(string)) {
-                return ".AsString(Int32.MaxValue)";
+                var size = column.Size?.ToString() ?? (column.IsPrimaryKey ? "64" : "Int32.MaxValue");
+                return $".AsString({size})";
             }
 
             // TODO support other types;
