@@ -92,11 +92,9 @@
             }
 
             // single column primary key
-            if (column.IsPrimaryKey && table.Columns.Count(c => c.IsPrimaryKey) == 1) {
+            if (column.IsPrimaryKey) {
                 builder.Append(".PrimaryKey()");
             }
-
-            // TODO multiple column primary key
 
             builder.Append(".");
             builder.Append(column.IsNullable ? "Nullable()" : "NotNullable()");
