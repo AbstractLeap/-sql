@@ -63,9 +63,16 @@
             // down is easy
             dropBuilder.Append("Delete.Column(\"").Append(column.Name).Append("\").FromTable(\"").Append(table.Name).Append("\");");
 
-            createBuilder.Append("Alter.Table(\"").Append(table.Name).Append("\").AddColumn(\"").Append(column.Name).Append("\")");
-            AppendColumnSpec(createBuilder, table, column);
-            createBuilder.Append(";").DecreaseIndent();
+            if (column.IsComputed) {
+                WriteComputedColumn(createBuilder, table, column);
+            }
+            else {
+                createBuilder.Append("Alter.Table(\"").Append(table.Name).Append("\").AddColumn(\"").Append(column.Name).Append("\")");
+                AppendColumnSpec(createBuilder, table, column);
+                createBuilder.Append(";");
+            }
+
+            createBuilder.DecreaseIndent();
         }
 
         private static void WriteCreateTable(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table) {
@@ -86,10 +93,16 @@
             createBuilder.NewLine();
 
             foreach (var column in table.Columns.Where(c => c.IsComputed)) {
-                createBuilder.Append($"this.ComputedColumn(\"{column.Name}\", \"{table.Name}\", \"{table.Schema}\", \"json_value([Document], '{column.ComputedFormula}')\", {column.IsPersisted.ToString().ToLowerInvariant()});").NewLine();
+                WriteComputedColumn(createBuilder, table, column);
             }
 
             createBuilder.DecreaseIndent().NewLine();
+        }
+
+        private static void WriteComputedColumn(CodeStringBuilder createBuilder, Table table, Column column) {
+            createBuilder.Append(
+                             $"this.ComputedColumn(\"{column.Name}\", \"{table.Name}\", \"{table.Schema}\", \"json_value([Document], '{column.ComputedFormula}')\", {column.IsPersisted.ToString().ToLowerInvariant()});")
+                         .NewLine();
         }
 
         private static void AppendColumnSpec(CodeStringBuilder builder, Table table, Column column) {
