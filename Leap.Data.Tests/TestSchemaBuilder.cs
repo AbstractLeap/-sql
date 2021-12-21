@@ -35,7 +35,7 @@
                                                    .AddTypes(typeof(TestDomain.PlayExtraColumns.Person))
                                                    .AddTypes(typeof(TupleKeyTypeThing))
                                                    .AddTypes(typeof(GenericContainer));
-            schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>().AddComputedColumn<string>("Email", "$.email.emailAddress");
+            schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>().AddComputedColumn<string>("Email", "$.email.address", true, true);
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>()
                          .AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));
 

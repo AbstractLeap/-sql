@@ -18,6 +18,12 @@
 
         public bool IsIdentity { get; set; }
 
+        public bool IsComputed { get; set; }
+
+        public bool IsPersisted { get; set; }
+
+        public string ComputedFormula { get; set; }
+
         protected bool Equals(Column other) {
             return this.Name == other.Name;
         }

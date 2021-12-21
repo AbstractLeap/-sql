@@ -13,8 +13,8 @@
             this.collectionName = collectionName;
         }
 
-        public SchemaBuilder AddComputedColumn<TColumn>(string name, string formula) {
-            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddComputedColumn<TColumn>(name, formula), this.collectionName);
+        public SchemaBuilder AddComputedColumn<TColumn>(string name, string formula, bool persisted, bool indexed) {
+            this.schemaBuilder.AddAction<TEntity>(collection => collection.AddComputedColumn<TColumn>(name, formula, persisted, indexed), this.collectionName);
             return this.schemaBuilder;
         }
 

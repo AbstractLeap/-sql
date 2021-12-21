@@ -10,6 +10,7 @@
             builder.Append("namespace ").Append(migrationNamespace).Append(" {").NewLine();
             builder.IncreaseIndent();
             builder.Append("using System;").NewLine();
+            builder.Append("using Leap.Data.SqlMigrations;").NewLine();
             builder.Append("using FluentMigrator;").NewLine().NewLine();
             builder.Append("[Migration(").Append(DateTime.Now.ToString("yyyyMMddHHmm")).Append(")]").NewLine();
             builder.Append("public class ").Append(migrationName).Append(" : Migration {").NewLine();
@@ -75,13 +76,19 @@
             createBuilder.Append("Create.Table(\"").Append(table.Name).Append("\")").NewLine();
             createBuilder.IncreaseIndent();
             createBuilder.Append(".InSchema(\"").Append(table.Schema).Append("\")").NewLine();
-            foreach (var column in table.Columns) {
+            foreach (var column in table.Columns.Where(c => !c.IsComputed)) {
                 createBuilder.Append(".WithColumn(\"").Append(column.Name).Append("\")");
                 AppendColumnSpec(createBuilder, table, column);
                 createBuilder.NewLine();
             }
 
             createBuilder.Append(";");
+            createBuilder.NewLine();
+
+            foreach (var column in table.Columns.Where(c => c.IsComputed)) {
+                createBuilder.Append($"this.ComputedColumn(\"{column.Name}\", \"{table.Name}\", \"{table.Schema}\", \"json_value([Document], '{column.ComputedFormula}')\", {column.IsPersisted.ToString().ToLowerInvariant()});").NewLine();
+            }
+
             createBuilder.DecreaseIndent().NewLine();
         }
 

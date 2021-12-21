@@ -164,8 +164,8 @@
             }
         }
 
-        public void AddComputedColumn<T>(string name, string formula) {
-            this.nonKeyColumns.Add(new ComputedColumn<T>(this, name, formula));
+        public void AddComputedColumn<T>(string name, string formula, bool persisted, bool indexed) {
+            this.nonKeyColumns.Add(new ComputedColumn(typeof(T), this, name, formula, persisted, indexed));
             this.RecalculateColumns();
         }
 

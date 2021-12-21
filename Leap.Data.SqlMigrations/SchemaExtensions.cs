@@ -1,4 +1,5 @@
 ﻿namespace Leap.Data.SqlMigrations {
+    using System.Collections.Generic;
     using System.Linq;
 
     using Leap.Data.Schema;
@@ -19,7 +20,19 @@
                                        return new Table {
                                            Name    = t.GetTableName(),
                                            Schema  = t.GetSchemaName(),
-                                           Columns = t.Columns.Select(c => new Column { Name = c.Name, Type = c.Type, IsPrimaryKey = c is KeyColumn, IsIdentity = c is KeyColumn keyColumn && keyColumn.IsComputed }).ToList()
+                                           Columns = t.Columns.Select(c => new Column {
+                                               Name            = c.Name, 
+                                               Type            = c.Type, 
+                                               IsPrimaryKey    = c is KeyColumn, 
+                                               IsIdentity      = t.IsKeyComputed,
+                                               IsComputed      = c is ComputedColumn,
+                                               IsPersisted     = c is ComputedColumn { Persisted: true },
+                                               ComputedFormula = c is ComputedColumn computed ? computed.Formula : null
+                                           }).ToList(),
+                                           Indexes = t.Columns.OfType<ComputedColumn>().Select(c => new Index {
+                                               Name = $"idx_{c.Name}",
+                                               Columns = new List<string> { c.Name }
+                                           }).ToList()
                                        };
                                    })
                                .ToList()

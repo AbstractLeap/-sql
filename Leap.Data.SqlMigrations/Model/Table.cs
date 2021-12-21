@@ -11,6 +11,8 @@
 
         public ICollection<Column> Columns { get; set; }
 
+        public ICollection<Index> Indexes { get; set; }
+
         protected bool Equals(Table other) {
             return this.Name == other.Name && this.Schema == other.Schema;
         }
