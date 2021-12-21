@@ -94,6 +94,9 @@
             // single column primary key
             if (column.IsPrimaryKey) {
                 builder.Append(".PrimaryKey()");
+                if (column.IsIdentity) {
+                    builder.Append(".Identity()");
+                }
             }
 
             builder.Append(".");

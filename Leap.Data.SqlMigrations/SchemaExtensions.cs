@@ -19,7 +19,7 @@
                                        return new Table {
                                            Name    = t.GetTableName(),
                                            Schema  = t.GetSchemaName(),
-                                           Columns = t.Columns.Select(c => new Column { Name = c.Name, Type = c.Type, IsPrimaryKey = c is KeyColumn }).ToList()
+                                           Columns = t.Columns.Select(c => new Column { Name = c.Name, Type = c.Type, IsPrimaryKey = c is KeyColumn, IsIdentity = c is KeyColumn keyColumn && keyColumn.IsComputed }).ToList()
                                        };
                                    })
                                .ToList()

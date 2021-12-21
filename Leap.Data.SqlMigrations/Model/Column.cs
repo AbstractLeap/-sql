@@ -16,6 +16,8 @@
 
         public bool IsNullable { get; set; }
 
+        public bool IsIdentity { get; set; }
+
         protected bool Equals(Column other) {
             return this.Name == other.Name;
         }

@@ -47,7 +47,7 @@
             }
         }
 
-        public CollectionBuilder<T> Setup<T>(string collectionName = "") {
+        public CollectionBuilder<T> Setup<T>(string collectionName = null) {
             return new(this, collectionName);
         }
 
