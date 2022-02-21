@@ -184,6 +184,12 @@
         }
 
         internal Type GetTypeFromName(string entityName) {
+            // todo remove this when we don't have fully qualified assembly names
+            var tryFindType = Type.GetType(entityName);
+            if (tryFindType != null) {
+                return tryFindType;
+            }
+
             return this.entityTypeMap[entityName];
         }
 

@@ -6,6 +6,8 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Microsoft.Data.SqlClient;
+
     using Moq;
 
     using TildeSql.IdentityMap;
@@ -13,6 +15,7 @@
     using TildeSql.JsonNet;
     using TildeSql.Queries;
     using TildeSql.Schema;
+    using TildeSql.Tests.TestDomain.InheritancePlay;
     using TildeSql.UnitOfWork;
 
     using Xunit;
@@ -82,6 +85,34 @@
             var resultsAgain = await future.ToArrayAsync();
             queryExecutor.Verify(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>()), Times.Once);
             Assert.Equal(results, resultsAgain);
+        }
+
+        [Fact]
+        public async Task HydrationCanMixShortTypeNamesAndFullAssemblyQualifiedNames() {
+            var id = Guid.NewGuid();
+            using (var conn = new SqlConnection(TestSessionFactoryBuilder.SqlServerConnectionString)) {
+                conn.Open();
+
+                using (var insertOldStyleField = conn.CreateCommand()) {
+                    insertOldStyleField.CommandText = @$"insert into {nameof(Animal)}s (Id, Document, DocumentType, Version) values 
+( '{id}'
+, '{{""<Name>k__BackingField"":""Jimminy Cricket"",""<Id>k__BackingField"":{{""<Id>k__BackingField"":""{id}""}}}}'
+, 'TildeSql.Tests.TestDomain.InheritancePlay.Terrier, TildeSql.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null'
+, '{Guid.NewGuid()}'
+)";
+                    insertOldStyleField.ExecuteNonQuery();
+                }
+
+                conn.Close();
+            }
+            
+            var sf = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
+            var session = sf.StartSession();
+
+            var jimminyCricket = await session.Get<Terrier>().SingleAsync(new AnimalId(id));
+
+            Assert.NotNull(jimminyCricket);
+            Assert.Equal("Jimminy Cricket", jimminyCricket.Name);
         }
 
         class Entity {
