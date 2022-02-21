@@ -52,6 +52,7 @@ namespace TildeSql.Tests {
             var allDogs = await querySession1.Get<Dog>().ToListAsync();
             Assert.Contains(poodle, allDogs);
             Assert.Contains(terrier, allDogs);
+            Assert.DoesNotContain<Animal>(cat, allDogs);
         }
 
         [Fact]

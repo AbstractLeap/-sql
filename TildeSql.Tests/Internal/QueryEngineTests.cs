@@ -24,6 +24,7 @@
             var queryExecutor = new Mock<IQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
+            collection.AddClassType(typeof(Entity));
             var entity = new Entity("Foo");
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
@@ -42,6 +43,7 @@
             var queryExecutor = new Mock<IQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
+            collection.AddClassType(typeof(Entity));
             var entity1 = new Entity("Foo");
             var entity2 = new Entity("Bar");
             var row1 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity1).Values;
@@ -68,6 +70,7 @@
             var queryExecutor = new Mock<IQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
+            collection.AddClassType(typeof(Entity));
             var entity = new Entity("Foo");
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);

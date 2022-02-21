@@ -24,8 +24,12 @@
 
         private Dictionary<string, int> columnIndices;
 
-        private readonly List<Type> entityTypes = new List<Type>();
-        
+        private readonly TwoWayMap<string, Type> entityTypeMap = new();
+
+        private IEnumerable<Type> entityTypes => this.entityTypeMap.Forward.Values;
+
+        public IEnumerable<Type> EntityTypes => this.entityTypes.ToList().AsReadOnly();
+
         public ICollectionStorageSettings StorageSettings { get; init; }
         
         /// <summary>
@@ -60,8 +64,6 @@
         //public IKeyExtractor KeyExtractor { get; set; }
 
         public MemberInfo[] KeyMembers { get; set; }
-
-        public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
 
         public bool ContainsTypeHierarchy { get; private set; }
 
@@ -149,7 +151,10 @@
         }
 
         public void AddClassType(Type entityType) {
-            this.entityTypes.Add(entityType);
+            if (!this.entityTypeMap.TryAdd(entityType.Name, entityType.IsGenericType ? entityType.GetGenericTypeDefinition() : entityType)) {
+                throw new Exception($"Cannot add {entityType.Name} because there is already a type in this collection with the same name");
+            }
+
             if (this.BaseEntityType == null) {
                 this.BaseEntityType = entityType;
             }
@@ -172,6 +177,14 @@
         public void AddProjectionColumn<TEntity, TColumn>(string name, Func<TEntity, TColumn> projectionFunc) {
             this.nonKeyColumns.Add(new ProjectionColumn<TEntity, TColumn>(this, name, projectionFunc));
             this.RecalculateColumns();
+        }
+        internal string GetTypeName(Type entityType) {
+            var typeKey = entityType.IsGenericType ? entityType.GetGenericTypeDefinition() : entityType;
+            return this.entityTypeMap[typeKey];
+        }
+
+        internal Type GetTypeFromName(string entityName) {
+            return this.entityTypeMap[entityName];
         }
 
         private void RecalculateColumns() {

@@ -3,7 +3,7 @@
 
     class DocumentTypeColumnValueFactory : IColumnValueFactory {
         public TValue GetValue<TEntity, TKey, TValue>(Column column, TEntity entity) {
-            return (TValue)(object)entity.GetType().AssemblyQualifiedName;
+            return (TValue)(object)column.Collection.GetTypeName(entity.GetType());
         }
     }
 }

@@ -15,6 +15,7 @@
         [Fact]
         public void AddedEntityIsRetrievable() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -28,6 +29,7 @@
         [Fact]
         public void UpdateStateDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -42,6 +44,7 @@
         [Fact]
         public void UpdateRowDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -58,6 +61,7 @@
         [Fact]
         public void SetPersistedDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -73,6 +77,7 @@
         [Fact]
         public void AddedEntityIsAddOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -86,6 +91,7 @@
         [Fact]
         public void DeletedEntityIsDeleteOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -100,6 +106,7 @@
         [Fact]
         public void PersistedEntityIsNoOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -112,6 +119,7 @@
         [Fact]
         public void ChangedPersistedEntityIsUpdateOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
@@ -126,6 +134,8 @@
         [Fact]
         public void Inheritance() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
+            collection.AddClassType(typeof(Thing));
+            collection.AddClassType(typeof(ChildThing));
             var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
             var thing = new ChildThing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
