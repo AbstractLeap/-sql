@@ -6,6 +6,7 @@
 
     using Fasterflect;
 
+    using TildeSql.Internal;
     using TildeSql.Schema.Columns;
     using TildeSql.Schema.KeyFactories;
     using TildeSql.Utilities;
@@ -24,11 +25,11 @@
 
         private Dictionary<string, int> columnIndices;
 
-        private readonly TwoWayMap<string, Type> entityTypeMap = new();
+        private readonly TypeSerializer typeSerializer = new();
 
-        private IEnumerable<Type> entityTypes => this.entityTypeMap.Forward.Values;
+        private readonly List<Type> entityTypes = new();
 
-        public IEnumerable<Type> EntityTypes => this.entityTypes.ToList().AsReadOnly();
+        public IEnumerable<Type> EntityTypes => this.entityTypes.AsReadOnly();
 
         public ICollectionStorageSettings StorageSettings { get; init; }
         
@@ -151,15 +152,14 @@
         }
 
         public void AddClassType(Type entityType) {
-            if (!this.entityTypeMap.TryAdd(entityType.Name, entityType.IsGenericType ? entityType.GetGenericTypeDefinition() : entityType)) {
-                throw new Exception($"Cannot add {entityType.Name} because there is already a type in this collection with the same name");
-            }
+            this.typeSerializer.AddType(entityType);
+            this.entityTypes.Add(entityType);
 
             if (this.BaseEntityType == null) {
                 this.BaseEntityType = entityType;
             }
             else {
-                var commonBase = this.entityTypes.FindAssignableWith();
+                var commonBase = this.EntityTypes.FindAssignableWith();
                 if (commonBase == null || commonBase == typeof(object)) {
                     throw new Exception("All of the classes inside a single collection must have a common base class or interface");
                 }
@@ -178,19 +178,13 @@
             this.nonKeyColumns.Add(new ProjectionColumn<TEntity, TColumn>(this, name, projectionFunc));
             this.RecalculateColumns();
         }
+
         internal string GetTypeName(Type entityType) {
-            var typeKey = entityType.IsGenericType ? entityType.GetGenericTypeDefinition() : entityType;
-            return this.entityTypeMap[typeKey];
+            return this.typeSerializer.GetTypeName(entityType);
         }
 
-        internal Type GetTypeFromName(string entityName) {
-            // todo remove this when we don't have fully qualified assembly names
-            var tryFindType = Type.GetType(entityName);
-            if (tryFindType != null) {
-                return tryFindType;
-            }
-
-            return this.entityTypeMap[entityName];
+        public Type GetTypeFromName(string entityName) {
+            return this.typeSerializer.GetTypeFromName(entityName);
         }
 
         private void RecalculateColumns() {

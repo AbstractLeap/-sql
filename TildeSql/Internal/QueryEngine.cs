@@ -5,14 +5,13 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    using TildeSql.Utilities;
-
     using TildeSql.IdentityMap;
     using TildeSql.Internal.Caching;
     using TildeSql.Queries;
     using TildeSql.Schema;
     using TildeSql.Serialization;
     using TildeSql.UnitOfWork;
+    using TildeSql.Utilities;
 
     class QueryEngine : IAsyncDisposable {
         private readonly ISchema schema;
@@ -133,7 +132,6 @@
                 var json = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.Document);
                 var typeName = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.DocumentType);
                 var documentType = collection.GetTypeFromName(typeName);
-                documentType = documentType.IsGenericTypeDefinition ? documentType.MakeGenericType(typeof(T).GenericTypeArguments) : documentType;
                 if (this.serializer.Deserialize(documentType, json) is not T entity) {
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
