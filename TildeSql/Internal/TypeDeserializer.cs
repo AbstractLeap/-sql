@@ -32,8 +32,15 @@
             }
 
             foreach (var entityType in this.entityTypes) {
-                if (string.Equals(typeName, entityType.Name)) {
-                    return entityType.IsGenericType ? CreateGenericType(entityType) : entityType;
+                if (entityType.IsGenericType) {
+                    if (typeName.StartsWith(entityType.Name)) {
+                        return CreateGenericType(entityType);
+                    }
+                }
+                else {
+                    if (string.Equals(typeName, entityType.Name)) {
+                        return entityType;
+                    }
                 }
             }
 
