@@ -3,12 +3,11 @@
     using System.Linq;
     using System.Text;
 
-    using TildeSql.Schema.Conventions.Sql;
-    using TildeSql.Utilities;
-
     using TildeSql.Internal.Common;
     using TildeSql.Queries;
     using TildeSql.Schema;
+    using TildeSql.Schema.Conventions.Sql;
+    using TildeSql.Utilities;
 
     public abstract class SqlEntityQueryWriter : SqlBaseWriter, ISqlEntityQueryWriter {
         private readonly ISchema schema;
@@ -45,7 +44,7 @@
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
                         this.sqlDialect.AppendColumnName(builder, collection.DocumentTypeColumn.Name);
                         builder.Append(" = ");
-                        var paramName = command.AddParameter(entry.Value.Serialize());
+                        var paramName = command.AddParameter(collection.TypeSerializer.Serialize(entry.Value));
                         this.sqlDialect.AddParameter(builder, paramName);
                         if (!entry.IsLast) {
                             builder.Append(" or ");

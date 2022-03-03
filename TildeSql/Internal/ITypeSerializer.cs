@@ -1,7 +1,9 @@
 ﻿namespace TildeSql.Internal {
     using System;
 
-    public interface ITypeDeserializer {
+    public interface ITypeSerializer {
+        public string Serialize(Type type);
+
         public Type Deserialize(string typeName);
     }
 }

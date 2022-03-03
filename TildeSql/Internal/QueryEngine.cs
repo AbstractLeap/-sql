@@ -131,7 +131,7 @@
 
                 var json = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.Document);
                 var typeName = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.DocumentType);
-                var documentType = collection.TypeDeserializer.Deserialize(typeName);
+                var documentType = collection.TypeSerializer.Deserialize(typeName);
                 if (this.serializer.Deserialize(documentType, json) is not T entity) {
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
