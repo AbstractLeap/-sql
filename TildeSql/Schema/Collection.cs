@@ -25,7 +25,7 @@
 
         private Dictionary<string, int> columnIndices;
 
-        private readonly TypeSerializer typeSerializer = new();
+        private TypeDeserializer typeDeserializer;
 
         private readonly List<Type> entityTypes = new();
 
@@ -152,7 +152,6 @@
         }
 
         public void AddClassType(Type entityType) {
-            this.typeSerializer.AddType(entityType);
             this.entityTypes.Add(entityType);
 
             if (this.BaseEntityType == null) {
@@ -179,12 +178,15 @@
             this.RecalculateColumns();
         }
 
-        internal string GetTypeName(Type entityType) {
-            return this.typeSerializer.GetTypeName(entityType);
-        }
+        public ITypeDeserializer TypeDeserializer {
+            get {
+                if (this.typeDeserializer != null) {
+                    return this.typeDeserializer;
+                }
 
-        public Type GetTypeFromName(string entityName) {
-            return this.typeSerializer.GetTypeFromName(entityName);
+                this.Finalise();
+                return this.typeDeserializer;
+            }
         }
 
         private void RecalculateColumns() {
@@ -204,5 +206,9 @@
         }
 
         public override int GetHashCode() => HashCode.Combine(this.CollectionName);
+
+        public void Finalise() {
+            this.typeDeserializer = new TypeDeserializer(this.entityTypes);
+        }
     }
 }

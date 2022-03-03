@@ -45,7 +45,7 @@
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
                         this.sqlDialect.AppendColumnName(builder, collection.DocumentTypeColumn.Name);
                         builder.Append(" = ");
-                        var paramName = command.AddParameter(collection.GetTypeName(entry.Value));
+                        var paramName = command.AddParameter(entry.Value.Serialize());
                         this.sqlDialect.AddParameter(builder, paramName);
                         if (!entry.IsLast) {
                             builder.Append(" or ");

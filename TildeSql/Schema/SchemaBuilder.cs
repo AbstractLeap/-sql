@@ -108,6 +108,10 @@
                 }
             }
 
+            foreach (var collection in schema.All()) {
+                collection.Finalise();
+            }
+
             return schema;
         }
 
