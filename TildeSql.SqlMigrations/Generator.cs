@@ -50,6 +50,14 @@
                 throw new NotImplementedException();
             }
 
+            foreach (var (table, index) in diff.DropIndexes) {
+                WriteIndex(downBuilder, upBuilder, table, index);
+            }
+
+            foreach (var (table, index) in diff.CreateIndexes) {
+                WriteIndex(upBuilder, downBuilder, table, index);
+            }
+
             foreach (var (table, column) in diff.DropColumns) {
                 WriteAddColumn(downBuilder, upBuilder, column, table);
             }
@@ -97,6 +105,29 @@
             }
 
             createBuilder.DecreaseIndent().NewLine();
+
+            foreach(var index in table.Indexes) {
+                WriteIndex(createBuilder, dropBuilder, table, index);
+            }
+        }
+
+        private static void WriteIndex(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table, Model.Index index) {
+            WriteCreateIndex(createBuilder, table, index);
+            WriteDropIndex(dropBuilder, table, index);
+        }
+
+        private static void WriteCreateIndex(CodeStringBuilder builder, Table table, Model.Index index) {
+            builder.Append("Create.Index(\"").Append(index.Name).Append("\").OnTable(\"").Append(table.Name).Append("\").InSchema(\"").Append(table.Schema).Append("\")").NewLine();
+            builder.IncreaseIndent();
+            foreach(var column in index.Columns) {
+                builder.Append(".OnColumn(\"").Append(column).Append("\").Ascending()").NewLine();
+            }
+
+            builder.Append(";").DecreaseIndent().NewLine();
+        }
+
+        private static void WriteDropIndex(CodeStringBuilder builder, Table table, Model.Index index) {
+            builder.Append("Delete.Index(\"").Append(index.Name).Append("\").OnTable(\"").Append(table.Name).Append("\").InSchema(\"").Append(table.Schema).Append("\");").NewLine();
         }
 
         private static void WriteComputedColumn(CodeStringBuilder createBuilder, Table table, Column column) {

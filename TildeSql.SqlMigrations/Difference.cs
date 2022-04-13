@@ -17,6 +17,10 @@
         private readonly IList<(Table Table, Column OldColumn, Column NewColumn, IList<PropertyInfo> ChangedProperties)> alterColumns =
             new List<(Table Table, Column OldColumn, Column NewColumn, IList<PropertyInfo> ChangedProperties)>();
 
+        private readonly IList<(Table Table, Index Index)> createIndexes = new List<(Table Table, Index Index)>();
+
+        private readonly IList<(Table Table, Index Index)> dropIndexes = new List<(Table Table, Index Index)>();
+
         public IEnumerable<Table> CreateTables => this.createTables;
 
         public IEnumerable<(Table Table, Column Column)> CreateColumns => this.createColumns;
@@ -25,9 +29,13 @@
 
         public IEnumerable<(Table Table, Column Column)> DropColumns => this.dropColumns;
 
+        public IEnumerable<(Table Table, Index Index)> CreateIndexes => this.createIndexes;
+
+        public IEnumerable<(Table Table, Index Index)> DropIndexes => this.dropIndexes;
+
         public IEnumerable<Table> DropTables => this.dropTables;
 
-        public bool IsChange => this.createTables.Any() || this.createColumns.Any() || this.alterColumns.Any() || this.dropColumns.Any() || this.dropTables.Any();
+        public bool IsChange => this.createTables.Any() || this.createColumns.Any() || this.alterColumns.Any() || this.dropColumns.Any() || this.dropTables.Any() || this.createIndexes.Any() || this.dropIndexes.Any();
 
         public void AddCreateTable(Table table) {
             this.createTables.Add(table);
@@ -47,6 +55,14 @@
 
         public void AddAlterColumn(Table table, IList<PropertyInfo> changedProperties, Column? oldColumn, Column newColumn) {
             this.alterColumns.Add((table, oldColumn, newColumn, changedProperties));
+        }
+
+        public void AddCreateIndex(Table table, Index index) {
+            this.createIndexes.Add((table, index));
+        }
+
+        public void AddDropIndex(Table table, Index index) {
+            this.dropIndexes.Add((table, index));
         }
     }
 }

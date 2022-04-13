@@ -15,6 +15,7 @@
                 }
                 else {
                     CheckColumns(difference, newModelTable, matchingCurrentTable);
+                    CheckIndexes(difference, newModelTable, matchingCurrentTable);
                 }
             }
 
@@ -50,6 +51,29 @@
             foreach (var column in matchingCurrentTable.Columns) {
                 if (!newModelTable.Columns.Any(c => c.Equals(column))) {
                     difference.AddDropColumn(newModelTable, column);
+                }
+            }
+        }
+
+        private void CheckIndexes(Difference difference, Table newModelTable, Table matchingCurrentTable) {
+            foreach (var index in newModelTable.Indexes) {
+                var matchingIndex = matchingCurrentTable.Indexes.SingleOrDefault(i => i.Name == index.Name);
+                if (matchingIndex == null) {
+                    difference.AddCreateIndex(newModelTable, index);
+                }
+                else {
+                    if (index.Columns.Any(columnName => !matchingIndex.Columns.Any(matchingColumnName => columnName == matchingColumnName))
+                        || matchingIndex.Columns.Any(matchingColumnName => !index.Columns.Any(columnName => columnName == matchingColumnName))) {
+                        // drop and re-create index
+                        difference.AddDropIndex(newModelTable, index);
+                        difference.AddCreateIndex(newModelTable, index);
+                    }
+                }
+            }
+
+            foreach (var index in matchingCurrentTable.Indexes) {
+                if (!newModelTable.Indexes.Any(i => i.Name == index.Name)) {
+                    difference.AddDropIndex(newModelTable, index);
                 }
             }
         }
