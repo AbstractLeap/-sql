@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <PackageId>TildeSql.JsonNet</PackageId>
+    <Version>0.0.1</Version>
+    <Description>TildeSql.JsonNet provides the NewtonSoft Json serialization for ~Sql</Description>
+    <Authors>Abstract Leap</Authors>
+    <Company>Abstract Leap</Company>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
