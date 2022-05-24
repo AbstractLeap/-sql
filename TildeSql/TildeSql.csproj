@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <PackageId>TildeSql</PackageId>
     <Version>0.0.1</Version>
     <Description>TildeSql is a document based data access layer implemented on top of a relational database</Description>
@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="fasterflect" Version="3.0.0" />
-    <PackageReference Include="System.Linq.Async" Version="5.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>

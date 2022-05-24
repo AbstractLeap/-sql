@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <PackageId>TildeSql.SqlMigrations</PackageId>
     <Version>0.0.1</Version>
     <Description>TildeSql.SqlMigrations provides a migrations framework for ~Sql</Description>
@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentMigrator" Version="3.3.1" />
+    <PackageReference Include="FluentMigrator" Version="3.3.2" />
   </ItemGroup>
 
   <ItemGroup>
