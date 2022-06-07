@@ -1,14 +1,9 @@
 ﻿namespace TildeSql.Internal.Common {
     using System.Text;
 
-    using TildeSql.IdentityMap;
-
-    using TildeSql.Internal.ColumnValueFactories;
-
-    using TildeSql.Utilities;
-
     using TildeSql.Internal.QueryWriter;
     using TildeSql.Schema;
+    using TildeSql.Utilities;
 
     public abstract class SqlBaseWriter {
         private readonly ISqlDialect sqlDialect;
@@ -17,7 +12,7 @@
 
         protected SqlBaseWriter(ISqlDialect sqlDialect, ISchema schema) {
             this.sqlDialect = sqlDialect;
-            this.schema     = schema;
+            this.schema = schema;
         }
 
         protected void WriteColumns<TEntity>(StringBuilder builder, Collection collection) {
@@ -42,7 +37,7 @@
 
                 this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(collection.GetKeyColumnValue<TEntity, TKey>(key, keyColumn));
+                var paramName = command.AddParameter(keyColumn.Name, collection.GetKeyColumnValue<TEntity, TKey>(key, keyColumn));
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -59,7 +54,7 @@
 
                 this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(databaseRow.Values[databaseRow.Collection.GetColumnIndex(keyColumn.Name)]);
+                var paramName = command.AddParameter(keyColumn.Name, databaseRow.Values[databaseRow.Collection.GetColumnIndex(keyColumn.Name)]);
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!keyColumnEntry.IsLast) {
                     builder.Append(" and ");
@@ -71,8 +66,7 @@
             where TEntity : class {
             foreach (var keyEntry in keys.AsSmartEnumerable()) {
                 builder.Append("(");
-                foreach (var keyColumnEntry in collection.KeyColumns.AsSmartEnumerable())
-                {
+                foreach (var keyColumnEntry in collection.KeyColumns.AsSmartEnumerable()) {
                     var keyColumn = keyColumnEntry.Value;
                     if (useAlias) {
                         builder.Append("t.");
@@ -80,7 +74,7 @@
 
                     this.sqlDialect.AppendColumnName(builder, keyColumn.Name);
                     builder.Append(" = ");
-                    var paramName = command.AddParameter(collection.GetKeyColumnValue<TEntity, TKey>(keyEntry.Value, keyColumn));
+                    var paramName = command.AddParameter(keyColumn.Name, collection.GetKeyColumnValue<TEntity, TKey>(keyEntry.Value, keyColumn));
                     this.sqlDialect.AddParameter(builder, paramName);
                     if (!keyColumnEntry.IsLast) {
                         builder.Append(" and ");
@@ -99,7 +93,7 @@
                 builder.Append(appendWhere ? " where " : " and ");
                 this.sqlDialect.AppendColumnName(builder, databaseRow.Collection.OptimisticConcurrencyColumn.Name);
                 builder.Append(" = ");
-                var paramName = command.AddParameter(
+                var paramName = command.AddParameter(databaseRow.Collection.OptimisticConcurrencyColumn.Name,
                     RowValueHelper.GetValue(databaseRow.Collection.OptimisticConcurrencyColumn.Type, databaseRow.Collection, databaseRow.Values, databaseRow.Collection.OptimisticConcurrencyColumn.Name));
                 this.sqlDialect.AddParameter(builder, paramName);
             }

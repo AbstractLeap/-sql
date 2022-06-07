@@ -25,7 +25,7 @@ namespace TildeSql.Tests {
             var command = new Command();
             keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
             this.outputHelper.WriteLine(command.Queries.First());
-            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @p1", command.Queries.First());
+            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @BlogId", command.Queries.First());
         }
     }
 
@@ -43,7 +43,7 @@ namespace TildeSql.Tests {
             var command = new Command();
             writer.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
             this.outputHelper.WriteLine(command.Queries.First());
-            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @p1", command.Queries.First());
+            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @BlogId", command.Queries.First());
         }
 
         [Fact]
@@ -53,12 +53,15 @@ namespace TildeSql.Tests {
             var command = new Command();
             writer.Write(
                 new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
-                    WhereClause = "Foo in @Foo", WhereClauseParameters = new Dictionary<string, object> { { "Foo", new[] { Guid.NewGuid(), Guid.NewGuid() } } }
+                    WhereClause = "Foo in @Foo",
+                    WhereClauseParameters = new Dictionary<string, object> { { "Foo", new[] { Guid.NewGuid(), Guid.NewGuid() } } }
                 },
                 command);
             this.outputHelper.WriteLine(command.Queries.First());
-            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where (Foo in (@Foo_1,@Foo_2))", command.Queries.First());
+            Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where (Foo in (@Foo,@Foo_2))", command.Queries.First());
             Assert.Equal(2, command.Parameters.Count());
+            Assert.Equal("Foo", command.Parameters.ElementAt(0).Name);
+            Assert.Equal("Foo_2", command.Parameters.ElementAt(1).Name);
         }
 
         [Fact]
@@ -68,7 +71,8 @@ namespace TildeSql.Tests {
             var command = new Command();
             writer.Write(
                 new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
-                    WhereClause = "Foo = @Foo", WhereClauseParameters = new Dictionary<string, object> { { "Foo", "I am an enumerable string" } }
+                    WhereClause = "Foo = @Foo",
+                    WhereClauseParameters = new Dictionary<string, object> { { "Foo", "I am an enumerable string" } }
                 },
                 command);
             this.outputHelper.WriteLine(command.Queries.First());

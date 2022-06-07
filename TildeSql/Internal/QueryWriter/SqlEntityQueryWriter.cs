@@ -1,5 +1,6 @@
 ﻿namespace TildeSql.Internal.QueryWriter {
     using System.Collections;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
 
@@ -16,7 +17,7 @@
 
         protected SqlEntityQueryWriter(ISchema schema, ISqlDialect sqlDialect)
             : base(sqlDialect, schema) {
-            this.schema     = schema;
+            this.schema = schema;
             this.sqlDialect = sqlDialect;
         }
 
@@ -44,7 +45,7 @@
                     foreach (var entry in assignableTypes.AsSmartEnumerable()) {
                         this.sqlDialect.AppendColumnName(builder, collection.DocumentTypeColumn.Name);
                         builder.Append(" = ");
-                        var paramName = command.AddParameter(collection.TypeSerializer.Serialize(entry.Value));
+                        var paramName = command.AddParameter(collection.DocumentTypeColumn.Name, collection.TypeSerializer.Serialize(entry.Value));
                         this.sqlDialect.AddParameter(builder, paramName);
                         if (!entry.IsLast) {
                             builder.Append(" or ");
@@ -70,19 +71,19 @@
                         var enumerable = parameter.Value as IEnumerable;
                         if (enumerable != null && parameter.Value.GetType() != typeof(string)) {
                             // expand the enumerable
-                            var values = 0;
+                            var enumerableParamNames = new List<string>();
                             foreach (var val in enumerable) {
-                                values++;
-                                command.AddParameter(parameter.Key + "_" + values, val);
+                                enumerableParamNames.Add(command.AddParameter(parameter.Key, val));
                             }
 
-                            var sb = new StringBuilder();
-                            this.sqlDialect.AddParameter(sb, parameter.Key);
-                            var paramName = sb.ToString();
-                            whereClause = whereClause.Replace(paramName, $"({string.Join(",", Enumerable.Range(1, values).Select(i => $"{paramName}_{i}"))})");
+                            var paramName = GetParamSqlName(parameter.Key);
+                            whereClause = whereClause.Replace(paramName, $"({string.Join(",", enumerableParamNames.Select(GetParamSqlName))})");
                         }
                         else {
-                            command.AddParameter(parameter.Key, parameter.Value);
+                            var actualParamName = command.AddParameter(parameter.Key, parameter.Value);
+                            if (actualParamName != parameter.Key) {
+                                whereClause = whereClause.Replace(GetParamSqlName(parameter.Key), GetParamSqlName(actualParamName));
+                            }
                         }
                     }
                 }
@@ -102,6 +103,12 @@
             }
 
             command.AddQuery(builder.ToString());
+
+            string GetParamSqlName(string name) {
+                var sb = new StringBuilder();
+                this.sqlDialect.AddParameter(sb, name); // @{parameter.Key} in Sql Server, for example
+                return sb.ToString();
+            }
         }
     }
 }

@@ -4,14 +4,12 @@
     using System.Text;
     using System.Threading;
 
-    using TildeSql.Schema.Conventions.Sql;
-
-    using TildeSql.Utilities;
-
     using TildeSql.Internal.QueryWriter;
     using TildeSql.Schema;
     using TildeSql.Schema.Columns;
+    using TildeSql.Schema.Conventions.Sql;
     using TildeSql.Serialization;
+    using TildeSql.Utilities;
 
     public abstract class SqlAddOperationWriter {
         private readonly ISchema schema;
@@ -23,10 +21,10 @@
         private uint idCounter;
 
         protected SqlAddOperationWriter(ISchema schema, ISqlDialect sqlDialect, ISerializer serializer) {
-            this.schema     = schema;
+            this.schema = schema;
             this.sqlDialect = sqlDialect;
             this.serializer = serializer;
-            this.idCounter  = 1;
+            this.idCounter = 1;
         }
 
         public void Write(DatabaseRow databaseRow, Command command) {
@@ -76,7 +74,7 @@
             command.AddQuery(builder.ToString());
 
             void AppendValue(Column column, object[] databaseRowValues) {
-                var paramName = command.AddParameter(databaseRowValues[databaseRow.Collection.GetColumnIndex(column.Name)]);
+                var paramName = command.AddParameter(column.Name, databaseRowValues[databaseRow.Collection.GetColumnIndex(column.Name)]);
                 this.sqlDialect.AddParameter(builder, paramName);
             }
         }

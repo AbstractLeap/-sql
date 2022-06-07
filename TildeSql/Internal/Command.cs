@@ -4,6 +4,7 @@
     using System.Data;
     using System.Data.Common;
     using System.Linq;
+    using System.Text.RegularExpressions;
 
     public class Command {
         private readonly List<string> queries = new List<string>();
@@ -11,11 +12,13 @@
         private readonly Dictionary<string, ParameterInfo> parameters = new Dictionary<string, ParameterInfo>();
 
         public event EventHandler<QueryAddedEventArgs> OnQueryAdded;
-        
+
+        private static Regex alphaRegex = new Regex("[^a-zA-Z0-9 -]", RegexOptions.Compiled);
+
         public void AddQuery(string query) {
-            if (this.OnQueryAdded != null) {
+            if (OnQueryAdded != null) {
                 var args = new QueryAddedEventArgs(query);
-                this.OnQueryAdded(this, args);
+                OnQueryAdded(this, args);
                 query = args.Query;
             }
 
@@ -24,14 +27,17 @@
             }
         }
 
-        public string AddParameter(object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
-            var name = $"p{this.parameters.Count + 1}";
-            this.AddParameter(name, value, dbType, direction, size);
-            return name;
-        }
+        public string AddParameter(object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) => this.AddParameter("p", value, dbType, direction, size);
 
-        public void AddParameter(string name, object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
-            this.parameters[Clean(name)] = new ParameterInfo(name, value, direction ?? ParameterDirection.Input, dbType, size);
+        public string AddParameter(string name, object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
+            var cleanedName = Clean(name);
+            if (this.parameters.TryGetValue(cleanedName, out var _)) {
+                // already got this parameter in the query so we'll rename
+                cleanedName = cleanedName + "_" + (this.parameters.Count + 1);
+            }
+
+            this.parameters[cleanedName] = new ParameterInfo(cleanedName, value, direction ?? ParameterDirection.Input, dbType, size);
+            return cleanedName;
         }
 
         /// <remarks>
@@ -45,13 +51,21 @@
         internal IEnumerable<ParameterInfo> Parameters => this.parameters.Values.AsEnumerable();
 
         private static string Clean(string name) {
-            if (!string.IsNullOrEmpty(name)) {
-                switch (name[0]) {
-                    case '@':
-                    case ':':
-                    case '?':
-                        return name.Substring(1);
-                }
+            if (string.IsNullOrWhiteSpace(name)) {
+                return name;
+            }
+
+            switch (name[0]) {
+                case '@':
+                case ':':
+                case '?':
+                    name = name.Substring(1);
+                    break;
+            }
+
+            name = alphaRegex.Replace(name, string.Empty);
+            if (char.IsNumber(name[0])) {
+                name = $"p{name}";
             }
 
             return name;
@@ -62,8 +76,8 @@
             foreach (var (name, value, parameterDirection, dbType, size) in this.Parameters) {
                 var parameter = dbCommand.CreateParameter();
                 parameter.ParameterName = name;
-                parameter.Value         = value;
-                parameter.Direction     = parameterDirection;
+                parameter.Value = value;
+                parameter.Direction = parameterDirection;
                 if (dbType.HasValue) {
                     parameter.DbType = dbType.Value;
                 }
