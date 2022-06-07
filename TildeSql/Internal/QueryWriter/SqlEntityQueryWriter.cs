@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using System.Text.RegularExpressions;
 
     using TildeSql.Internal.Common;
     using TildeSql.Queries;
@@ -77,12 +78,13 @@
                             }
 
                             var paramName = GetParamSqlName(parameter.Key);
-                            whereClause = whereClause.Replace(paramName, $"({string.Join(",", enumerableParamNames.Select(GetParamSqlName))})");
+                            var newParams = $"({string.Join(",", enumerableParamNames.Select(GetParamSqlName))})";
+                            whereClause = ReplaceParameter(whereClause, paramName, newParams);
                         }
                         else {
                             var actualParamName = command.AddParameter(parameter.Key, parameter.Value);
                             if (actualParamName != parameter.Key) {
-                                whereClause = whereClause.Replace(GetParamSqlName(parameter.Key), GetParamSqlName(actualParamName));
+                                whereClause = ReplaceParameter(whereClause, GetParamSqlName(parameter.Key), GetParamSqlName(actualParamName));
                             }
                         }
                     }
@@ -108,6 +110,12 @@
                 var sb = new StringBuilder();
                 this.sqlDialect.AddParameter(sb, name); // @{parameter.Key} in Sql Server, for example
                 return sb.ToString();
+            }
+
+            static string ReplaceParameter(string whereClause, string oldParamName, string newParamName) {
+                var regex = new Regex($"({oldParamName})([^\\w]|$)");
+                whereClause = regex.Replace(whereClause, m => $"{newParamName}{m.Groups[2].Value}"); // first group is the whole match, second is the existing param, third (zero based remember) is the bit after the variable that we need to put back in
+                return whereClause;
             }
         }
     }
