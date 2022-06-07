@@ -47,7 +47,7 @@
             var migrationCode = new Generator().CreateCode(diff, "TildeSql.Tests.Migration", "Tests");
             var syntaxTree = CSharpSyntaxTree.ParseText(migrationCode);
             var references = new List<MetadataReference> {
-                MetadataReference.CreateFromFile(typeof(Migration).Assembly.Location), 
+                MetadataReference.CreateFromFile(typeof(Migration).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(ICreateExpressionRoot).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(MigratorExtensions).Assembly.Location)
             };
@@ -55,7 +55,7 @@
             var compilation = CSharpCompilation.Create(
                 "TildeSql.Tests.Migration.dll",
                 new[] { syntaxTree },
-                references.Union(ReferenceAssemblies.Net50),
+                references.Union(ReferenceAssemblies.Net60),
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
             Assembly assembly;
             using (var ms = new MemoryStream()) {
