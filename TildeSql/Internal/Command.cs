@@ -9,7 +9,12 @@
     public class Command {
         private readonly List<string> queries = new List<string>();
 
-        private readonly Dictionary<string, ParameterInfo> parameters = new Dictionary<string, ParameterInfo>();
+        private readonly List<ParameterInfo> parameters = new List<ParameterInfo>();
+
+        /// <summary>
+        /// Used to check for duplicate names, case insensitive
+        /// </summary>
+        private readonly HashSet<string> parameterNames = new HashSet<string>();
 
         public event EventHandler<QueryAddedEventArgs> OnQueryAdded;
 
@@ -31,12 +36,14 @@
 
         public string AddParameter(string name, object value, DbType? dbType = null, ParameterDirection? direction = null, int? size = null) {
             var cleanedName = Clean(name);
-            if (this.parameters.TryGetValue(cleanedName, out var _)) {
+            var upperCleanedname = cleanedName.ToUpper();
+            if (this.parameterNames.Contains(upperCleanedname)) {
                 // already got this parameter in the query so we'll rename
                 cleanedName = cleanedName + "_" + (this.parameters.Count + 1);
             }
 
-            this.parameters[cleanedName] = new ParameterInfo(cleanedName, value, direction ?? ParameterDirection.Input, dbType, size);
+            this.parameters.Add(new ParameterInfo(cleanedName, value, direction ?? ParameterDirection.Input, dbType, size));
+            this.parameterNames.Add(upperCleanedname);
             return cleanedName;
         }
 
@@ -48,7 +55,7 @@
         /// <remarks>
         ///     For unit testing
         /// </remarks>
-        internal IEnumerable<ParameterInfo> Parameters => this.parameters.Values.AsEnumerable();
+        internal IEnumerable<ParameterInfo> Parameters => this.parameters.AsEnumerable();
 
         private static string Clean(string name) {
             if (string.IsNullOrWhiteSpace(name)) {
