@@ -2,13 +2,12 @@
     using System;
     using System.Collections.Generic;
 
-    using TildeSql.JsonNet;
-
-    using TildeSql.SqlServer;
     using TildeSql.Configuration;
     using TildeSql.Humanizer;
+    using TildeSql.JsonNet;
     using TildeSql.Schema;
     using TildeSql.Schema.Conventions;
+    using TildeSql.SqlServer;
     using TildeSql.Tests.TestDomain.Blog;
     using TildeSql.Tests.TestDomain.GenericType;
     using TildeSql.Tests.TestDomain.Identity;
@@ -35,11 +34,12 @@
                                                    .AddTypes(MultiTableType.ArchivedCollectionName, typeof(Person))
                                                    .AddTypes(typeof(TestDomain.PlayExtraColumns.Person))
                                                    .AddTypes(typeof(TupleKeyTypeThing))
+                                                   .AddTypes(typeof(TupleWithPrimitiveKeyTing))
                                                    .AddTypes(typeof(GenericContainer));
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>().AddComputedColumn<string>("Email", "$.email.address", true, true);
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>()
                          .AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));
-
+            schemaBuilder.Setup<TupleWithPrimitiveKeyTing>().PrimaryKey("oneId", "atTime", "emailAddress");
             return schemaBuilder.UseSqlServerConvention().UseConvention(new NameConvention()).UseConvention(new ComputedConvention()).Build();
         }
 

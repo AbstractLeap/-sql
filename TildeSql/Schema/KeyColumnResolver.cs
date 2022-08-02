@@ -6,9 +6,8 @@
 
     using Fasterflect;
 
-    using TildeSql.Utilities;
-
     using TildeSql.Schema.Columns;
+    using TildeSql.Utilities;
 
     class KeyColumnResolver {
         private readonly Type keyType;
@@ -65,7 +64,10 @@
                     resultantMemberAccessors.Add(this.keyType.GetFields()[keyMemberIdx]);
                 }
 
-                resultantMemberAccessors.AddRange(memberAccessors.Skip(1).Union(new[] { memberInfo }));
+                if (!keyMemberInfo.PropertyOrFieldType().IsPrimitiveType()) {
+                    resultantMemberAccessors.AddRange(memberAccessors.Skip(1).Union(new[] { memberInfo }));
+                }
+
                 yield return (new KeyColumn(memberType, name, this.collection, keyMemberInfo, resultantMemberAccessors.ToArray()),
                                  new NestedKeyColumnValueAccessor(resultantMemberAccessors.ToArray()));
             }
