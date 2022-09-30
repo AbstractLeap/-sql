@@ -31,6 +31,8 @@
 
         private DbDataReader dataReader;
 
+        private IQuery currentlyReadQuery;
+
         public SqlQueryExecutor(IConnectionFactory connectionFactory, ISqlQueryWriter sqlQueryWriter, ISchema schema) {
             this.connectionFactory = connectionFactory;
             this.sqlQueryWriter    = sqlQueryWriter;
@@ -86,11 +88,18 @@
             }
 
             // read the result we've been asked for
+            if (this.currentlyReadQuery != null && this.currentlyReadQuery != query) {
+                // if they didn't enumerate the whole of the previous query, we do go to the next query
+                await this.dataReader.NextResultAsync();
+            }
+
+            currentlyReadQuery = query;
             await foreach (var row in this.ReadResultAsync<TEntity>()) {
                 yield return row;
             }
 
             await this.dataReader.NextResultAsync();
+            this.currentlyReadQuery = null;
 
             if (this.notReadQueries.Count == 0) {
                 await this.CleanUpCommandAsync();
