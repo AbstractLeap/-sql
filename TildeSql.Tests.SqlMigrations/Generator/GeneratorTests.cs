@@ -40,7 +40,8 @@ namespace TildeSql.Tests.SqlMigrations.Generator
                         Size = 64,
                         Type = typeof(string)
                     }
-                }
+                },
+                Indexes = new List<Index>()
             });
             var code = generator.CreateCode(diff, "Tests.Migrations", "Migration1");
             this.output.WriteLine(code);

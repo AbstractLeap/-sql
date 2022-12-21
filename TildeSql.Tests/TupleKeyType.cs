@@ -38,7 +38,7 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var querySession1 = sf.StartSession();
-            var thingAgain = await querySession1.Get<TupleWithPrimitiveKeyTing>().SingleAsync((idOne, now, email));
+            var thingAgain = await querySession1.Get<TupleWithPrimitiveKeyTing>().SingleAsync((idOne, now.Ticks, email));
             Assert.Equal(email, thingAgain.Email);
             Assert.Equal(idOne, thingAgain.OneId);
             Assert.Equal(now, thingAgain.AtTime);
