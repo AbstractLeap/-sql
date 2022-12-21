@@ -1,8 +1,9 @@
 ﻿namespace TildeSql {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface ISession {
+    public interface ISession : IAsyncDisposable {
         IQueryBuilder<TEntity> Get<TEntity>()
             where TEntity : class;
 

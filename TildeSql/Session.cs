@@ -11,7 +11,7 @@
     using TildeSql.Schema;
     using TildeSql.Serialization;
 
-    class Session : ISession {
+    sealed class Session : ISession {
         private readonly ISchema schema;
 
         private readonly IMemoryCache memoryCache;
@@ -117,6 +117,11 @@
 
         public QueryEngine GetEngine() {
             return this.queryEngine;
+        }
+
+        public async ValueTask DisposeAsync() {
+            await this.queryEngine.DisposeAsync();
+            await this.updateEngine.DisposeAsync();
         }
     }
 }

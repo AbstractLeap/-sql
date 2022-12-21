@@ -158,6 +158,10 @@
                 await this.command.DisposeAsync().ConfigureAwait(false);
             }
 
+            if (this.connection != null) {
+                await this.connection.DisposeAsync().ConfigureAwait(false);
+            }
+
             if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
                 await disposableConnectionFactory.DisposeAsync();
             }
