@@ -11,7 +11,7 @@ namespace TildeSql.Internal {
     using TildeSql.Internal.QueryWriter;
     using TildeSql.Internal.UpdateWriter;
 
-    public class SqlUpdateExecutor : IUpdateExecutor, IAsyncDisposable {
+    public class SqlUpdateExecutor : IUpdateExecutor, IAsyncDisposable, IDisposable {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlUpdateWriter updateWriter;
@@ -110,6 +110,12 @@ namespace TildeSql.Internal {
         public async ValueTask DisposeAsync() {
             if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
                 await disposableConnectionFactory.DisposeAsync();
+            }
+        }
+
+        public void Dispose() {
+            if (this.connectionFactory is IDisposable disposableConnectionFactory) {
+                disposableConnectionFactory.Dispose();
             }
         }
     }

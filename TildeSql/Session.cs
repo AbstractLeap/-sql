@@ -123,5 +123,10 @@
             await this.queryEngine.DisposeAsync();
             await this.updateEngine.DisposeAsync();
         }
+
+        public void Dispose() {
+            this.queryEngine.Dispose();
+            this.updateEngine.Dispose();
+        }
     }
 }

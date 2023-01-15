@@ -3,7 +3,7 @@
     using System.Data.Common;
     using System.Threading.Tasks;
 
-    public abstract class ConnectionPerSessionConnectionFactory : IConnectionFactory, IAsyncDisposable {
+    public abstract class ConnectionPerSessionConnectionFactory : IConnectionFactory, IAsyncDisposable, IDisposable {
         private readonly string connectionString;
 
         private DbConnection connection;
@@ -27,6 +27,10 @@
 
         public ValueTask DisposeAsync() {
             return this.connection?.DisposeAsync() ?? ValueTask.CompletedTask;
+        }
+
+        public void Dispose() {
+            this.connection?.Dispose();
         }
     }
 }

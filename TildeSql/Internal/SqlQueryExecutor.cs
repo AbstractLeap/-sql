@@ -13,7 +13,7 @@
     using TildeSql.Queries;
     using TildeSql.Schema;
 
-    public class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable {
+    public class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable, IDisposable {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlQueryWriter sqlQueryWriter;
@@ -149,6 +149,8 @@
             }
         }
 
+        private bool isDisposed;
+
         public async ValueTask DisposeAsync() {
             if (this.dataReader != null) {
                 await this.dataReader.DisposeAsync().ConfigureAwait(false);
@@ -164,6 +166,30 @@
 
             if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
                 await disposableConnectionFactory.DisposeAsync();
+            }
+
+            this.isDisposed = true;
+        }
+
+        public void Dispose() {
+            if (this.isDisposed) {
+                return;
+            }
+
+            if (this.dataReader != null) {
+                this.dataReader.Dispose();
+            }
+
+            if (this.command != null) {
+                this.command.Dispose();
+            }
+
+            if (this.connection != null) {
+                this.connection.Dispose();
+            }
+
+            if (this.connectionFactory is IDisposable disposableConnectionFactory) {
+                disposableConnectionFactory.Dispose();
             }
         }
     }

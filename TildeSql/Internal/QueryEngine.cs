@@ -13,7 +13,7 @@
     using TildeSql.UnitOfWork;
     using TildeSql.Utilities;
 
-    class QueryEngine : IAsyncDisposable {
+    class QueryEngine : IAsyncDisposable, IDisposable {
         private readonly ISchema schema;
 
         private readonly IdentityMap identityMap;
@@ -208,6 +208,12 @@
         public async ValueTask DisposeAsync() {
             if (this.persistenceQueryExecutor is IAsyncDisposable disposable) {
                 await disposable.DisposeAsync();
+            }
+        }
+
+        public void Dispose() {
+            if (this.persistenceQueryExecutor is IDisposable disposable) {
+                disposable.Dispose();
             }
         }
     }

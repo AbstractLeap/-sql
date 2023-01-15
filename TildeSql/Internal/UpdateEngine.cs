@@ -13,7 +13,7 @@
     using TildeSql.Serialization;
     using TildeSql.UnitOfWork;
 
-    class UpdateEngine : IAsyncDisposable {
+    class UpdateEngine : IAsyncDisposable, IDisposable {
         private readonly IUpdateExecutor persistenceUpdateExecutor;
 
         private readonly IMemoryCache memoryCache;
@@ -176,6 +176,12 @@
         public async ValueTask DisposeAsync() {
             if (this.persistenceUpdateExecutor is IAsyncDisposable disposable) {
                 await disposable.DisposeAsync();
+            }
+        }
+
+        public void Dispose() {
+            if (this.persistenceUpdateExecutor is IDisposable disposable) {
+                disposable.Dispose();
             }
         }
     }

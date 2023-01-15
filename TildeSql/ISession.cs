@@ -3,7 +3,7 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    public interface ISession : IAsyncDisposable {
+    public interface ISession : IAsyncDisposable, IDisposable {
         IQueryBuilder<TEntity> Get<TEntity>()
             where TEntity : class;
 
