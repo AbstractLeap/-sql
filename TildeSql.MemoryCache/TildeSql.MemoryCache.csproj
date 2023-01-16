@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>TildeSql.MemoryCache</PackageId>
-    <Version>0.0.2</Version>
+    <Version>0.1.0</Version>
     <Description>TildeSql.MemoryCache provides an in-memory cache for ~Sql</Description>
     <Authors>Abstract Leap</Authors>
     <Company>Abstract Leap</Company>
