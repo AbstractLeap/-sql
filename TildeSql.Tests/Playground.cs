@@ -35,8 +35,8 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var fetchSession = sessionFactory.StartSession();
-            var blogsFuture = fetchSession.Get<Blog>().MultipleFuture(newBlog.BlogId, newBlog2.BlogId);
-            var blogsNow = await fetchSession.Get<Blog>().MultipleAsync(newBlog.BlogId, newBlog2.BlogId).ToArrayAsync();
+            var blogsFuture = fetchSession.Get<Blog>().MultipleFuture(new [] { newBlog.BlogId, newBlog2.BlogId });
+            var blogsNow = await fetchSession.Get<Blog>().MultipleAsync(new [] { newBlog.BlogId, newBlog2.BlogId }).ToArrayAsync();
             var blogsFromFuture = await blogsFuture.ToArrayAsync();
             Assert.Equal(2, blogsNow.Length);
             Assert.Equal(2, blogsFromFuture.Length);

@@ -31,14 +31,14 @@
             return new FutureSingleResult<TEntity, TKey>(query, this.session);
         }
 
-        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(params TKey[] keys) {
-            var query = new MultipleKeyQuery<TEntity, TKey>(keys, this.collection);
+        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys) {
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query);
         }
 
-        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(params TKey[] keys) {
-            var query = new MultipleKeyQuery<TEntity, TKey>(keys, this.collection);
+        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys) {
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(query);
             return new FutureMultipleResult<TEntity, TKey>(query, this.session);

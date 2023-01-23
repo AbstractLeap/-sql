@@ -15,7 +15,7 @@ namespace TildeSql.Tests {
             var blogId2 = new BlogId();
             var session = this.GetSession();
             var entity = await session.Get<Blog>().SingleAsync(blogId1);
-            var entitiesEnumerable = session.Get<Blog>().MultipleAsync(blogId1, blogId2);
+            var entitiesEnumerable = session.Get<Blog>().MultipleAsync(new [] { blogId1, blogId2 });
             await foreach (var asyncEntity in entitiesEnumerable) { }
 
             var entities = await entitiesEnumerable.ToListAsync();
@@ -23,7 +23,7 @@ namespace TildeSql.Tests {
             var futureEntityFuture = session.Get<Blog>().SingleFuture(blogId1);
             var futureEntity = await futureEntityFuture.SingleAsync();
 
-            var futureEntitiesFuture = session.Get<Blog>().MultipleFuture(blogId1, blogId2);
+            var futureEntitiesFuture = session.Get<Blog>().MultipleFuture(new[] { blogId1, blogId2 });
             var futureEntities = await futureEntitiesFuture.ToListAsync();
 
             var blog = new Blog("My blog");

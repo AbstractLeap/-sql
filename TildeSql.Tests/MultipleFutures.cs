@@ -19,8 +19,8 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var selectSession = sessionFactory.StartSession();
-            var futureOrange = selectSession.Get<Orange>().MultipleFuture(orange.Id);
-            var futureApple = selectSession.Get<Apple>().MultipleFuture(apple.Id);
+            var futureOrange = selectSession.Get<Orange>().MultipleFuture(new [] { orange.Id });
+            var futureApple = selectSession.Get<Apple>().MultipleFuture(new [] { apple.Id });
 
             var oranges = await futureOrange.ToArrayAsync();
             var apples = await futureApple.ToArrayAsync();
@@ -44,8 +44,8 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var selectSession = sessionFactory.StartSession();
-            var futureOrange = selectSession.Get<Orange>().MultipleFuture(orange.Id);
-            var futureApple = selectSession.Get<Apple>().MultipleFuture(apple.Id);
+            var futureOrange = selectSession.Get<Orange>().MultipleFuture(new [] { orange.Id });
+            var futureApple = selectSession.Get<Apple>().MultipleFuture(new [] { apple.Id });
 
             var apples = await futureApple.ToArrayAsync();
             var oranges = await futureOrange.ToArrayAsync();
@@ -67,8 +67,8 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var selectSession = sessionFactory.StartSession();
-            var futureOrange = selectSession.Get<Orange>().MultipleFuture(Guid.NewGuid());
-            var futureApple = selectSession.Get<Apple>().MultipleFuture(apple.Id);
+            var futureOrange = selectSession.Get<Orange>().MultipleFuture(new [] { Guid.NewGuid() });
+            var futureApple = selectSession.Get<Apple>().MultipleFuture(new [] { apple.Id });
 
             var oranges = await futureOrange.ToArrayAsync();
             var apples = await futureApple.ToArrayAsync();
@@ -90,9 +90,9 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var selectSession = sessionFactory.StartSession();
-            var futureEmptyOrange = selectSession.Get<Orange>().MultipleFuture(Guid.NewGuid());
+            var futureEmptyOrange = selectSession.Get<Orange>().MultipleFuture(new [] { Guid.NewGuid() });
             var futureApple = selectSession.Get<Apple>().Where("id = @Id", new { apple.Id }).Future();
-            var futureOrange = selectSession.Get<Orange>().MultipleFuture(orange.Id);
+            var futureOrange = selectSession.Get<Orange>().MultipleFuture(new [] { orange.Id });
 
             var emptyOranges = await futureEmptyOrange.ToArrayAsync();
             var fetchedApple = await futureApple.FirstOrDefaultAsync();
@@ -116,8 +116,8 @@ namespace TildeSql.Tests {
             await insertSession.SaveChangesAsync();
 
             var selectSession = sessionFactory.StartSession();
-            var futureOrange = selectSession.Get<Orange>().MultipleFuture(Guid.NewGuid());
-            var futureApple = selectSession.Get<Apple>().MultipleFuture(apple.Id);
+            var futureOrange = selectSession.Get<Orange>().MultipleFuture(new[] { Guid.NewGuid() });
+            var futureApple = selectSession.Get<Apple>().MultipleFuture(new [] { apple.Id });
 
             var apples = await futureApple.ToArrayAsync();
             var oranges = await futureOrange.ToArrayAsync();

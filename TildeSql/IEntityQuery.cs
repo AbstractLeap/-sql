@@ -6,6 +6,6 @@
     public interface IEntityQuery<TEntity> {
         ValueTask<TEntity> SingleAsync<TKey>(TKey key, CancellationToken cancellationToken = default);
 
-        IAsyncEnumerable<TEntity> MultipleAsync<TKey>(params TKey[] keys);
+        IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys);
     }
 }
