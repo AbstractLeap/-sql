@@ -1,112 +1,101 @@
-![Logo of the project](https://raw.githubusercontent.com/jehna/readme-best-practices/master/sample-logo.png)
+
+
+![~Sql logo](https://raw.githubusercontent.com/AbstractLeap/docs/logo.webp)
 
 # ~Sql
-> A .Net ORM for a DDD-inspired Document DB over Sql
+> A .Net Data library for a DDD-inspired Document DB over Sql
 
-A brief description of your project, what it is used for and how does life get
-awesome when someone starts to use it.
+~Sql is a .Net library designed to support a [DDD](https://en.wikipedia.org/wiki/Domain-driven_design) domain model that uses a relational database (namely SQL Server) to provide a transactional document database.
 
-## Installing / Getting started
+It's goal is to enable storage of a [domain model](https://martinfowler.com/eaaCatalog/domainModel.html) that uses the full expressiveness of C# in a persistence agnostic way.
 
-A quick introduction of the minimal setup you need to get a hello world up &
-running.
+## Installing
 
-```shell
-packagemanager install awesome-project
-awesome-project start
-awesome-project "Do something!"  # prints "Nah."
+To get started, add the following packages from Nuget:
+
 ```
-
-Here you should say what actually happens when you execute the code above.
-
-### Initial Configuration
-
-Some projects require initial configuration (e.g. access tokens or keys, `npm i`).
-This is the section where you would document those requirements.
+dotnet add package TildeSql
+dotnet add package TildeSql.SqlServer
+dotnet add package TildeSql.JsonNet
+```
 
 ## Developing
 
-Here's a brief intro about what a developer must do in order to start developing
-the project further:
+If you want to build the solution (and run the tests) you will need Sql Server and dotnet, that's it!
 
 ```shell
-git clone https://github.com/your/awesome-project.git
-cd awesome-project/
-packagemanager install
+git clone https://github.com/AbstractLeap/tildesql.git
+cd tildesql/
 ```
 
-And state what happens step-by-step.
-
-### Building
-
-If your project needs some additional steps for the developer to build the
-project after some code changes, state them here:
-
-```shell
-./configure
-make
-make install
-```
-
-Here again you should state what actually happens when the code above gets
-executed.
-
-### Deploying / Publishing
-
-In case there's some step you have to take that publishes this project to a
-server, this is the right time to state it.
-
-```shell
-packagemanager deploy awesome-project -s server.com -u username -p password
-```
-
-And again you'd need to tell what the previous code actually does.
 
 ## Features
 
-What's all the bells and whistles this project can perform?
-* What's the main functionality
-* You can also do another thing
-* If you get really randy, you can even do this
+What can it do?
+* Supports DDD tactical patterns (Entity, Value Object, Service, Aggregate, Repository, Domain Events)
+* Removes/minimises primitive obsession
+* Complete persistence ignorance -> Automatic dirty tracking
+* Migrations
+* Unit of Work/Identity Map
+* In-memory and distributed caching
+* Strongly typed and multiple primary keys
+* Batched queries through "Futures"
+* Supports persisting generic types
+* Multiple tables per type
+* Optimistic concurrency
+* Inheritance
+* Computed and projected columns
+* Async everywhere
 
-## Configuration
+## A Few Examples
 
-Here you should write what are all of the configurations a user can enter when
-using the project.
+The following code illustrates the basic operations in ~Sql:
+```
+var blogId1 = new BlogId(); // strongly typed key
+var blogId2 = new BlogId();
+await using var session = this.GetSession(); // async everywhere
+var entitiesEnumerable = session.Get<Blog>().MultipleFuture(new [] { blogId1, blogId2 }); // batch up multiple query
+var entity = await session.Get<Blog>().SingleAsync(blogId1);
+await foreach (var asyncEntity in entitiesEnumerable) { } // async enumeration
 
-#### Argument 1
-Type: `String`  
-Default: `'default value'`
+var blog = new Blog("My blog");
+session.Add(blog);
+session.Delete(blog);
 
-State what an argument does and how you can use it. If needed, you can provide
-an example below.
+var queryEntities = await session.Get<Blog>()
+				.Where("AuthorId = @AuthorId", new { AuthorId = authorId.Id })
+				.ToListAsync();
 
-Example:
-```bash
-awesome-project "Some other value"  # Prints "You're nailing this readme!"
+entity.Title = "Foo"; // automatic dirty checking
+await session.SaveChangesAsync();
 ```
 
-#### Argument 2
-Type: `Number|Boolean`  
-Default: 100
+The following example illustrates how an inheritance hierarchy could be stored in a single table with the identity map ensuring that a query for a super type still returns the original (more specifically typed) instance for the same session:
 
-Copy-paste as many of these as you need.
+```
+var poodle = new Poodle("Paul");
+session.Add(poodle);
+
+var dog = await session.Get<Dog>().SingleAsync(poodle.Id);
+Assert.Same(poodle, dog);
+```
+This example shows the storage of a generic type:
+```
+var thing = new Entity<Foo>(new Foo { Name = "Foofoo" });
+insertSession.Add(thing);
+await insertSession.SaveChangesAsync();
+
+var selectSession = sf.StartSession();
+var personAgain = await selectSession.Get<Entity<Foo>>().SingleAsync(thing.Id);
+Assert.Equal("Foofoo", personAgain.Thing.Name);
+```
 
 ## Contributing
 
-When you publish something open source, one of the greatest motivations is that
-anyone can just jump in and start contributing to your project.
+If you'd like to contribute, please fork the repository and use a feature
+branch. Pull requests are warmly welcome.
 
-These paragraphs are meant to welcome those kind souls to feel that they are
-needed. You should state something like:
-
-"If you'd like to contribute, please fork the repository and use a feature
-branch. Pull requests are warmly welcome."
-
-If there's anything else the developer needs to know (e.g. the code style
-guide), you should link it here. If there's a lot of things to take into
-consideration, it is common to separate this section to its own file called
-`CONTRIBUTING.md` (or similar). If so, you should say that it exists here.
+You may want to open an issue in the repository first :-)
 
 ## Links
 
@@ -126,9 +115,5 @@ links to humans using your project. You can include links like:
 
 
 ## Licensing
-
-One really important part: Give your project a proper license. Here you should
-state what the license is and how to find the text version of the license.
-Something like:
 
 "The code in this project is licensed under MIT license."
