@@ -24,7 +24,7 @@ namespace TildeSql.Tests
 
             var selectSession = sf.StartSession();
             var personAgain = await selectSession.Get<Entity<Foo>>().SingleAsync(thing.Id);
-            Assert.Equal("Foofoo", thing.Thing.Name);
+            Assert.Equal("Foofoo", personAgain.Thing.Name);
         }
 
         class Foo
