@@ -57,6 +57,8 @@
         /// </remarks>
         internal IEnumerable<ParameterInfo> Parameters => this.parameters.AsEnumerable();
 
+        public int ParameterCount => this.parameters.Count;
+
         private static string Clean(string name) {
             if (string.IsNullOrWhiteSpace(name)) {
                 return name;

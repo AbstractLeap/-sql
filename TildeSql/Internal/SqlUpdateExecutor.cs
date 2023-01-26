@@ -32,61 +32,75 @@ namespace TildeSql.Internal {
             }
 
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
-            await using var dbCommand = connection.CreateCommand();
-            dbCommand.Transaction = transaction;
-            var command = new Command();
-            var wrapSqlWithAffectedRowsCount = false;
-            var returnsData = false;
-            command.OnQueryAdded += (sender, args) => {
-                if (wrapSqlWithAffectedRowsCount) {
-                    args.Query  = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
-                    returnsData = true;
+
+            // in SQL server we have a 2100 parameter limit so we execute multiple commands as necessary (inside the same transaction)
+            var insertList = inserts as List<DatabaseRow> ?? inserts.ToList(); // this is true by default
+            var updateList = updates as List<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)> ?? updates.ToList();
+            var deleteList = deletes as List<DatabaseRow> ?? deletes.ToList();
+            var insertIdx = 0;
+            var updateIdx = 0;
+            var deleteIdx = 0;
+            while (insertIdx < insertList.Count || updateIdx < updateList.Count || deleteIdx < deleteList.Count) {
+                var startInsertIdx = insertIdx;
+                var startUpdateIdx = updateIdx;
+                var startDeleteIdx = deleteIdx;
+                await using var dbCommand = connection.CreateCommand();
+                dbCommand.Transaction = transaction;
+                var command = new Command();
+                var wrapSqlWithAffectedRowsCount = false;
+                var returnsData = false;
+                command.OnQueryAdded += (sender, args) => {
+                    if (wrapSqlWithAffectedRowsCount) {
+                        args.Query  = this.sqlDialect.AddAffectedRowsCount(args.Query, command);
+                        returnsData = true;
+                    }
+                };
+
+                for (; insertIdx < insertList.Count && command.ParameterCount < 2000; insertIdx++) {
+                    var databaseRow = insertList[insertIdx];
+                    returnsData = returnsData || databaseRow.Collection.IsKeyComputed;
+                    this.updateWriter.WriteInsert(databaseRow, command);
                 }
-            };
 
-            foreach (var databaseRow in inserts) {
-                returnsData = returnsData || databaseRow.Collection.IsKeyComputed;
-                this.updateWriter.WriteInsert(databaseRow, command);
-            }
+                wrapSqlWithAffectedRowsCount = true;
+                for (; updateIdx < updateList.Count && command.ParameterCount < 2000; updateIdx++) {
+                    this.updateWriter.WriteUpdate(updateList[updateIdx], command);
+                }
 
-            wrapSqlWithAffectedRowsCount = true;
-            foreach (var update in updates) {
-                this.updateWriter.WriteUpdate(update, command);
-            }
+                for (; deleteIdx < deleteList.Count && command.ParameterCount < 2000; deleteIdx++) {
+                    this.updateWriter.WriteDelete(deleteList[deleteIdx], command);
+                }
 
-            foreach (var databaseRow in deletes) {
-                this.updateWriter.WriteDelete(databaseRow, command);
-            }
+                command.WriteToDbCommand(dbCommand);
+                if (!returnsData) {
+                    // we can just execute and then run the next iteration if necessary
+                    await dbCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                }
+                else {
+                    await using var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                    List<Exception> exceptions = new();
+                    for (var i = startInsertIdx; i < insertIdx; i++) {
+                        var insert = insertList[i];
+                        if (!insert.Collection.IsKeyComputed) {
+                            continue;
+                        }
 
-            command.WriteToDbCommand(dbCommand);
-            if (!returnsData) {
-                await dbCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-                await transaction.CommitAsync(cancellationToken);
-                return;
-            }
-
-            await using (var dbReader = await dbCommand.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false)) {
-                List<Exception> exceptions = new();
-                foreach (var insert in inserts) {
-                    if (!insert.Collection.IsKeyComputed) {
-                        continue;
+                        await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                        insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
+                        await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
                     }
 
-                    await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                    insert.Values[insert.Collection.GetColumnIndex(insert.Collection.KeyColumns.First().Name)] = dbReader.GetValue(0);
-                    await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
-                }
+                    for (var i = startUpdateIdx; i < updateIdx; i++) {
+                        await ReadOptimisticConcurrencyResultAsync(dbReader, updateList[i].OldDatabaseRow, exceptions);
+                    }
 
-                foreach (var update in updates) {
-                    await ReadOptimisticConcurrencyResultAsync(dbReader, update.OldDatabaseRow, exceptions);
-                }
+                    for (var i = startDeleteIdx; i < deleteIdx; i++) {
+                        await ReadOptimisticConcurrencyResultAsync(dbReader, deleteList[i], exceptions);
+                    }
 
-                foreach (var databaseRow in deletes) {
-                    await ReadOptimisticConcurrencyResultAsync(dbReader, databaseRow, exceptions);
-                }
-
-                if (exceptions.Any()) {
-                    throw new AggregateException(exceptions);
+                    if (exceptions.Any()) {
+                        throw new AggregateException(exceptions);
+                    }
                 }
             }
 

@@ -1,9 +1,11 @@
 namespace TildeSql.Tests {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
 
     using TildeSql.Tests.TestDomain.Blog;
+    using TildeSql.Utilities;
 
     using Xunit;
 
@@ -168,6 +170,38 @@ namespace TildeSql.Tests {
             await session.SaveChangesAsync();
 
             Assert.NotNull(await futureRequest.SingleAsync());
+        }
+
+        [Fact]
+        public async Task BatchedUpdates() {
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
+            await using var insertSession = sessionFactory.StartSession();
+
+            var blogs = new List<Blog>();
+            foreach (var i in Enumerable.Range(0, 2000)) {
+                var blog = new Blog($"Blog {i + 1}");
+                blogs.Add(blog);
+                insertSession.Add(blog);
+            }
+
+            await insertSession.SaveChangesAsync(); // shouldn't throw due to many params
+
+            foreach (var entry in blogs.AsSmartEnumerable()) {
+                var blog = entry.Value;
+                if (entry.Index % 3 == 0) {
+                    insertSession.Delete(blog);
+                }
+                else {
+                    blog.Title += " (Updated)";
+                }
+            }
+
+            await insertSession.SaveChangesAsync();
+
+            await using var selectSession = sessionFactory.StartSession();
+            var remainingBlogs = await selectSession.Get<Blog>().ToListAsync();
+            Assert.All(remainingBlogs, b => Assert.EndsWith("(Updated)", b.Title));
+            Assert.Equal(1333, remainingBlogs.Count);
         }
 
         private static async Task<Blog> AddBlog(ISessionFactory sessionFactory, string title) {
