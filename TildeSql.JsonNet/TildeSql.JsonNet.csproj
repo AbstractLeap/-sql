@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <PackageId>TildeSql.JsonNet</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>TildeSql.JsonNet provides the NewtonSoft Json serialization for ~Sql</Description>
     <Authors>Abstract Leap</Authors>
     <Company>Abstract Leap</Company>
