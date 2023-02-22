@@ -1,6 +1,6 @@
 
 
-![~Sql logo](https://raw.githubusercontent.com/AbstractLeap/-sql/docs/logo.webp)
+![~Sql logo](https://raw.githubusercontent.com/AbstractLeap/-sql/main/docs/logo.webp)
 
 # ~Sql
 > A .Net Data library for a DDD-inspired Document DB over Sql
