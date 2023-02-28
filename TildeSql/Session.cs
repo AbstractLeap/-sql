@@ -115,6 +115,11 @@
             return new EntityInspector<TEntity>(this.schema, this.unitOfWork, entity);
         }
 
+        public IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity, string collectionName)
+            where TEntity : class {
+            return new EntityInspector<TEntity>(this.schema.GetCollection<TEntity>(collectionName), this.unitOfWork, entity);
+        }
+
         public QueryEngine GetEngine() {
             return this.queryEngine;
         }

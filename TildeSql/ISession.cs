@@ -26,5 +26,8 @@
 
         IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity)
             where TEntity : class;
+
+        IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity, string collectionName)
+            where TEntity : class;
     }
 }

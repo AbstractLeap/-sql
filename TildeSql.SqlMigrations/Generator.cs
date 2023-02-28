@@ -4,6 +4,8 @@
 
     using TildeSql.SqlMigrations.Model;
 
+    using Index = TildeSql.SqlMigrations.Model.Index;
+
     public class Generator {
         public string CreateCode(Difference diff, string migrationNamespace, string migrationName) {
             var builder = new CodeStringBuilder();
@@ -111,12 +113,12 @@
             }
         }
 
-        private static void WriteIndex(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table, Model.Index index) {
+        private static void WriteIndex(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table, Index index) {
             WriteCreateIndex(createBuilder, table, index);
             WriteDropIndex(dropBuilder, table, index);
         }
 
-        private static void WriteCreateIndex(CodeStringBuilder builder, Table table, Model.Index index) {
+        private static void WriteCreateIndex(CodeStringBuilder builder, Table table, Index index) {
             builder.Append("Create.Index(\"").Append(index.Name).Append("\").OnTable(\"").Append(table.Name).Append("\").InSchema(\"").Append(table.Schema).Append("\")").NewLine();
             builder.IncreaseIndent();
             foreach(var column in index.Columns) {
@@ -126,7 +128,7 @@
             builder.Append(";").DecreaseIndent().NewLine();
         }
 
-        private static void WriteDropIndex(CodeStringBuilder builder, Table table, Model.Index index) {
+        private static void WriteDropIndex(CodeStringBuilder builder, Table table, Index index) {
             builder.Append("Delete.Index(\"").Append(index.Name).Append("\").OnTable(\"").Append(table.Name).Append("\").InSchema(\"").Append(table.Schema).Append("\");").NewLine();
         }
 
@@ -145,9 +147,10 @@
             // single column primary key
             if (column.IsPrimaryKey) {
                 builder.Append(".PrimaryKey()");
-                if (column.IsIdentity) {
-                    builder.Append(".Identity()");
-                }
+            }
+
+            if (column.IsIdentity) {
+                builder.Append(".Identity()");
             }
 
             builder.Append(".");

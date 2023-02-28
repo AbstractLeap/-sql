@@ -45,7 +45,7 @@
 
             if (this.typeLookup.TryGetValue(collectionType, out var collections)) {
                 if (collections.Count == 1) {
-                    this.defaultCollectionLookup.Add(collectionType, collections[0]); // to speed up future requests
+                    this.defaultCollectionLookup.TryAdd(collectionType, collections[0]); // to speed up future requests
                     return collections[0];
                 }
 

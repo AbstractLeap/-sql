@@ -24,10 +24,13 @@
                                                               Name            = c.Name,
                                                               Type            = c.Type,
                                                               IsPrimaryKey    = c is KeyColumn,
-                                                              IsIdentity      = c is KeyColumn && t.IsKeyComputed,
-                                                              IsComputed      = c is ComputedColumn,
+                                                              IsIdentity      = (c is KeyColumn && t.IsKeyComputed) || c is GenericColumn { IsIdentity: true },
+                                                              IsComputed      = c is ComputedColumn or GenericColumn { IsComputed: true } or GenericColumn { IsIdentity: true },
                                                               IsPersisted     = c is ComputedColumn { Persisted: true },
-                                                              ComputedFormula = c is ComputedColumn computed ? computed.Formula : null
+                                                              ComputedFormula = c is ComputedColumn computed ? computed.Formula : null,
+                                                              Size            = c is GenericColumn genericColumn ? genericColumn.Size : null,
+                                                              Precision       = c is GenericColumn genericColumn1 ? genericColumn1.Precision : null,
+                                                              IsNullable      = c is GenericColumn { IsNullable: true }
                                                           })
                                                       .ToList(),
                                            Indexes = t.Columns.OfType<ComputedColumn>()

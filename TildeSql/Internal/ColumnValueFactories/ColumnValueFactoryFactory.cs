@@ -14,7 +14,9 @@
         public IColumnValueFactory GetFactory(Column column) {
             if (column is KeyColumn) {
                 return new KeyColumnValueFactory(column.Collection);
-            } else if (column is DocumentColumn) {
+            }
+
+            if (column is DocumentColumn) {
                 return new DocumentColumnValueFactory(this.serializer);
             } else if (column is DocumentTypeColumn) {
                 return new DocumentTypeColumnValueFactory();
@@ -22,7 +24,10 @@
                 return new OptimisticConcurrencyColumnValueFactory();
             } else if (column.IsComputed) {
                 return new NullColumnFactory();
-            } else if (column.GetType().GetGenericTypeDefinition() == typeof(ProjectionColumn<,>)) {
+            } else if (column is GenericColumn) {
+                return new NullColumnFactory();
+            }
+            else if (column.GetType().GetGenericTypeDefinition() == typeof(ProjectionColumn<,>)) {
                 return new ProjectionColumnFactory();
             }
 

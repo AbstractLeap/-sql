@@ -168,6 +168,11 @@
             }
         }
 
+        public void AddColumn<T>(string name, int? size = null, int? precision = null, bool isNullable = false, bool isIdentity = false) {
+            this.nonKeyColumns.Add(new GenericColumn(typeof(T), this, name, size, precision, isNullable, isIdentity));
+            this.RecalculateColumns();
+        }
+
         public void AddComputedColumn<T>(string name, string formula, bool persisted, bool indexed) {
             this.nonKeyColumns.Add(new ComputedColumn(typeof(T), this, name, formula, persisted, indexed));
             this.RecalculateColumns();
