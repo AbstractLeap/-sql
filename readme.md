@@ -1,8 +1,6 @@
 
+<img src="https://raw.githubusercontent.com/AbstractLeap/-sql/main/docs/logo-light.png" style="height: 100px" alt="~sql logo" />
 
-![~Sql logo](https://raw.githubusercontent.com/AbstractLeap/-sql/main/docs/logo-light.png)
-
-# ~Sql
 > A .Net Data library for a DDD-inspired Document DB over Sql
 
 ~Sql is a .Net library designed to support a [DDD](https://en.wikipedia.org/wiki/Domain-driven_design) domain model that uses a relational database (namely SQL Server) to provide a transactional document database.
