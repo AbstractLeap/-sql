@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-database" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+  <ellipse cx="12" cy="6" rx="8" ry="3"></ellipse>
+  
+  <path d="M4 6v12a8 3 0 0 0 16 0v-12"></path>
+  <path d="M8 15l3 -2l2 2l3 -2"></path>
+</svg>
