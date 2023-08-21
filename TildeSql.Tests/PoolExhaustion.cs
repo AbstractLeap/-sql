@@ -53,13 +53,17 @@ namespace TildeSql.Tests {
                 this.conns        = new List<SqlConnection>();
             }
 
-            public DbConnection Get() {
+            private DbConnection Get() {
                 var con = new SqlConnection(this.conString);
                 this.conns.Add(con);
                 this.outputHelper.WriteLine($"Conn: {this.conns.Count}");
                 con.Disposed    += (sender, args) => this.outputHelper.WriteLine($"{this.Conn((SqlConnection)sender)} disposed");
                 con.StateChange += (sender, args) => this.outputHelper.WriteLine($"{this.Conn((SqlConnection)sender)}: {args.OriginalState} -> {args.CurrentState}");
                 return con;
+            }
+
+            public ValueTask<DbConnection> GetAsync() {
+                return ValueTask.FromResult(this.Get());
             }
 
             private int Conn(SqlConnection conn) {

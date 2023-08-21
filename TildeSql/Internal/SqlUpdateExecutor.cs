@@ -26,7 +26,7 @@ namespace TildeSql.Internal {
 
         public async ValueTask ExecuteAsync(IEnumerable<DatabaseRow> inserts, IEnumerable<(DatabaseRow OldDatabaseRow, DatabaseRow NewDatabaseRow)> updates, IEnumerable<DatabaseRow> deletes, CancellationToken cancellationToken = default)
         {
-            await using var connection = this.connectionFactory.Get();
+            await using var connection = await this.connectionFactory.GetAsync();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }

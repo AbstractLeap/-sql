@@ -50,7 +50,7 @@
                 return;
             }
 
-            this.connection = this.connectionFactory.Get();
+            this.connection = await this.connectionFactory.GetAsync();
             if (connection.State != ConnectionState.Open) {
                 await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             }

@@ -14,13 +14,17 @@
             this.connectionString = connectionString;
         }
 
-        public DbConnection Get() {
+        private DbConnection Get() {
             if (this.connection != null) return this.connection;
             lock (this.connLock) {
                 this.connection ??= new ConnectionPerSessionDbConnectionWrapper(this.CreateConnection(this.connectionString));
             }
 
             return this.connection;
+        }
+
+        public ValueTask<DbConnection> GetAsync() {
+            return ValueTask.FromResult(this.Get());
         }
 
         protected abstract DbConnection CreateConnection(string connectionString);
