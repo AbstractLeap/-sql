@@ -35,7 +35,14 @@
 
             foreach (var entry in this.keyMembers.AsSmartEnumerable()) {
                 var keyMemberInfo = entry.Value;
-                foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, entry.Index, keyMemberInfo, new List<MemberInfo>(), this.keyMembers.Length == 1)) {
+                foreach (var keyColumn in ResolveKeyColumns(
+                             keyMemberInfo,
+                             entry.Index,
+                             keyMemberInfo,
+                             new List<MemberInfo>(),
+                             1,
+                             this.keyMembers.Length > 1 ? 0 : null,
+                             this.keyMembers.Length == 1)) {
                     yield return keyColumn;
                 }
             }
@@ -46,18 +53,12 @@
             int keyMemberIdx,
             MemberInfo memberInfo,
             ICollection<MemberInfo> memberAccessors,
+            int currentDepth,
+            int? splitDepth,
             bool single) {
             var memberType = memberInfo.PropertyOrFieldType();
             if (memberType.IsPrimitiveType()) {
-                var name = single
-                               ? string.Join("_", memberAccessors.Skip(memberAccessors.Count > 1 ? 1 : 0).Select(m => m.Name))
-                               : string.Join("_", memberAccessors.Skip(this.keyMembers.Length == 1 ? 1 : 0).Union(new[] { memberInfo }).Select(m => m.Name));
-
-                //var name = this.keyMembers.Length == 1
-                //               ? (single
-                //                      ? string.Join("_", memberAccessors.Skip(1).Union(new[] { memberInfo }).Select(m => m.Name))
-                //                      : string.Join("_", memberAccessors.Select(m => m.Name)))
-                //               : string.Join("_", memberAccessors.Union(new[] { memberInfo }).Select(m => m.Name));
+                var name = string.Join("_", memberAccessors.Skip(splitDepth ?? 0).Union(single ? Enumerable.Empty<MemberInfo>() : new[] { memberInfo }).Select(m => m.Name));
                 var resultantMemberAccessors = new List<MemberInfo>();
                 if (this.keyMembers.Length > 1) {
                     // the first accessor is from a tuple matching the keytype
@@ -74,7 +75,14 @@
             else {
                 var members = GetKeyMemberInfos(memberType);
                 foreach (var member in members) {
-                    foreach (var keyColumn in ResolveKeyColumns(keyMemberInfo, keyMemberIdx, member, memberAccessors.Union(new[] { memberInfo }).ToList(), members.Length == 1)) {
+                    foreach (var keyColumn in ResolveKeyColumns(
+                                 keyMemberInfo,
+                                 keyMemberIdx,
+                                 member,
+                                 memberAccessors.Union(new[] { memberInfo }).ToList(),
+                                 currentDepth + 1,
+                                 splitDepth.HasValue ? splitDepth : (members.Length > 1 ? currentDepth : null),
+                                 members.Length == 1)) {
                         yield return keyColumn;
                     }
                 }
