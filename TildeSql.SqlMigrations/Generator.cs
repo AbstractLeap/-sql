@@ -71,15 +71,28 @@
 
         private static void WriteAddColumn(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Column column, Table table) {
             // down is easy
-            dropBuilder.Append("Delete.Column(\"").Append(column.Name).Append("\").FromTable(\"").Append(table.Name).Append("\");");
+            dropBuilder.Append("Delete.Column(\"")
+                       .Append(column.Name)
+                       .Append("\").FromTable(\"")
+                       .Append(table.Name)
+                       .Append("\").InSchema(\"")
+                       .Append(table.Schema)
+                       .Append("\");")
+                       .NewLine();
 
             if (column.IsComputed) {
                 WriteComputedColumn(createBuilder, table, column);
             }
             else {
-                createBuilder.Append("Alter.Table(\"").Append(table.Name).Append("\").AddColumn(\"").Append(column.Name).Append("\")");
+                createBuilder.Append("Alter.Table(\"")
+                             .Append(table.Name)
+                             .Append("\").InSchema(\"")
+                             .Append(table.Schema)
+                             .Append("\").AddColumn(\"")
+                             .Append(column.Name)
+                             .Append("\")");
                 AppendColumnSpec(createBuilder, table, column);
-                createBuilder.Append(";");
+                createBuilder.Append(";").NewLine();
             }
 
             createBuilder.DecreaseIndent();
