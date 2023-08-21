@@ -1,5 +1,6 @@
 ﻿namespace TildeSql.SqlMigrations {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
 
     using TildeSql.SqlMigrations.Model;
@@ -7,7 +8,7 @@
     using Index = TildeSql.SqlMigrations.Model.Index;
 
     public class Generator {
-        public string CreateCode(Difference diff, string migrationNamespace, string migrationName) {
+        public string CreateCode(Difference diff, string migrationNamespace, string migrationName, Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter = null) {
             var builder = new CodeStringBuilder();
             builder.Append("namespace ").Append(migrationNamespace).Append(" {").NewLine();
             builder.IncreaseIndent();
@@ -21,7 +22,7 @@
             builder.IncreaseIndent();
             var upBuilder = new CodeStringBuilder(builder.GetIndent());
             var downBuilder = new CodeStringBuilder(builder.GetIndent());
-            ProcessDiff(diff, upBuilder, downBuilder);
+            ProcessDiff(diff, upBuilder, downBuilder, dropAndRecreateFilter);
             builder.FormatOff();
             builder.Append(upBuilder);
             builder.FormatOn();
@@ -39,13 +40,42 @@
             return builder.ToString();
         }
 
-        private void ProcessDiff(Difference diff, CodeStringBuilder upBuilder, CodeStringBuilder downBuilder) {
+        private void ProcessDiff(
+            Difference diff,
+            CodeStringBuilder upBuilder,
+            CodeStringBuilder downBuilder,
+            Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter) {
             foreach (var table in diff.CreateTables) {
                 WriteCreateTable(upBuilder, downBuilder, table);
             }
 
+            var recreatedTables = new HashSet<Table>();
+            foreach (var schemaChange in diff.SchemaChanges) {
+                if (dropAndRecreateFilter?.Invoke((schemaChange.Table.Name, schemaChange.Table.Schema)) ?? false) {
+                    if (!recreatedTables.Contains(schemaChange.Table)) {
+                        WriteCreateTable(downBuilder, upBuilder, schemaChange.Table);
+                        WriteCreateTable(upBuilder, downBuilder, schemaChange.Table);
+                    }
+
+                    recreatedTables.Add(schemaChange.Table);
+                }
+                else {
+                    WriteChangeSchema(upBuilder, downBuilder, schemaChange.Table, schemaChange.NewSchema);
+                }
+            }
+
             foreach (var (table, column) in diff.CreateColumns) {
-                WriteAddColumn(upBuilder, downBuilder, column, table);
+                if (dropAndRecreateFilter?.Invoke((table.Name, table.Schema)) ?? false) {
+                    if (!recreatedTables.Contains(table)) {
+                        WriteCreateTable(downBuilder, upBuilder, table);
+                        WriteCreateTable(upBuilder, downBuilder, table);
+                    }
+
+                    recreatedTables.Add(table);
+                }
+                else {
+                    WriteAddColumn(upBuilder, downBuilder, column, table);
+                }
             }
 
             foreach (var (table, oldColumn, newColumn, changedProperties) in diff.AlterColumns) {
@@ -53,15 +83,45 @@
             }
 
             foreach (var (table, index) in diff.DropIndexes) {
-                WriteIndex(downBuilder, upBuilder, table, index);
+                if (dropAndRecreateFilter?.Invoke((table.Name, table.Schema)) ?? false) {
+                    if (!recreatedTables.Contains(table)) {
+                        WriteCreateTable(downBuilder, upBuilder, table);
+                        WriteCreateTable(upBuilder, downBuilder, table);
+                    }
+
+                    recreatedTables.Add(table);
+                }
+                else {
+                    WriteIndex(downBuilder, upBuilder, table, index);
+                }
             }
 
             foreach (var (table, index) in diff.CreateIndexes) {
-                WriteIndex(upBuilder, downBuilder, table, index);
+                if (dropAndRecreateFilter?.Invoke((table.Name, table.Schema)) ?? false) {
+                    if (!recreatedTables.Contains(table)) {
+                        WriteCreateTable(downBuilder, upBuilder, table);
+                        WriteCreateTable(upBuilder, downBuilder, table);
+                    }
+
+                    recreatedTables.Add(table);
+                }
+                else {
+                    WriteIndex(upBuilder, downBuilder, table, index);
+                }
             }
 
             foreach (var (table, column) in diff.DropColumns) {
-                WriteAddColumn(downBuilder, upBuilder, column, table);
+                if (dropAndRecreateFilter?.Invoke((table.Name, table.Schema)) ?? false) {
+                    if (!recreatedTables.Contains(table)) {
+                        WriteCreateTable(downBuilder, upBuilder, table);
+                        WriteCreateTable(upBuilder, downBuilder, table);
+                    }
+
+                    recreatedTables.Add(table);
+                }
+                else {
+                    WriteAddColumn(downBuilder, upBuilder, column, table);
+                }
             }
 
             foreach (var table in diff.DropTables) {
@@ -94,8 +154,23 @@
                 AppendColumnSpec(createBuilder, table, column);
                 createBuilder.Append(";").NewLine();
             }
+        }
 
-            createBuilder.DecreaseIndent();
+        private static void WriteChangeSchema(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table, string newSchema) {
+            Write(dropBuilder, table.Name, newSchema, table.Schema);
+            Write(createBuilder, table.Name, table.Schema, newSchema);
+
+            void Write(CodeStringBuilder builder, string tableName, string fromSchema, string toSchema) {
+                builder.Append("this.Alter.Table(\"")
+                       .Append(tableName)
+                       .Append("\").InSchema(\"")
+                       .Append(fromSchema)
+                       .Append("\").ToSchema(\"")
+                       .Append(toSchema)
+                       .Append("\");")
+                       .NewLine();
+                //this.Alter.Table("").InSchema("").ToSchema("");
+            }
         }
 
         private static void WriteCreateTable(CodeStringBuilder createBuilder, CodeStringBuilder dropBuilder, Table table) {
@@ -121,8 +196,8 @@
 
             createBuilder.DecreaseIndent().NewLine();
 
-            foreach(var index in table.Indexes) {
-                WriteIndex(createBuilder, dropBuilder, table, index);
+            foreach (var index in table.Indexes) {
+                WriteIndex(createBuilder, new CodeStringBuilder(), table, index);
             }
         }
 
