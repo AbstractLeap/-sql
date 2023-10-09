@@ -127,6 +127,7 @@
         }
 
         private async Task CleanUpCommandAsync() {
+            this.currentlyReadQuery = null;
             await this.dataReader.CloseAsync();
             await this.dataReader.DisposeAsync();
             await this.command.DisposeAsync();
