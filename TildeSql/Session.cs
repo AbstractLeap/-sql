@@ -1,4 +1,6 @@
 ﻿namespace TildeSql {
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -18,7 +20,7 @@
 
         private readonly IDistributedCache distributedCache;
 
-        private readonly ISaveChangesEventListener saveChangesEventListener;
+        private readonly IEnumerable<IInterceptor> interceptors;
 
         private readonly UnitOfWork.UnitOfWork unitOfWork;
 
@@ -35,13 +37,13 @@
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
-            ISaveChangesEventListener saveChangesEventListener) {
-            this.schema                   = schema;
-            this.memoryCache              = memoryCache;
-            this.distributedCache         = distributedCache;
-            this.saveChangesEventListener = saveChangesEventListener;
-            this.identityMap              = new IdentityMap.IdentityMap();
-            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema);
+            IEnumerable<IInterceptor> interceptors = null) {
+            this.schema           = schema;
+            this.memoryCache      = memoryCache;
+            this.distributedCache = distributedCache;
+            this.interceptors     = interceptors ?? Enumerable.Empty<IInterceptor>();
+            this.identityMap      = new IdentityMap.IdentityMap();
+            this.unitOfWork       = new UnitOfWork.UnitOfWork(serializer, schema);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,
@@ -64,8 +66,8 @@
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default) {
-            if (this.saveChangesEventListener != null) {
-                await this.saveChangesEventListener.OnBeforeSaveChangesAsync(this);
+            foreach (var saveChangesEventListener in this.interceptors.OfType<ISaveChangesEventListener>()) {
+                await saveChangesEventListener.OnBeforeSaveChangesAsync(this);
             }
 
             // flush the queryEngine
