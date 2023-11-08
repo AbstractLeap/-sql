@@ -12,5 +12,14 @@
                 column,
                 entity);
         }
+
+        public static object GetValue(this IColumnValueFactory columnValueFactory, Column column, object entity) {
+            return columnValueFactory.CallMethod(
+                new[] { column.Collection.BaseEntityType, column.Collection.KeyType, column.Type },
+                nameof(IColumnValueFactory.GetValue),
+                new[] { typeof(Column), column.Collection.BaseEntityType },
+                column,
+                entity);
+        }
     }
 }
