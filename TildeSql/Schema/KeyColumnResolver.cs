@@ -90,7 +90,7 @@
         }
 
         MemberInfo[] GetKeyMemberInfos(Type keyType) {
-            var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyDeclaredOnly | Flags.ExcludeBackingMembers)
+            var members = keyType.Members(MemberTypes.Property | MemberTypes.Field, Flags.InstanceAnyVisibility | Flags.ExcludeBackingMembers)
                                  .Where(m => m.Name != "EqualityContract") // compiler generated for records
                                  .ToArray();
 
