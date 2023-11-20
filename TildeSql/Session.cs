@@ -1,4 +1,5 @@
 ﻿namespace TildeSql {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -13,6 +14,8 @@
 
     sealed class Session : ISession {
         private readonly ISchema schema;
+
+        private readonly ISerializer serializer;
 
         private readonly IMemoryCache memoryCache;
 
@@ -37,6 +40,7 @@
             IDistributedCache distributedCache,
             ISaveChangesEventListener saveChangesEventListener) {
             this.schema                   = schema;
+            this.serializer               = serializer;
             this.memoryCache              = memoryCache;
             this.distributedCache         = distributedCache;
             this.saveChangesEventListener = saveChangesEventListener;
@@ -118,6 +122,23 @@
         public IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity, string collectionName)
             where TEntity : class {
             return new EntityInspector<TEntity>(this.schema.GetCollection<TEntity>(collectionName), this.unitOfWork, entity);
+        }
+
+        [Obsolete("This is a preview feature")]
+        public void Attach<TEntity, TKey>(TEntity entity)
+            where TEntity : class {
+            this.Attach<TEntity, TKey>(entity, this.schema.GetDefaultCollection<TEntity>());
+        }
+
+        [Obsolete("This is a preview feature")]
+        public void Attach<TEntity, TKey>(TEntity entity, string collectionName)
+            where TEntity : class {
+            this.Attach<TEntity, TKey>(entity, this.schema.GetCollection<TEntity>(collectionName));
+        }
+
+        private void Attach<TEntity, TKey>(TEntity entity, Collection collection) {
+            var rowFactory = new DatabaseRowFactory(this.serializer);
+            this.unitOfWork.AddOrUpdate(collection, entity, rowFactory.Create<TEntity, TKey>(collection, entity), DocumentState.Persisted);
         }
 
         public QueryEngine GetEngine() {
