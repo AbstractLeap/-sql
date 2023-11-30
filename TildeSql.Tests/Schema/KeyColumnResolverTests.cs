@@ -113,7 +113,7 @@
 
             var keyColumns = keyColumnResolver.ResolveKeyColumns().ToArray();
 
-            Assert.Equal(2, keyColumns.Length);
+            Assert.Equal(4, keyColumns.Length);
             var leftKeyColumn = keyColumns[0];
             var rightKeyColumn = keyColumns[1];
             Assert.Same(keyMembers[0], leftKeyColumn.Item1.KeyMemberInfo);

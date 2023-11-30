@@ -198,10 +198,11 @@ namespace TildeSql.Tests {
 
             await insertSession.SaveChangesAsync();
 
+            var insertedBlogIds = blogs.Select(b => b.BlogId).ToHashSet();
             await using var selectSession = sessionFactory.StartSession();
-            var remainingBlogs = await selectSession.Get<Blog>().ToListAsync();
+            var remainingBlogs = (await selectSession.Get<Blog>().ToListAsync()).Where(b => insertedBlogIds.Contains(b.BlogId)).ToArray();
             Assert.All(remainingBlogs, b => Assert.EndsWith("(Updated)", b.Title));
-            Assert.Equal(1333, remainingBlogs.Count);
+            Assert.Equal(1333, remainingBlogs.Length);
         }
 
         private static async Task<Blog> AddBlog(ISessionFactory sessionFactory, string title) {

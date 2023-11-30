@@ -22,7 +22,14 @@
         }
 
         public void AddOrUpdate<TEntity>(Collection collection, TEntity entity, DatabaseRow row, DocumentState state) {
-            var document = DocumentExtensions.Create(entity, collection); // we want to create a document of the actual type, not the base type in inheritance hierarchies
+            IDocument document = FindDocument(collection, entity);
+            if (document != null) {
+                document.Row   = row;
+                document.State = state;
+                return;
+            }
+
+            document       = DocumentExtensions.Create(entity, collection); // we want to create a document of the actual type, not the base type in inheritance hierarchies
             document.Row   = row;
             document.State = state;
             if (!this.attachedEntities.TryGetValue(collection, out var list)) {
