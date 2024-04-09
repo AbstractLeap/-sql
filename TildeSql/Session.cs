@@ -124,23 +124,6 @@
             return new EntityInspector<TEntity>(this.schema.GetCollection<TEntity>(collectionName), this.unitOfWork, entity);
         }
 
-        [Obsolete("This is a preview feature")]
-        public void Attach<TEntity, TKey>(TEntity entity)
-            where TEntity : class {
-            this.Attach<TEntity, TKey>(entity, this.schema.GetDefaultCollection<TEntity>());
-        }
-
-        [Obsolete("This is a preview feature")]
-        public void Attach<TEntity, TKey>(TEntity entity, string collectionName)
-            where TEntity : class {
-            this.Attach<TEntity, TKey>(entity, this.schema.GetCollection<TEntity>(collectionName));
-        }
-
-        private void Attach<TEntity, TKey>(TEntity entity, Collection collection) {
-            var rowFactory = new DatabaseRowFactory(this.serializer);
-            this.unitOfWork.AddOrUpdate(collection, entity, rowFactory.Create<TEntity, TKey>(collection, entity), DocumentState.Persisted);
-        }
-
         public QueryEngine GetEngine() {
             return this.queryEngine;
         }

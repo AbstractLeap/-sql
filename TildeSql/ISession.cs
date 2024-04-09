@@ -29,13 +29,5 @@
 
         IEntityInspector<TEntity> Inspect<TEntity>(TEntity entity, string collectionName)
             where TEntity : class;
-
-        [Obsolete("This is a preview feature")]
-        void Attach<TEntity, TKey>(TEntity entity)
-            where TEntity : class;
-
-        [Obsolete("This is a preview feature")]
-        void Attach<TEntity, TKey>(TEntity entity, string collectionName)
-            where TEntity : class;
     }
 }
