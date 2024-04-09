@@ -6,26 +6,33 @@
     using TildeSql.SqlMigrations.Model;
 
     public class Differ {
-        public Difference Diff(Database currentModel, Database newModel) {
+        public Difference Diff(Database currentModel, Database newModel, bool ignoreSchemaInTableNameMatching = true) {
             var difference = new Difference();
             foreach (var newModelTable in newModel.Tables) {
-                var matchingCurrentTable = currentModel.Tables.SingleOrDefault(t => t.Equals(newModelTable));
+                var matchingCurrentTable = currentModel.Tables.SingleOrDefault(t => t.Equals(newModelTable, ignoreSchemaInTableNameMatching));
                 if (matchingCurrentTable == null) {
                     difference.AddCreateTable(newModelTable);
                 }
                 else {
+                    CheckSchema(difference, newModelTable, matchingCurrentTable);
                     CheckColumns(difference, newModelTable, matchingCurrentTable);
                     CheckIndexes(difference, newModelTable, matchingCurrentTable);
                 }
             }
 
             foreach (var currentModelTable in currentModel.Tables) {
-                if (!newModel.Tables.Any(t => t.Equals(currentModelTable))) {
+                if (!newModel.Tables.Any(t => t.Equals(currentModelTable, ignoreSchemaInTableNameMatching))) {
                     difference.AddDropTable(currentModelTable);
                 }
             }
 
             return difference;
+        }
+
+        private void CheckSchema(Difference difference, Table newModelTable, Table matchingCurrentTable) {
+            if (!string.Equals(newModelTable.Schema, matchingCurrentTable.Schema)) {
+                difference.AddChangeSchema(matchingCurrentTable, newModelTable.Schema);
+            }
         }
 
         private void CheckColumns(Difference difference, Table newModelTable, Table matchingCurrentTable) {

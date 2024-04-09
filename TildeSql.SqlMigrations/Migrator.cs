@@ -14,11 +14,12 @@
             string migrationNamespace,
             string migrationName,
             ISchema schema,
-            Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter = null) {
+            Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter = null,
+            bool ignoreSchemaInTableNameMatching = true) {
             var currentModelJson = await new ModelReader().ReadFileAsync(modelPath);
             var currentModel = new ModelSerializer().Deserialize(currentModelJson);
             var newModel = schema.ToDatabaseModel();
-            var diff = new Differ().Diff(currentModel, newModel);
+            var diff = new Differ().Diff(currentModel, newModel, ignoreSchemaInTableNameMatching);
             if (diff.IsChange) {
                 var migrationCode = new Generator().CreateCode(diff, migrationNamespace, migrationName, dropAndRecreateFilter);
                 await File.WriteAllTextAsync(migrationPath, migrationCode);

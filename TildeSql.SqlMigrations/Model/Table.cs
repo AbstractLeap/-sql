@@ -13,19 +13,19 @@
 
         public ICollection<Index> Indexes { get; set; }
 
-        protected bool Equals(Table other) {
-            return this.Name == other.Name && this.Schema == other.Schema;
+        public bool Equals(Table other, bool ignoreSchemaInTableNameMatching) {
+            return this.Name == other.Name && (ignoreSchemaInTableNameMatching || this.Schema == other.Schema);
         }
 
         public override bool Equals(object obj) {
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((Table)obj);
+            return Equals((Table)obj, ignoreSchemaInTableNameMatching: true);
         }
 
         public override int GetHashCode() {
-            return HashCode.Combine(this.Name, this.Schema);
+            return HashCode.Combine(this.Name);
         }
     }
 }

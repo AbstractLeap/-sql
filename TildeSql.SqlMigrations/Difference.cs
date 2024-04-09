@@ -21,6 +21,8 @@
 
         private readonly IList<(Table Table, Index Index)> dropIndexes = new List<(Table Table, Index Index)>();
 
+        private readonly IList<(Table Table, string NewSchema)> schemaChanges = new List<(Table Table, string NewSchema)>();
+
         public IEnumerable<Table> CreateTables => this.createTables;
 
         public IEnumerable<(Table Table, Column Column)> CreateColumns => this.createColumns;
@@ -35,7 +37,17 @@
 
         public IEnumerable<Table> DropTables => this.dropTables;
 
-        public bool IsChange => this.createTables.Any() || this.createColumns.Any() || this.alterColumns.Any() || this.dropColumns.Any() || this.dropTables.Any() || this.createIndexes.Any() || this.dropIndexes.Any();
+        public IEnumerable<(Table Table, string NewSchema)> SchemaChanges => this.schemaChanges;
+
+        public bool IsChange =>
+            this.createTables.Any()
+            || this.createColumns.Any()
+            || this.alterColumns.Any()
+            || this.dropColumns.Any()
+            || this.dropTables.Any()
+            || this.createIndexes.Any()
+            || this.dropIndexes.Any()
+            || this.schemaChanges.Any();
 
         public void AddCreateTable(Table table) {
             this.createTables.Add(table);
@@ -47,6 +59,10 @@
 
         public void AddDropTable(Table table) {
             this.dropTables.Add(table);
+        }
+
+        public void AddChangeSchema(Table table, string newSchema) {
+            this.schemaChanges.Add((table, newSchema));
         }
 
         public void AddDropColumn(Table table, Column column) {
