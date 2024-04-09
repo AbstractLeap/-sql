@@ -15,11 +15,11 @@
     using Xunit;
 
     public class Run {
-        private const string ModelPath = @"F:\Projects\leap-data\TildeSql.Tests.SqlMigrations\model.json";
+        private const string ModelPath = @"C:\Repos\leap-data\TildeSql.Tests.SqlMigrations\model.json";
 
         private const string MigrationNamespace = "TildeSql.Tests.SqlMigrations";
 
-        [Fact]
+        [Fact(Skip = "Just for testing")]
         public async Task CreateTable() {
             var migrationName = "HelloMigrations";
             var migrationPath = GetMigrationPath(migrationName);
@@ -27,7 +27,7 @@
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
-        [Fact]
+        [Fact(Skip = "Just for testing")]
         public async Task AddColumn() {
             var migrationName = "AddColumn";
             var migrationPath = GetMigrationPath(migrationName);
@@ -37,7 +37,7 @@
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
-        [Fact]
+        [Fact(Skip = "Just for testing")]
         public async Task DropColumn() {
             var migrationName = "DropColumn";
             var migrationPath = GetMigrationPath(migrationName);
@@ -45,7 +45,7 @@
             await Migrator.RunAsync(ModelPath, migrationPath, MigrationNamespace, migrationName, schema);
         }
 
-        [Fact]
+        [Fact(Skip = "Just for testing")]
         public async Task DropTable() {
             var migrationName = "DropTable";
             var migrationPath = GetMigrationPath(migrationName);
@@ -54,7 +54,7 @@
         }
 
         private static string GetMigrationPath(string migrationName) {
-            return $@"F:\Projects\leap-data\TildeSql.Tests.SqlMigrations\{migrationName}.cs";
+            return $@"C:\Repos\leap-data\TildeSql.Tests.SqlMigrations\{migrationName}.cs";
         }
 
         [Fact(Skip = "Just for testing")]

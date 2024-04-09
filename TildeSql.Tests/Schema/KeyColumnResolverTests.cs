@@ -115,14 +115,13 @@
 
             Assert.Equal(4, keyColumns.Length);
             var leftKeyColumn = keyColumns[0];
-            var rightKeyColumn = keyColumns[1];
+            var rightKeyColumn = keyColumns[2];
             Assert.Same(keyMembers[0], leftKeyColumn.Item1.KeyMemberInfo);
             Assert.Same(keyMembers[1], rightKeyColumn.Item1.KeyMemberInfo);
-            Assert.Equal("LeftId", leftKeyColumn.Item1.Name);
-            Assert.Equal("RightId", rightKeyColumn.Item1.Name);
-            var instance = new TupleEntity { LeftId = new SingleStrongTypeEntityId(Guid.NewGuid()), RightId = new SingleStrongTypeEntityId(Guid.NewGuid()) };
-            Assert.Equal(instance.LeftId.Id, leftKeyColumn.Item2.GetValue((instance.LeftId, instance.RightId)));
-            Assert.Equal(instance.RightId.Id, rightKeyColumn.Item2.GetValue((instance.LeftId, instance.RightId)));
+            Assert.Equal("fooId_id", leftKeyColumn.Item1.Name);
+            Assert.Equal("fooId_tenantId", keyColumns[1].Item1.Name);
+            Assert.Equal("barId_id", rightKeyColumn.Item1.Name);
+            Assert.Equal("barId_tenantId", keyColumns[3].Item1.Name);
         }
 
         class ConflictingSubKeys {
