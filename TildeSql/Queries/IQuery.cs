@@ -17,4 +17,8 @@
 
     internal interface IQuery<TEntity> : IQuery
         where TEntity : class { }
+
+    internal interface IMultipleKeyQuery : IQuery {
+        object[] ExpectedKeys();
+    }
 }

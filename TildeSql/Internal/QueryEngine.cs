@@ -102,7 +102,7 @@
                     var cacheExecutor = entry.Value;
                     if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
                         await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                            var entity = HydrateDocument(row);
+                            var (_, entity) = HydrateDocument(row);
                             if (entity != null) {
                                 yield return entity;
                             }
@@ -113,10 +113,29 @@
                 }
 
                 @lock ??= await this.mutex.LockAsync();
+                var matchedKey = new List<object>();
                 await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
-                    var entity = HydrateDocument(row);
+                    var (id, entity) = HydrateDocument(row);
                     if (entity != null) {
                         yield return entity;
+                    }
+
+                    matchedKey.Add(id);
+                }
+
+                // Try and back-fill any non-persisted keys from the identityMap
+                if (query is IMultipleKeyQuery keyedQuery) {
+                    var length = keyedQuery.ExpectedKeys().Length;
+                    if (matchedKey.Count != length) {
+                        foreach (var key in keyedQuery.ExpectedKeys().Except(matchedKey)) {
+                            var collection = query.Collection;
+                            if (!this.identityMap.TryGetValue(collection.KeyType, key, out T entityInstance))
+                                continue;
+
+                            if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.New) {
+                                yield return entityInstance;
+                            }
+                        }
                     }
                 }
             }
@@ -126,7 +145,7 @@
 
             yield break;
 
-            T HydrateDocument(object[] row) {
+            (object key, T entity) HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
                 var collection = query.Collection;
                 var id = collection.KeyFactory.Create(row);
@@ -135,11 +154,11 @@
                 // check ID map for instance
                 if (this.identityMap.TryGetValue(collection.KeyType, id, out T entityInstance)) {
                     if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.Deleted) {
-                        return null;
+                        return (id, null);
                     }
 
                     this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), DocumentState.Persisted);
-                    return entityInstance;
+                    return (id, entityInstance);
                 }
 
                 var json = RowValueHelper.GetValue<string>(collection, row, SpecialColumns.Document);
@@ -151,7 +170,7 @@
 
                 this.identityMap.Add(collection.KeyType, id, entity);
                 this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), DocumentState.Persisted);
-                return entity;
+                return (id, entity);
             }
         }
 
