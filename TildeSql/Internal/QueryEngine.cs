@@ -7,6 +7,7 @@
 
     using TildeSql.IdentityMap;
     using TildeSql.Internal.Caching;
+    using TildeSql.Internal.Common;
     using TildeSql.Queries;
     using TildeSql.Schema;
     using TildeSql.Serialization;
@@ -14,6 +15,8 @@
     using TildeSql.Utilities;
 
     class QueryEngine : IAsyncDisposable, IDisposable {
+        private readonly AsyncLock mutex = new();
+
         private readonly ISchema schema;
 
         private readonly IdentityMap identityMap;
@@ -73,45 +76,56 @@
 
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
-            if (!this.identityMapQueries.Contains(query) && !this.cacheExecutorQueries.Any(e => e.Contains(query)) && !this.persistenceQueryExecutorQueries.Contains(query)) {
-                // query has not been executed, so let's flush existing queries and then add
-                await this.FlushPersistenceAsync();
-                if (!this.queriesToExecute.Contains(query)) {
-                    this.Add(query);
+            IDisposable @lock = null;
+            try {
+                if (!this.identityMapQueries.Contains(query) && !this.cacheExecutorQueries.Any(e => e.Contains(query)) && !this.persistenceQueryExecutorQueries.Contains(query)) {
+                    @lock = await this.mutex.LockAsync();
+
+                    // query has not been executed, so let's flush existing queries and then add
+                    await this.FlushPersistenceAsync();
+                    if (!this.queriesToExecute.Contains(query)) {
+                        this.Add(query);
+                    }
+
+                    await this.ExecuteAsync();
                 }
 
-                await this.ExecuteAsync();
-            }
-
-            if (this.identityMapQueries.Contains(query)) {
-                await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
-                    yield return entity;
-                }
-
-                yield break;
-            }
-
-            // TODO fix caches getting instances from the wrong collection
-            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
-                var cacheExecutor = entry.Value;
-                if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
-                    await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                        var entity = HydrateDocument(row);
-                        if (entity != null) {
-                            yield return entity;
-                        }
+                if (this.identityMapQueries.Contains(query)) {
+                    await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
+                        yield return entity;
                     }
 
                     yield break;
                 }
-            }
 
-            await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
-                var entity = HydrateDocument(row);
-                if (entity != null) {
-                    yield return entity;
+                // TODO fix caches getting instances from the wrong collection
+                foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
+                    var cacheExecutor = entry.Value;
+                    if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
+                        await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                            var entity = HydrateDocument(row);
+                            if (entity != null) {
+                                yield return entity;
+                            }
+                        }
+
+                        yield break;
+                    }
+                }
+
+                @lock ??= await this.mutex.LockAsync();
+                await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
+                    var entity = HydrateDocument(row);
+                    if (entity != null) {
+                        yield return entity;
+                    }
                 }
             }
+            finally {
+                @lock?.Dispose();
+            }
+
+            yield break;
 
             T HydrateDocument(object[] row) {
                 // need to hydrate the entity from the database row and add to the document
@@ -143,6 +157,7 @@
         }
 
         public async ValueTask EnsureCleanAsync(CancellationToken cancellationToken = default) {
+            using var @lock = await this.mutex.LockAsync(cancellationToken);
             await this.FlushPersistenceAsync(); // clear out any non-read queries
             await this.ExecuteAsync(cancellationToken); // execute any non-executed queries
             await this.FlushPersistenceAsync(); // ensure that they're also read
