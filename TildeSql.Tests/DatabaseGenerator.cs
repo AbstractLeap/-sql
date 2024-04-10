@@ -55,7 +55,7 @@
             var compilation = CSharpCompilation.Create(
                 "TildeSql.Tests.Migration.dll",
                 new[] { syntaxTree },
-                references.Union(ReferenceAssemblies.Net60),
+                references.Union(ReferenceAssemblies.Net80),
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
             Assembly assembly;
             using (var ms = new MemoryStream()) {
