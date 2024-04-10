@@ -113,30 +113,20 @@
                 }
 
                 @lock ??= await this.mutex.LockAsync();
-                var matchedKey = new List<object>();
+                var matchedKeys = new List<object>();
+                var foundEntites = new List<T>();
                 await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
                     var (id, entity) = HydrateDocument(row);
                     if (entity != null) {
                         yield return entity;
                     }
 
-                    matchedKey.Add(id);
+                    foundEntites.Add(entity);
+                    matchedKeys.Add(id);
                 }
 
-                // Try and back-fill any non-persisted keys from the identityMap
-                if (query is IMultipleKeyQuery keyedQuery) {
-                    var length = keyedQuery.ExpectedKeys().Length;
-                    if (matchedKey.Count != length) {
-                        foreach (var key in keyedQuery.ExpectedKeys().Except(matchedKey)) {
-                            var collection = query.Collection;
-                            if (!this.identityMap.TryGetValue(collection.KeyType, key, out T entityInstance))
-                                continue;
-
-                            if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.New) {
-                                yield return entityInstance;
-                            }
-                        }
-                    }
+                await foreach (var entity in this.identityMapExecutor.GetAdditionalAsync(query, [..matchedKeys], foundEntites)) {
+                    yield return entity;
                 }
             }
             finally {

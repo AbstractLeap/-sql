@@ -95,5 +95,30 @@
                 throw new Exception($"{nameof(IdentityMapExecutor)} did not execute {query} so can not get result");
             }
         }
+
+        public async IAsyncEnumerable<TEntity> GetAdditionalAsync<TEntity>(IQuery query, List<object> matchedKey, IEnumerable<TEntity> entities)
+            where TEntity : class {
+            // Try and back-fill any non-persisted keys from the identityMap
+            if (query is not IMultipleKeyQuery keyedQuery)
+                yield break;
+
+            var expectedKeys = keyedQuery.ExpectedKeys();
+            if (expectedKeys.Length == matchedKey.Count)
+                yield break;
+
+            var newEntities = new List<TEntity>(expectedKeys.Length - matchedKey.Count);
+            foreach (var key in expectedKeys.Except(matchedKey)) {
+                var collection = query.Collection;
+                if (!this.identityMap.TryGetValue(collection.KeyType, key, out TEntity entityInstance))
+                    continue;
+
+                if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.New) {
+                    yield return entityInstance;
+                    newEntities.Add(entityInstance);
+                }
+            }
+
+            this.resultCache.Add(query, entities.Union(newEntities).ToArray());
+        }
     }
 }
