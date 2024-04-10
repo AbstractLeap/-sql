@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <PackageId>TildeSql.SqlServer</PackageId>
     <Version>0.2.0</Version>
     <Description>TildeSql.SqlServer provides the SqlServer engine for ~Sql</Description>
