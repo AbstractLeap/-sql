@@ -14,6 +14,8 @@
     using TildeSql.Schema;
 
     public class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable, IDisposable {
+        private readonly SemaphoreSlim mutex = new(1, 1);
+
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlQueryWriter sqlQueryWriter;
@@ -50,21 +52,27 @@
                 return;
             }
 
-            this.connection = await this.connectionFactory.GetAsync();
-            if (connection.State != ConnectionState.Open) {
-                await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            }
+            await this.mutex.WaitAsync(cancellationToken);
+            try {
+                this.connection = await this.connectionFactory.GetAsync();
+                if (connection.State != ConnectionState.Open) {
+                    await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+                }
 
-            // TODO figure out connection/transaction lifecycle
-            this.command = connection.CreateCommand();
-            var queryCommand = new Command();
-            foreach (var nonCompletedQuery in queries) {
-                this.sqlQueryWriter.Write(nonCompletedQuery, queryCommand);
-                this.notReadQueries.Enqueue(nonCompletedQuery);
-            }
+                // TODO figure out connection/transaction lifecycle
+                this.command = connection.CreateCommand();
+                var queryCommand = new Command();
+                foreach (var nonCompletedQuery in queries) {
+                    this.sqlQueryWriter.Write(nonCompletedQuery, queryCommand);
+                    this.notReadQueries.Enqueue(nonCompletedQuery);
+                }
 
-            queryCommand.WriteToDbCommand(this.command);
-            this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                queryCommand.WriteToDbCommand(this.command);
+                this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            }
+            finally {
+                this.mutex.Release();
+            }
         }
 
         public async IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
@@ -79,27 +87,33 @@
                 yield break;
             }
 
-            // we don't have the result, so we must go through the reader until we do.
-            var nonCompleteQuery = this.notReadQueries.Dequeue();
-            while (nonCompleteQuery != null && !nonCompleteQuery.Equals(query)) {
-                await this.ReadResultIntoCacheAsync(nonCompleteQuery);
+            await this.mutex.WaitAsync();
+            try {
+                // we don't have the result, so we must go through the reader until we do.
+                var nonCompleteQuery = this.notReadQueries.Dequeue();
+                while (nonCompleteQuery != null && !nonCompleteQuery.Equals(query)) {
+                    await this.ReadResultIntoCacheAsync(nonCompleteQuery);
+                    await this.dataReader.NextResultAsync();
+                    nonCompleteQuery = this.notReadQueries.Dequeue();
+                }
+
+                // read the result we've been asked for
+                if (this.currentlyReadQuery != null && this.currentlyReadQuery != query) {
+                    // if they didn't enumerate the whole of the previous query, we do go to the next query
+                    await this.dataReader.NextResultAsync();
+                }
+
+                currentlyReadQuery = query;
+                await foreach (var row in this.ReadResultAsync<TEntity>()) {
+                    yield return row;
+                }
+
                 await this.dataReader.NextResultAsync();
-                nonCompleteQuery = this.notReadQueries.Dequeue();
+                this.currentlyReadQuery = null;
             }
-
-            // read the result we've been asked for
-            if (this.currentlyReadQuery != null && this.currentlyReadQuery != query) {
-                // if they didn't enumerate the whole of the previous query, we do go to the next query
-                await this.dataReader.NextResultAsync();
+            finally {
+                this.mutex.Release();
             }
-
-            currentlyReadQuery = query;
-            await foreach (var row in this.ReadResultAsync<TEntity>()) {
-                yield return row;
-            }
-
-            await this.dataReader.NextResultAsync();
-            this.currentlyReadQuery = null;
 
             if (this.notReadQueries.Count == 0) {
                 await this.CleanUpCommandAsync();
@@ -116,9 +130,15 @@
         /// </summary>
         /// <returns></returns>
         public async ValueTask FlushAsync() {
-            while (this.notReadQueries.TryDequeue(out var query)) {
-                await this.ReadResultIntoCacheAsync(query);
-                await this.dataReader.NextResultAsync();
+            await this.mutex.WaitAsync();
+            try {
+                while (this.notReadQueries.TryDequeue(out var query)) {
+                    await this.ReadResultIntoCacheAsync(query);
+                    await this.dataReader.NextResultAsync();
+                }
+            }
+            finally {
+                this.mutex.Release();
             }
 
             if (this.dataReader != null) {
@@ -127,12 +147,20 @@
         }
 
         private async Task CleanUpCommandAsync() {
-            this.currentlyReadQuery = null;
-            await this.dataReader.CloseAsync();
-            await this.dataReader.DisposeAsync();
-            await this.command.DisposeAsync();
-            await this.connection.CloseAsync();
-            await this.connection.DisposeAsync();
+            await this.mutex.WaitAsync();
+            try {
+                if (this.notReadQueries.Count > 0) return;
+
+                this.currentlyReadQuery = null;
+                await this.dataReader.CloseAsync();
+                await this.dataReader.DisposeAsync();
+                await this.command.DisposeAsync();
+                await this.connection.CloseAsync();
+                await this.connection.DisposeAsync();
+            }
+            finally {
+                this.mutex.Release();
+            }
         }
 
         private async ValueTask<List<object[]>> ReadResultIntoListAsync<T>()
