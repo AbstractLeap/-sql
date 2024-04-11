@@ -98,7 +98,6 @@
                     yield break;
                 }
 
-                // TODO fix caches getting instances from the wrong collection
                 foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
                     var cacheExecutor = entry.Value;
                     if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
@@ -138,7 +137,7 @@
                     if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.Deleted) {
                         return null;
                     }
-                    
+
                     this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), DocumentState.Persisted);
                     return entityInstance;
                 }
