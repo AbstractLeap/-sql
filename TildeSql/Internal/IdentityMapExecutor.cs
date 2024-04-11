@@ -62,13 +62,16 @@
                 }
 
                 var state = this.unitOfWork.GetState(multipleKeyQuery.Collection, entity);
-                if (state is DocumentState.NotAttached or DocumentState.Deleted) {
+                if (state is DocumentState.NotAttached) {
                     unmatchedKeys.Add(key);
                     continue;
                 }
 
-                result.Add(entity);
+                // Great, we've found it
                 matchedKeys.Add(key);
+                if (state != DocumentState.Deleted) {
+                    result.Add(entity);
+                }
             }
 
             if (matchedKeys.Count == 0) return;
