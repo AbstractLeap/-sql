@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
     <PackageId>TildeSql.JsonNet</PackageId>
     <Version>0.2.0</Version>
     <Description>TildeSql.JsonNet provides the NewtonSoft Json serialization for ~Sql</Description>
