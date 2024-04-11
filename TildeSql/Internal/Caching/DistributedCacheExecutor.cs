@@ -14,6 +14,8 @@
 
         private readonly HashSet<IQuery> executedQueries = new();
 
+        private readonly Dictionary<IQuery, (IQuery Executed, IQuery Remaining)> partiallyExecutedQueries = new();
+
         public DistributedCacheExecutor(IDistributedCache distributedCache) {
             this.distributedCache = distributedCache;
             this.resultCache      = new ResultCache();
@@ -36,32 +38,50 @@
 
         public async ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            var resultTasks = new List<ValueTask<object[]>>();
-            foreach (var key in multipleKeyQuery.Keys) {
-                resultTasks.Add(this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), cancellationToken));
-            }
+            var resultTasks = multipleKeyQuery.Keys.Select(
+                async key =>
+                    (Key: key,
+                        Result: await this.distributedCache.GetAsync<object[]>(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), cancellationToken)));
 
-            var hasAllResults = true;
+            var results = new List<object[]>(multipleKeyQuery.Keys.Length);
+            var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
+            var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
             foreach (var resultTask in resultTasks) {
-                var result = await resultTask;
+                var (key, result) = await resultTask;
                 if (result == null) {
-                    hasAllResults = false;
+                    unmatchedKeys.Add(key);
+                }
+                else {
+                    results.Add(result);
+                    matchedKeys.Add(key);
                 }
             }
 
-            if (hasAllResults) {
-                this.resultCache.Add(multipleKeyQuery, resultTasks.Select(t => t.Result).ToList());
+            if (matchedKeys.Count == 0) return;
+            if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                this.resultCache.Add(executedQuery, results);
+                this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
+            }
+            else {
+                this.resultCache.Add(multipleKeyQuery, results);
                 this.executedQueries.Add(multipleKeyQuery);
             }
         }
 
-        public async ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+        public async ValueTask<ExecuteResult> ExecuteAsync(IList<IQuery> queries, CancellationToken cancellationToken = default) {
             this.executedQueries.Clear();
+            this.partiallyExecutedQueries.Clear();
+
             foreach (var query in queries) {
                 await query.AcceptAsync(this, cancellationToken);
             }
 
-            return new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q)));
+            var executed = queries.Where(q => this.executedQueries.Contains(q));
+            var partiallyExecuted = this.partiallyExecutedQueries.Where(q => queries.Contains(q.Key)).Select(q => (q.Key, q.Value.Executed, q.Value.Remaining));
+            var nonExecutedQueries = queries.Where(q => !this.executedQueries.Contains(q) && !this.partiallyExecutedQueries.ContainsKey(q));
+            return new ExecuteResult(executed, partiallyExecuted, nonExecutedQueries);
         }
 
         public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)

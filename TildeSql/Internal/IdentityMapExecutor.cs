@@ -52,9 +52,9 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            var result = new List<TEntity>();
-            var matchedKeys = new HashSet<TKey>();
-            var unmatchedKeys = new HashSet<TKey>();
+            var result = new List<TEntity>(multipleKeyQuery.Keys.Length);
+            var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
+            var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
             foreach (var key in multipleKeyQuery.Keys) {
                 if (!this.identityMap.TryGetValue(key, out TEntity entity)) {
                     unmatchedKeys.Add(key);
@@ -84,7 +84,7 @@
             }
         }
 
-        public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+        public ExecuteResult Execute(IList<IQuery> queries, CancellationToken cancellationToken = default) {
             this.executedQueries.Clear();
             this.partiallyExecutedQueries.Clear();
 

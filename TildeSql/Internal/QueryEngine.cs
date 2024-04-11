@@ -196,7 +196,7 @@
                 return;
             }
 
-            IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
+            var queriesStillToExecute = this.queriesToExecute;
             var identityMapExecutionResult = this.identityMapExecutor.Execute(queriesStillToExecute, cancellationToken);
             foreach (var executedQuery in identityMapExecutionResult.ExecutedQueries) {
                 this.identityMapQueries.Add(executedQuery);
@@ -211,7 +211,7 @@
                 }
             }
 
-            queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries.Union(identityMapExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToArray();
+            queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries.Union(identityMapExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
 
             if (queriesStillToExecute.Any()) {
                 foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
@@ -229,7 +229,7 @@
                         }
                     }
 
-                    queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToArray();
+                    queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
                     if (!queriesStillToExecute.Any()) {
                         break;
                     }
