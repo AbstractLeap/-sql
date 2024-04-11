@@ -4,7 +4,7 @@
 
     using TildeSql.Schema;
 
-    public class MultipleKeyQuery<TEntity, TKey> : QueryBase<TEntity>, IMultipleKeyQuery
+    public class MultipleKeyQuery<TEntity, TKey> : QueryBase<TEntity>
         where TEntity : class {
         public MultipleKeyQuery(TKey[] keys, Collection collection) : base(collection) {
             this.Keys = keys;
@@ -18,10 +18,6 @@
 
         public override ValueTask AcceptAsync(IAsyncQueryVisitor visitor, CancellationToken cancellationToken = default) {
             return visitor.VisitMultipleKeyQueryAsync(this, cancellationToken);
-        }
-
-        public object[] ExpectedKeys() {
-            return [..this.Keys];
         }
     }
 }

@@ -165,8 +165,9 @@
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
-            Assert.Equal(entity1.Id, result[0].Id);
-            Assert.Equal(entity2.Id, result[1].Id);
+            Assert.Equal(2, result.Length);
+            Assert.Contains(entity1, result);
+            Assert.Contains(entity2, result);
         }
 
         [Fact]

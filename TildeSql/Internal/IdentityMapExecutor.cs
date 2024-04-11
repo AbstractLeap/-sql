@@ -17,6 +17,8 @@
 
         private readonly HashSet<IQuery> executedQueries = new();
 
+        private readonly Dictionary<IQuery, (IQuery Executed, IQuery Remaining)> partiallyExecutedQueries = new();
+
         public IdentityMapExecutor(IdentityMap identityMap, UnitOfWork unitOfWork) {
             this.identityMap = identityMap;
             this.unitOfWork  = unitOfWork;
@@ -51,32 +53,49 @@
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
             var result = new List<TEntity>();
+            var matchedKeys = new HashSet<TKey>();
+            var unmatchedKeys = new HashSet<TKey>();
             foreach (var key in multipleKeyQuery.Keys) {
                 if (!this.identityMap.TryGetValue(key, out TEntity entity)) {
-                    return;
+                    unmatchedKeys.Add(key);
+                    continue;
                 }
 
                 var state = this.unitOfWork.GetState(multipleKeyQuery.Collection, entity);
-                if (state == DocumentState.NotAttached) {
-                    return;
+                if (state is DocumentState.NotAttached or DocumentState.Deleted) {
+                    unmatchedKeys.Add(key);
+                    continue;
                 }
-                
-                if (state != DocumentState.Deleted) {
-                    result.Add(entity);
-                }
+
+                result.Add(entity);
+                matchedKeys.Add(key);
             }
 
-            this.resultCache.Add(multipleKeyQuery, result);
-            this.executedQueries.Add(multipleKeyQuery);
+            if (matchedKeys.Count == 0) return;
+            if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                this.resultCache.Add(executedQuery, result);
+                this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
+            }
+            else {
+                this.resultCache.Add(multipleKeyQuery, result);
+                this.executedQueries.Add(multipleKeyQuery);
+            }
         }
 
         public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
             this.executedQueries.Clear();
+            this.partiallyExecutedQueries.Clear();
+
             foreach (var query in queries) {
                 query.Accept(this);
             }
 
-            return new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q)));
+            var executed = queries.Where(q => this.executedQueries.Contains(q));
+            var partiallyExecuted = this.partiallyExecutedQueries.Where(q => queries.Contains(q.Key)).Select(q => (q.Key, q.Value.Executed, q.Value.Remaining));
+            var nonExecutedQueries = queries.Where(q => !this.executedQueries.Contains(q) && !this.partiallyExecutedQueries.ContainsKey(q));
+            return new ExecuteResult(executed, partiallyExecuted, nonExecutedQueries);
         }
 
         public IAsyncEnumerable<TEntity> GetAsync<TEntity>(IQuery query)
@@ -94,31 +113,6 @@
             else {
                 throw new Exception($"{nameof(IdentityMapExecutor)} did not execute {query} so can not get result");
             }
-        }
-
-        public async IAsyncEnumerable<TEntity> GetAdditionalAsync<TEntity>(IQuery query, List<object> matchedKey, IEnumerable<TEntity> entities)
-            where TEntity : class {
-            // Try and back-fill any non-persisted keys from the identityMap
-            if (query is not IMultipleKeyQuery keyedQuery)
-                yield break;
-
-            var expectedKeys = keyedQuery.ExpectedKeys();
-            if (expectedKeys.Length == matchedKey.Count)
-                yield break;
-
-            var newEntities = new List<TEntity>(expectedKeys.Length - matchedKey.Count);
-            foreach (var key in expectedKeys.Except(matchedKey)) {
-                var collection = query.Collection;
-                if (!this.identityMap.TryGetValue(collection.KeyType, key, out TEntity entityInstance))
-                    continue;
-
-                if (this.unitOfWork.GetState(collection, entityInstance) == DocumentState.New) {
-                    yield return entityInstance;
-                    newEntities.Add(entityInstance);
-                }
-            }
-
-            this.resultCache.Add(query, entities.Union(newEntities).ToArray());
         }
     }
 }
