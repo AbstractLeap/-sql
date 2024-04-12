@@ -42,6 +42,8 @@
 
         private readonly HashSet<IQuery> identityMapQueries = new();
 
+        private readonly Dictionary<IQuery, IQuery[]> queryForwardMap = new();
+
         public QueryEngine(
             ISchema schema,
             IdentityMap identityMap,
@@ -76,11 +78,13 @@
 
         public async IAsyncEnumerable<T> GetResult<T>(IQuery query)
             where T : class {
-            IDisposable @lock = null;
-            try {
-                if (!this.identityMapQueries.Contains(query) && !this.cacheExecutorQueries.Any(e => e.Contains(query)) && !this.persistenceQueryExecutorQueries.Contains(query)) {
-                    @lock = await this.mutex.LockAsync();
+            if (!this.queryForwardMap.ContainsKey(query)
+                && !this.identityMapQueries.Contains(query)
+                && !this.cacheExecutorQueries.Any(e => e.Contains(query))
+                && !this.persistenceQueryExecutorQueries.Contains(query)) {
+                var @lock = await this.mutex.LockAsync();
 
+                try {
                     // query has not been executed, so let's flush existing queries and then add
                     await this.FlushPersistenceAsync();
                     if (!this.queriesToExecute.Contains(query)) {
@@ -89,39 +93,48 @@
 
                     await this.ExecuteAsync();
                 }
+                finally {
+                    @lock?.Dispose();
+                }
+            }
 
-                if (this.identityMapQueries.Contains(query)) {
-                    await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
-                        yield return entity;
+            if (this.queryForwardMap.TryGetValue(query, out var queries)) {
+                foreach (var forwardedQuery in queries) {
+                    await foreach (var result in this.GetResult<T>(forwardedQuery)) {
+                        yield return result;
+                    }
+                }
+
+                yield break;
+            }
+
+            if (this.identityMapQueries.Contains(query)) {
+                await foreach (var entity in this.identityMapExecutor.GetAsync<T>(query)) {
+                    yield return entity;
+                }
+
+                yield break;
+            }
+
+            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
+                var cacheExecutor = entry.Value;
+                if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
+                    await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                        var entity = HydrateDocument(row);
+                        if (entity != null) {
+                            yield return entity;
+                        }
                     }
 
                     yield break;
                 }
-
-                foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
-                    var cacheExecutor = entry.Value;
-                    if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
-                        await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                            var entity = HydrateDocument(row);
-                            if (entity != null) {
-                                yield return entity;
-                            }
-                        }
-
-                        yield break;
-                    }
-                }
-
-                @lock ??= await this.mutex.LockAsync();
-                await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
-                    var entity = HydrateDocument(row);
-                    if (entity != null) {
-                        yield return entity;
-                    }
-                }
             }
-            finally {
-                @lock?.Dispose();
+
+            await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
+                var entity = HydrateDocument(row);
+                if (entity != null) {
+                    yield return entity;
+                }
             }
 
             yield break;
@@ -183,13 +196,22 @@
                 return;
             }
 
-            IEnumerable<IQuery> queriesStillToExecute = this.queriesToExecute;
+            var queriesStillToExecute = this.queriesToExecute;
             var identityMapExecutionResult = this.identityMapExecutor.Execute(queriesStillToExecute, cancellationToken);
             foreach (var executedQuery in identityMapExecutionResult.ExecutedQueries) {
                 this.identityMapQueries.Add(executedQuery);
             }
 
-            queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries;
+            foreach (var (original, executed, remaining) in identityMapExecutionResult.PartiallyExecutedQueries) {
+                if (this.queryForwardMap.ContainsKey(original)) {
+                    this.queryForwardMap.Add(original, [executed, remaining]);
+                }
+                else {
+                    this.queryForwardMap[original] = [executed, remaining];
+                }
+            }
+
+            queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries.Union(identityMapExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
 
             if (queriesStillToExecute.Any()) {
                 foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
@@ -198,7 +220,16 @@
                         this.cacheExecutorQueries[entry.Index].Add(executedQuery);
                     }
 
-                    queriesStillToExecute = cacheExecutionResult.NonExecutedQueries;
+                    foreach (var (original, executed, remaining) in cacheExecutionResult.PartiallyExecutedQueries) {
+                        if (this.queryForwardMap.ContainsKey(original)) {
+                            this.queryForwardMap.Add(original, [executed, remaining]);
+                        }
+                        else {
+                            this.queryForwardMap[original] = [executed, remaining];
+                        }
+                    }
+
+                    queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
                     if (!queriesStillToExecute.Any()) {
                         break;
                     }

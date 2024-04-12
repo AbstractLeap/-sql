@@ -17,6 +17,8 @@
 
         private readonly HashSet<IQuery> executedQueries = new();
 
+        private readonly Dictionary<IQuery, (IQuery Executed, IQuery Remaining)> partiallyExecutedQueries = new();
+
         public IdentityMapExecutor(IdentityMap identityMap, UnitOfWork unitOfWork) {
             this.identityMap = identityMap;
             this.unitOfWork  = unitOfWork;
@@ -50,33 +52,53 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            var result = new List<TEntity>();
+            var result = new List<TEntity>(multipleKeyQuery.Keys.Length);
+            var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
+            var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
             foreach (var key in multipleKeyQuery.Keys) {
                 if (!this.identityMap.TryGetValue(key, out TEntity entity)) {
-                    return;
+                    unmatchedKeys.Add(key);
+                    continue;
                 }
 
                 var state = this.unitOfWork.GetState(multipleKeyQuery.Collection, entity);
-                if (state == DocumentState.NotAttached) {
-                    return;
+                if (state is DocumentState.NotAttached) {
+                    unmatchedKeys.Add(key);
+                    continue;
                 }
-                
+
+                // Great, we've found it
+                matchedKeys.Add(key);
                 if (state != DocumentState.Deleted) {
                     result.Add(entity);
                 }
             }
 
-            this.resultCache.Add(multipleKeyQuery, result);
-            this.executedQueries.Add(multipleKeyQuery);
+            if (matchedKeys.Count == 0) return;
+            if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                this.resultCache.Add(executedQuery, result);
+                this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
+            }
+            else {
+                this.resultCache.Add(multipleKeyQuery, result);
+                this.executedQueries.Add(multipleKeyQuery);
+            }
         }
 
-        public ExecuteResult Execute(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+        public ExecuteResult Execute(IList<IQuery> queries, CancellationToken cancellationToken = default) {
             this.executedQueries.Clear();
+            this.partiallyExecutedQueries.Clear();
+
             foreach (var query in queries) {
                 query.Accept(this);
             }
 
-            return new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q)));
+            var executed = queries.Where(q => this.executedQueries.Contains(q));
+            var partiallyExecuted = this.partiallyExecutedQueries.Where(q => queries.Contains(q.Key)).Select(q => (q.Key, q.Value.Executed, q.Value.Remaining));
+            var nonExecutedQueries = queries.Where(q => !this.executedQueries.Contains(q) && !this.partiallyExecutedQueries.ContainsKey(q));
+            return new ExecuteResult(executed, partiallyExecuted, nonExecutedQueries);
         }
 
         public IAsyncEnumerable<TEntity> GetAsync<TEntity>(IQuery query)

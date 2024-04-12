@@ -14,6 +14,8 @@
 
         private readonly HashSet<IQuery> executedQueries = new();
 
+        private readonly Dictionary<IQuery, (IQuery Executed, IQuery Remaining)> partiallyExecutedQueries = new();
+
         public MemoryCacheExecutor(IMemoryCache memoryCache) {
             this.memoryCache = memoryCache;
             this.resultCache = new ResultCache();
@@ -34,26 +36,44 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
-            var result = new List<object[]>();
+            var result = new List<object[]>(multipleKeyQuery.Keys.Length);
+            var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
+            var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
             foreach (var key in multipleKeyQuery.Keys) {
-                if (!this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), out object[] row)) {
-                    return; // can't support this query as don't have all the entities cached
+                if (this.memoryCache.TryGetValue(CacheKeyProvider.GetCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, key), out object[] row)) {
+                    unmatchedKeys.Add(key);
+                    continue;
                 }
-                
+
                 result.Add(row);
+                matchedKeys.Add(key);
             }
 
-            this.resultCache.Add(multipleKeyQuery, result);
-            this.executedQueries.Add(multipleKeyQuery);
+            if (matchedKeys.Count == 0) return;
+            if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                this.resultCache.Add(executedQuery, result);
+                this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
+            }
+            else {
+                this.resultCache.Add(multipleKeyQuery, result);
+                this.executedQueries.Add(multipleKeyQuery);
+            }
         }
 
-        public ValueTask<ExecuteResult> ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default) {
+        public ValueTask<ExecuteResult> ExecuteAsync(IList<IQuery> queries, CancellationToken cancellationToken = default) {
             this.executedQueries.Clear();
+            this.partiallyExecutedQueries.Clear();
+
             foreach (var query in queries) {
                 query.Accept(this);
             }
 
-            return ValueTask.FromResult(new ExecuteResult(queries.Where(q => this.executedQueries.Contains(q)), queries.Where(q => !this.executedQueries.Contains(q))));
+            var executed = queries.Where(q => this.executedQueries.Contains(q));
+            var partiallyExecuted = this.partiallyExecutedQueries.Where(q => queries.Contains(q.Key)).Select(q => (q.Key, q.Value.Executed, q.Value.Remaining));
+            var nonExecutedQueries = queries.Where(q => !this.executedQueries.Contains(q) && !this.partiallyExecutedQueries.ContainsKey(q));
+            return ValueTask.FromResult(new ExecuteResult(executed, partiallyExecuted, nonExecutedQueries));
         }
 
         public IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)

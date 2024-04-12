@@ -1,19 +1,25 @@
 ﻿namespace TildeSql.Internal {
     using System.Collections.Generic;
-    using System.Linq;
 
     using TildeSql.Queries;
 
     public class ExecuteResult {
+        public ExecuteResult(IEnumerable<IQuery> executedQueries, IEnumerable<(IQuery, IQuery, IQuery)> partiallyExecutedQueries, IEnumerable<IQuery> nonExecutedQueries)
+            : this(executedQueries, nonExecutedQueries) {
+            this.PartiallyExecutedQueries = partiallyExecutedQueries ?? [];
+        }
+
         public ExecuteResult(IEnumerable<IQuery> executedQueries, IEnumerable<IQuery> nonExecutedQueries) {
-            this.ExecutedQueries    = executedQueries ?? Enumerable.Empty<IQuery>();
-            this.NonExecutedQueries = nonExecutedQueries ?? Enumerable.Empty<IQuery>();
+            this.ExecutedQueries    = executedQueries ?? [];
+            this.NonExecutedQueries = nonExecutedQueries ?? [];
         }
 
         public ExecuteResult()
-            : this(Enumerable.Empty<IQuery>(), Enumerable.Empty<IQuery>()) { }
+            : this([], []) { }
 
         public IEnumerable<IQuery> ExecutedQueries { get; }
+
+        public IEnumerable<(IQuery Original, IQuery Executed, IQuery Remaining)> PartiallyExecutedQueries { get; } = [];
 
         public IEnumerable<IQuery> NonExecutedQueries { get; }
     }
