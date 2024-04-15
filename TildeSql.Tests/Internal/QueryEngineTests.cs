@@ -201,6 +201,24 @@
         }
 
         [Fact]
+        public async Task EmptyMultipleQueryWorks() {
+            var schema = new Mock<ISchema>();
+            var queryExecutor = new Mock<IQueryExecutor>();
+            var serializer = new JsonNetFieldSerializer();
+            var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
+            collection.AddClassType(typeof(Entity));
+
+            queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Throws<InvalidOperationException>();
+            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<IQuery>())).Throws<InvalidOperationException>();
+
+            var query = new MultipleKeyQuery<Entity, EntityId>(Array.Empty<EntityId>(), collection);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null);
+
+            var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
+            Assert.Empty(result);
+        }
+
+        [Fact]
         public async Task HydrationCanMixShortTypeNamesAndFullAssemblyQualifiedNames() {
             var id = Guid.NewGuid();
             using (var conn = new SqlConnection(TestSessionFactoryBuilder.SqlServerConnectionString)) {

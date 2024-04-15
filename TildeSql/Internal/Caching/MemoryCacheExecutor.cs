@@ -36,6 +36,11 @@
 
         public void VisitMultipleKeyQuery<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery)
             where TEntity : class {
+            if (multipleKeyQuery.Keys.Length == 0) {
+                this.resultCache.Add(multipleKeyQuery, new List<object[]>(0));
+                this.executedQueries.Add(multipleKeyQuery);
+            }
+
             var result = new List<object[]>(multipleKeyQuery.Keys.Length);
             var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
             var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
@@ -49,7 +54,6 @@
                 matchedKeys.Add(key);
             }
 
-            if (matchedKeys.Count == 0) return;
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
                 var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
                 var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);

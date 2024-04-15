@@ -38,6 +38,11 @@
 
         public async ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
+            if (multipleKeyQuery.Keys.Length == 0) {
+                this.resultCache.Add(multipleKeyQuery, new List<object[]>(0));
+                this.executedQueries.Add(multipleKeyQuery);
+            }
+
             var resultTasks = multipleKeyQuery.Keys.Select(
                 async key =>
                     (Key: key,
@@ -57,7 +62,6 @@
                 }
             }
 
-            if (matchedKeys.Count == 0) return;
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
                 var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
                 var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
