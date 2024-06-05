@@ -10,6 +10,10 @@
         
         Collection Collection { get; }
 
+        TimeSpan? AbsoluteExpirationRelativeToNow { get; }
+
+        internal string CacheKey { get; }
+
         void Accept(IQueryVisitor visitor);
 
         ValueTask AcceptAsync(IAsyncQueryVisitor visitor, CancellationToken cancellationToken = default);

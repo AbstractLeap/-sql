@@ -34,7 +34,7 @@
         public Session(
             ISchema schema,
             ISerializer serializer,
-            IQueryExecutor queryExecutor,
+            IPersistenceQueryExecutor queryExecutor,
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,

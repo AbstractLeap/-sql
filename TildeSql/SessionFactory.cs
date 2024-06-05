@@ -12,7 +12,7 @@
 
         private readonly ISerializer serializer;
 
-        private readonly Func<IQueryExecutor> queryExecutorFactory;
+        private readonly Func<IPersistenceQueryExecutor> queryExecutorFactory;
 
         private readonly Func<IUpdateExecutor> updateExecutorFactory;
 
@@ -25,7 +25,7 @@
         public SessionFactory(
             ISchema schema,
             ISerializer serializer,
-            Func<IQueryExecutor> queryExecutorFactory,
+            Func<IPersistenceQueryExecutor> queryExecutorFactory,
             Func<IUpdateExecutor> updateExecutorFactory,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,

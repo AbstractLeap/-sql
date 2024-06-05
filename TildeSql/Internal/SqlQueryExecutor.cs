@@ -13,7 +13,7 @@
     using TildeSql.Queries;
     using TildeSql.Schema;
 
-    public class SqlQueryExecutor : IQueryExecutor, IAsyncDisposable, IDisposable {
+    public class SqlQueryExecutor : IPersistenceQueryExecutor, IAsyncDisposable, IDisposable {
         private readonly IConnectionFactory connectionFactory;
 
         private readonly ISqlQueryWriter sqlQueryWriter;
@@ -67,8 +67,7 @@
             this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        public async IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
-            where TEntity : class {
+        public async IAsyncEnumerable<object[]> GetAsync(IQuery query) {
             // do we have the result already?
             // (we've already read this result from the resultsets)
             if (this.resultCache.TryGetValue(query, out var result)) {
@@ -94,7 +93,7 @@
             }
 
             currentlyReadQuery = query;
-            await foreach (var row in this.ReadResultAsync<TEntity>()) {
+            await foreach (var row in this.ReadResultAsync()) {
                 yield return row;
             }
 
@@ -126,6 +125,24 @@
             }
         }
 
+        //public async ValueTask FlushQueryAsync(IQuery query) {
+        //    if (this.resultCache.TryGetValue(query, out var result)) {
+        //        return;
+        //    }
+
+        //    while (this.notReadQueries.TryDequeue(out var notReadQuery)) {
+        //        await this.ReadResultIntoCacheAsync(query);
+        //        await this.dataReader.NextResultAsync();
+        //        if (query == notReadQuery) {
+        //            break;
+        //        }
+        //    }
+
+        //    if (this.notReadQueries.Count == 0) {
+        //        await this.CleanUpCommandAsync();
+        //    }
+        //}
+
         private async Task CleanUpCommandAsync() {
             this.currentlyReadQuery = null;
             await this.dataReader.CloseAsync();
@@ -135,13 +152,11 @@
             await this.connection.DisposeAsync();
         }
 
-        private async ValueTask<List<object[]>> ReadResultIntoListAsync<T>()
-            where T : class {
-            return await this.ReadResultAsync<T>().ToListAsync();
+        private async ValueTask<List<object[]>> ReadResultIntoListAsync() {
+            return await this.ReadResultAsync().ToListAsync();
         }
 
-        private async IAsyncEnumerable<object[]> ReadResultAsync<T>()
-            where T : class {
+        private async IAsyncEnumerable<object[]> ReadResultAsync() {
             while (await this.dataReader.ReadAsync().ConfigureAwait(false)) {
                 // hydrate database row
                 var values = new object[this.dataReader.VisibleFieldCount];

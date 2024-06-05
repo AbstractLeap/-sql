@@ -16,7 +16,7 @@
 
         public ISerializer Serializer { get; set; } = new SystemJsonSerializer();
 
-        public Func<IQueryExecutor> QueryExecutorFactory { get; set; }
+        public Func<IPersistenceQueryExecutor> QueryExecutorFactory { get; set; }
 
         public Func<IUpdateExecutor> UpdateExecutorFactory { get; set; }
         

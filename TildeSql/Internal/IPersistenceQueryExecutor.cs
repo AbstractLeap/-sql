@@ -5,11 +5,10 @@
 
     using TildeSql.Queries;
 
-    public interface IQueryExecutor {
+    public interface IPersistenceQueryExecutor {
         ValueTask ExecuteAsync(IEnumerable<IQuery> queries, CancellationToken cancellationToken = default);
 
-        IAsyncEnumerable<object[]> GetAsync<TEntity>(IQuery query)
-            where TEntity : class;
+        IAsyncEnumerable<object[]> GetAsync(IQuery query);
 
         ValueTask FlushAsync();
     }

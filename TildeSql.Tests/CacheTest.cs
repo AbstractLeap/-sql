@@ -1,4 +1,5 @@
 ﻿namespace TildeSql.Tests {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -12,6 +13,7 @@
     using TildeSql.Tests.TestDomain.Blog;
 
     using Xunit;
+    using TildeSql.Internal.Caching;
 
     public class CacheTest {
         [Fact]
@@ -30,10 +32,12 @@
 
         private static ISessionFactory MakeTarget() {
             var testSchema = TestSchemaBuilder.Build();
-            var configuration = new Configuration(testSchema).UseMemoryCache();
+            var configuration = new Configuration(testSchema).UseMemoryCache()
+                .UseMemoryCache()
+                .EnableCaching<Blog>(TimeSpan.FromMinutes(5));
 
             // should never get called
-            var mockQueryExecutor = new Mock<IQueryExecutor>();
+            var mockQueryExecutor = new Mock<IPersistenceQueryExecutor>();
             configuration.QueryExecutorFactory = () => mockQueryExecutor.Object;
 
             var mockUpdateExecutor = new Mock<IUpdateExecutor>();

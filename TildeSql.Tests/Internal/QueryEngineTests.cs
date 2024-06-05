@@ -24,7 +24,7 @@
         [Fact]
         public async Task Works() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -43,7 +43,7 @@
         [Fact]
         public async Task MultipleQueriesWorkOutOfOrder() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -70,7 +70,7 @@
         [Fact]
         public async Task FutureEntityQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -90,7 +90,7 @@
         [Fact]
         public async Task MultipleKeyQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -115,7 +115,7 @@
         [Fact]
         public async Task MultipleKeysInCacheWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -144,7 +144,7 @@
         [Fact]
         public async Task MultipleKeysOnlyOneInCacheWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -173,7 +173,7 @@
         [Fact]
         public async Task MultipleKeysDeletedQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -203,7 +203,7 @@
         [Fact]
         public async Task EmptyMultipleQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
