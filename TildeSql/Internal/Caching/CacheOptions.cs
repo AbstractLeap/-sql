@@ -7,5 +7,9 @@
             if (this.cache.TryGetValue(collectionName, out options)) return true;
             return false;
         }
+
+        public void Add(string collectionName, CollectionCacheOptions options) {
+            this.cache[collectionName] = options;
+        }
     }
 }
