@@ -4,6 +4,6 @@
 
     public interface ICacheKeyProvider {
         string GetEntityCacheKey<TEntity, TKey>(Collection collection, TKey key);
-        string GetEntityQueryCacheKey<TEntity, TKey>(Collection collection, EntityQuery<TEntity> entityQuery) where TEntity : class;
+        string GetEntityQueryCacheKey<TEntity>(Collection collection, EntityQuery<TEntity> entityQuery) where TEntity : class;
     }
 }

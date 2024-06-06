@@ -22,7 +22,7 @@
 
         public TimeSpan? AbsoluteExpirationRelativeToNow { get; set; }
 
-        internal string CacheKey { get; set; }
+        public string CacheKey { get; set; }
 
         public abstract void Accept(IQueryVisitor visitor);
 

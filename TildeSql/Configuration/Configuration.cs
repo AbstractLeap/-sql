@@ -1,6 +1,9 @@
 ﻿namespace TildeSql.Configuration {
     using System;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.Events;
     using TildeSql.Internal;
     using TildeSql.Internal.Caching;
@@ -24,6 +27,10 @@
         
         public IDistributedCache DistributedCache { get; set; }
 
+        public ICacheSerializer CacheSerializer { get; set; }
+
+        public CacheOptions CacheOptions { get; set; }
+
         public ISaveChangesEventListener SaveChangesEventListener { get; set; }
 
         public ISessionFactory BuildSessionFactory() {
@@ -34,6 +41,8 @@
                 this.UpdateExecutorFactory,
                 this.MemoryCache,
                 this.DistributedCache,
+                this.CacheSerializer,
+                this.CacheOptions,
                 this.SaveChangesEventListener);
         }
     }

@@ -7,6 +7,9 @@
 
     using Fasterflect;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.Internal.Caching;
     using TildeSql.Operations;
     using TildeSql.Schema;
@@ -121,8 +124,9 @@
                 deleteOperation.Collection);
         }
 
-        private ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection, CancellationToken cancellationToken) {
-            return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity), cancellationToken);
+        private async ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection, CancellationToken cancellationToken) {
+            return;
+            //return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity), cancellationToken);
         }
 
         private void DeleteFromMemoryCache<TEntity>(DeleteOperation<TEntity> deleteOperation) {
@@ -134,7 +138,8 @@
         }
 
         private void DeleteFromMemoryCache<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection) {
-            this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity));
+            return;
+            //this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity));
         }
 
         #endregion
@@ -150,7 +155,7 @@
         }
 
         private void UpdateMemoryCache<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection) {
-            this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values);
+            //this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values);
         }
 
         private ValueTask UpdateDistributedCacheAsync<TEntity>(TEntity entity, DatabaseRow row, CancellationToken cancellationToken) {
@@ -167,8 +172,8 @@
                 cancellationToken);
         }
 
-        private ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection, CancellationToken cancellationToken) {
-            return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values, cancellationToken);
+        private async ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection, CancellationToken cancellationToken) {
+            //return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values, cancellationToken);
         }
 
         #endregion

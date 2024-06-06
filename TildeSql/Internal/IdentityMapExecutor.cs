@@ -79,6 +79,10 @@
                 }
             }
 
+            if (matchedKeys.Count == 0) {
+                return;
+            }
+
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
                 var executedQuery = new MultipleKeyQuery<TEntity, TKey>([..matchedKeys], multipleKeyQuery.Collection);
                 var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);

@@ -4,8 +4,6 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    using TildeSql.MemoryCache;
-
     using Moq;
 
     using TildeSql.Configuration;
@@ -14,6 +12,8 @@
 
     using Xunit;
     using TildeSql.Internal.Caching;
+    using Microsoft.Extensions.Caching.Memory;
+    using Microsoft.Extensions.Options;
 
     public class CacheTest {
         [Fact]
@@ -32,8 +32,8 @@
 
         private static ISessionFactory MakeTarget() {
             var testSchema = TestSchemaBuilder.Build();
-            var configuration = new Configuration(testSchema).UseMemoryCache()
-                .UseMemoryCache()
+            var configuration = new Configuration(testSchema)
+                .UseMemoryCache(new MemoryCache(Options.Create(new MemoryCacheOptions())))
                 .EnableCaching<Blog>(TimeSpan.FromMinutes(5));
 
             // should never get called

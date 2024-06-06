@@ -35,7 +35,6 @@
   <ItemGroup>
     <ProjectReference Include="..\TildeSql.Humanizer\TildeSql.Humanizer.csproj" />
     <ProjectReference Include="..\TildeSql.JsonNet\TildeSql.JsonNet.csproj" />
-    <ProjectReference Include="..\TildeSql.MemoryCache\TildeSql.MemoryCache.csproj" />
     <ProjectReference Include="..\TildeSql.SqlMigrations\TildeSql.SqlMigrations.csproj" />
     <ProjectReference Include="..\TildeSql.SqlServer\TildeSql.SqlServer.csproj" />
     <ProjectReference Include="..\TildeSql\TildeSql.csproj" />

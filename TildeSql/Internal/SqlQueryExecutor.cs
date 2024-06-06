@@ -106,7 +106,7 @@
         }
 
         private async ValueTask ReadResultIntoCacheAsync(IQuery nonCompleteQuery) {
-            var queryResults = await (ValueTask<List<object[]>>)this.CallMethod(new[] { nonCompleteQuery.EntityType }, nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
+            var queryResults = await (ValueTask<List<object[]>>)this.CallMethod(nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
             this.resultCache.Add(nonCompleteQuery, queryResults);
         }
 
@@ -124,24 +124,6 @@
                 await this.CleanUpCommandAsync();
             }
         }
-
-        //public async ValueTask FlushQueryAsync(IQuery query) {
-        //    if (this.resultCache.TryGetValue(query, out var result)) {
-        //        return;
-        //    }
-
-        //    while (this.notReadQueries.TryDequeue(out var notReadQuery)) {
-        //        await this.ReadResultIntoCacheAsync(query);
-        //        await this.dataReader.NextResultAsync();
-        //        if (query == notReadQuery) {
-        //            break;
-        //        }
-        //    }
-
-        //    if (this.notReadQueries.Count == 0) {
-        //        await this.CleanUpCommandAsync();
-        //    }
-        //}
 
         private async Task CleanUpCommandAsync() {
             this.currentlyReadQuery = null;

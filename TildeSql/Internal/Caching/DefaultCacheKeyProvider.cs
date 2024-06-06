@@ -16,7 +16,7 @@
             }
             return cacheKey.ToString();
         }
-        public string GetEntityQueryCacheKey<TEntity, TKey>(Collection collection, EntityQuery<TEntity> entityQuery) where TEntity : class {
+        public string GetEntityQueryCacheKey<TEntity>(Collection collection, EntityQuery<TEntity> entityQuery) where TEntity : class {
             //throw new System.NotImplementedException();
             var cacheKey = new StringBuilder("query|");
             cacheKey.Append(collection.CollectionName);

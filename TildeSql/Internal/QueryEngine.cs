@@ -77,8 +77,7 @@
             where T : class {
             if (!this.queryForwardMap.ContainsKey(query)
                 && !this.identityMapQueries.Contains(query)
-                && !(this.memoryCacheExecutorQueries?.Contains(query) ?? false)
-                && !(this.distributedCacheExecutorQueries?.Contains(query) ?? false)
+                && !(this.cacheExecutorQueries?.Contains(query) ?? false)
                 && !this.persistenceQueryExecutorQueries.Contains(query)) {
                 var @lock = await this.mutex.LockAsync();
 
@@ -114,21 +113,18 @@
                 yield break;
             }
 
-            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
-                var cacheExecutor = entry.Value;
-                if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
-                    await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                        var entity = HydrateDocument(row);
-                        if (entity != null) {
-                            yield return entity;
-                        }
+            if (this.cacheExecutorQueries?.Contains(query) ?? false) {
+                await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                    var entity = HydrateDocument(row);
+                    if (entity != null) {
+                        yield return entity;
                     }
-
-                    yield break;
                 }
+
+                yield break;
             }
 
-            await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
+            await foreach (var row in this.persistenceQueryExecutor.GetAsync(query)) {
                 var entity = HydrateDocument(row);
                 if (entity != null) {
                     yield return entity;
