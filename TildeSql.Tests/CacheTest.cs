@@ -4,19 +4,14 @@
     using System.Data;
     using System.Data.Common;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
 
     using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Options;
 
-    using Moq;
-
     using StackExchange.Profiling.Data;
 
     using TildeSql.Configuration;
-    using TildeSql.Internal;
-    using TildeSql.JsonNet;
     using TildeSql.SqlServer;
     using TildeSql.Tests.TestDomain.Blog;
 
@@ -24,17 +19,38 @@
 
     public class CacheTest {
         [Fact]
-        public async Task SessionFactoryCacheWorks() {
-            var sf = MakeTarget();
+        public async Task CacheMultipleWorks() {
+            var profiler = new Profiler();
+            var schema = TestSchemaBuilder.Build();
+            var memoryCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var sf = TestSessionFactoryBuilder.Build(
+                schema,
+                sqlSetup: s => s.ConnectionFactoryFactory = new ProfilingDbConnectionFactoryFactory(
+                                   new ConnectionPerCommandSqlServerConnectionFactoryFactory(TestSessionFactoryBuilder.SqlServerConnectionString),
+                                   profiler),
+                configSetup: c => c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5)));
+
             var session = sf.StartSession();
             var blog = new Blog("Caching uncovered");
             session.Add(blog);
+            var blog2 = new Blog("Caching again");
+            session.Add(blog2);
             await session.SaveChangesAsync();
 
-            var session2 = sf.StartSession();
-            var blogAgain = await session2.Get<Blog>().SingleAsync(blog.BlogId);
-            Assert.Equal(blog, blogAgain);
-            Assert.NotSame(blogAgain, blog);
+            memoryCache.Clear();
+            profiler.IsActive = true;
+            var tasks = new List<ValueTask<Blog[]>>();
+            var keys = new[] { blog.BlogId, blog2.BlogId };
+            foreach (var i in Enumerable.Range(0, 1000)) {
+                var innerSession = sf.StartSession();
+                tasks.Add(innerSession.Get<Blog>().MultipleAsync(keys).ToArrayAsync());
+            }
+
+            await Task.WhenAll(tasks.Select(v => v.AsTask()));
+
+            Assert.Equal(1, profiler.CommandsExecuted);
+            var blogInstances = new HashSet<Blog>(tasks.SelectMany(v => v.Result), ReferenceEqualityComparer.Instance);
+            Assert.Equal(2000, blogInstances.Count);
         }
 
         [Fact]
@@ -73,9 +89,7 @@
                 sqlSetup: s => s.ConnectionFactoryFactory = new ProfilingDbConnectionFactoryFactory(
                                    new ConnectionPerCommandSqlServerConnectionFactoryFactory(TestSessionFactoryBuilder.SqlServerConnectionString),
                                    profiler),
-                configSetup: c => {                    
-                    c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5));
-                });
+                configSetup: c => { c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5)); });
 
             var session = sf.StartSession();
             var blog = new Blog("Caching uncovered");
@@ -101,53 +115,22 @@
             var blogInstances = new HashSet<Blog>(tasks.Select(v => v.Result), ReferenceEqualityComparer.Instance);
             Assert.Equal(1000, blogInstances.Count);
         }
-
-        private static ISessionFactory MakeTarget() {
-            var testSchema = TestSchemaBuilder.Build();
-            var configuration = new Configuration(testSchema).UseMemoryCache(new MemoryCache(Options.Create(new MemoryCacheOptions())))
-                                                             .EnableCaching<Blog>(TimeSpan.FromMinutes(5));
-
-            // should never get called
-            var mockQueryExecutor = new Mock<IPersistenceQueryExecutor>();
-            configuration.QueryExecutorFactory = () => mockQueryExecutor.Object;
-
-            var mockUpdateExecutor = new Mock<IUpdateExecutor>();
-            mockUpdateExecutor
-                .Setup(
-                    e => e.ExecuteAsync(
-                        It.IsAny<IEnumerable<DatabaseRow>>(),
-                        It.IsAny<IEnumerable<(DatabaseRow, DatabaseRow)>>(),
-                        It.IsAny<IEnumerable<DatabaseRow>>(),
-                        It.IsAny<CancellationToken>()))
-                .Returns(ValueTask.CompletedTask);
-            configuration.UpdateExecutorFactory = () => mockUpdateExecutor.Object;
-
-            return configuration.BuildSessionFactory();
-        }
     }
 
     public class Profiler : IDbProfiler {
-        private int commandsExecuted;
-
         public void ExecuteStart(IDbCommand profiledDbCommand, SqlExecuteType executeType) {
-            this.commandsExecuted++;
+            this.CommandsExecuted++;
         }
 
-        public void ExecuteFinish(IDbCommand profiledDbCommand, SqlExecuteType executeType, DbDataReader reader) {
-            
-        }
+        public void ExecuteFinish(IDbCommand profiledDbCommand, SqlExecuteType executeType, DbDataReader reader) { }
 
-        public void ReaderFinish(IDataReader reader) {
-            
-        }
+        public void ReaderFinish(IDataReader reader) { }
 
-        public void OnError(IDbCommand profiledDbCommand, SqlExecuteType executeType, Exception exception) {
-            
-        }
+        public void OnError(IDbCommand profiledDbCommand, SqlExecuteType executeType, Exception exception) { }
 
         public bool IsActive { get; set; }
 
-        public int CommandsExecuted => this.commandsExecuted;
+        public int CommandsExecuted { get; private set; }
     }
 
     public class ProfilingDbConnectionFactoryFactory : IConnectionFactoryFactory {
