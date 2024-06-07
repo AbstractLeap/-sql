@@ -256,6 +256,7 @@
 
                         if (queriesStillToExecute.Any()) {
                             await ExecuteAgainstPersistenceAsync();
+                            return;
                         }
                     }
                     finally {
