@@ -30,7 +30,7 @@
         }
 
         public bool TryGetValue<T>(IQuery query, out IList<T> result) {
-            if (this.entries.TryGetValue(query, out var list) && list is List<T> typedList) {
+            if (this.entries.TryGetValue(query, out var list) && list is IList<T> typedList) {
                 this.entries.Remove(query);
                 result = typedList;
                 return true;

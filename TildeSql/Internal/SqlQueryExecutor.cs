@@ -93,9 +93,13 @@
             }
 
             currentlyReadQuery = query;
+            var results = new List<object[]>(); // we store in the result cache as well in case they re-enumerate
             await foreach (var row in this.ReadResultAsync()) {
+                results.Add(row);
                 yield return row;
             }
+
+            this.resultCache.Add(query, results);
 
             await this.dataReader.NextResultAsync();
             this.currentlyReadQuery = null;
@@ -106,7 +110,7 @@
         }
 
         private async ValueTask ReadResultIntoCacheAsync(IQuery nonCompleteQuery) {
-            var queryResults = await (ValueTask<List<object[]>>)this.CallMethod(nameof(this.ReadResultIntoListAsync), Array.Empty<object>());
+            var queryResults = await this.ReadResultIntoListAsync();
             this.resultCache.Add(nonCompleteQuery, queryResults);
         }
 

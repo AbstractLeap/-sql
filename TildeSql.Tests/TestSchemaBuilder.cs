@@ -65,9 +65,13 @@
     class TestSessionFactoryBuilder {
         public const string SqlServerConnectionString = "Server=.;Database=tildesql;Trusted_Connection=True;TrustServerCertificate=Yes";
 
-        public static ISessionFactory Build(ISchema schema, string connectionString = SqlServerConnectionString, Action<SqlServerConfiguration> setup = null) {
-            var sessionFactory = new Configuration(schema).UseSqlServer(connectionString, setup).UseJsonNetFieldSerialization().BuildSessionFactory();
-            return sessionFactory;
+        public static ISessionFactory Build(ISchema schema, string connectionString = SqlServerConnectionString, Action<SqlServerConfiguration> sqlSetup = null, Action<Configuration> configSetup = null) {
+            var config = new Configuration(schema);
+            if (configSetup != null) {
+                configSetup(config);
+            }
+
+            return config.UseSqlServer(connectionString, sqlSetup).UseJsonNetFieldSerialization().BuildSessionFactory();
         }
     }
 }
