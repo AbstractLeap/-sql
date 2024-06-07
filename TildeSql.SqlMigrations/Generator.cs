@@ -8,7 +8,12 @@
     using Index = TildeSql.SqlMigrations.Model.Index;
 
     public class Generator {
-        public string CreateCode(Difference diff, string migrationNamespace, string migrationName, Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter = null) {
+        public string CreateCode(
+            Difference diff,
+            string migrationNamespace,
+            string migrationName,
+            Func<(string TableName, string SchemaName), bool> dropAndRecreateFilter = null,
+            string[] tags = null) {
             var builder = new CodeStringBuilder();
             builder.Append("namespace ").Append(migrationNamespace).Append(" {").NewLine();
             builder.IncreaseIndent();
@@ -16,6 +21,10 @@
             builder.Append("using TildeSql.SqlMigrations;").NewLine();
             builder.Append("using FluentMigrator;").NewLine().NewLine();
             builder.Append("[Migration(").Append(DateTime.Now.ToString("yyyyMMddHHmm")).Append(")]").NewLine();
+            if (tags is { Length: > 0 }) {
+                builder.Append("[Tags(").Append(string.Join(", ", tags)).Append(")]").NewLine();
+            }
+
             builder.Append("public class ").Append(migrationName).Append(" : Migration {").NewLine();
             builder.IncreaseIndent();
             builder.Append("public override void Up() {").NewLine();
