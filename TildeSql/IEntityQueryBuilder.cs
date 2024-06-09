@@ -13,7 +13,7 @@
 
         IEntityQueryBuilder<TEntity> Limit(int limit);
 
-        IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null);
+        IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null);
 
         IEntityQueryBuilder<TEntity> NoCache();
 

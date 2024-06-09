@@ -56,9 +56,10 @@
             return this;
         }
 
-        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null) {
+        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null) {
             this.query.CacheQuery = true;
             this.query.AbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow;
+            this.query.CacheKey = key;
             return this;
         }
 

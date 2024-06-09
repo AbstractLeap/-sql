@@ -86,16 +86,19 @@
 
         public async ValueTask VisitEntityQueryAsync<TEntity>(EntityQuery<TEntity> entityQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            if (!this.cacheOptions.TryGetCacheOptions(entityQuery.Collection.CollectionName, out var collectionCacheOptions)) {
-                return;
+            CollectionCacheOptions collectionCacheOptions = null;
+            if (entityQuery.CacheKey == null || !entityQuery.AbsoluteExpirationRelativeToNow.HasValue) {
+                if (!this.cacheOptions.TryGetCacheOptions(entityQuery.Collection.CollectionName, out collectionCacheOptions)) {
+                    return;
+                }
             }
 
-            var key = collectionCacheOptions.CacheKeyProvider.GetEntityQueryCacheKey<TEntity>(entityQuery.Collection, entityQuery);
+            var key = entityQuery.CacheKey ?? collectionCacheOptions.CacheKeyProvider.GetEntityQueryCacheKey<TEntity>(entityQuery.Collection, entityQuery);
             if (string.IsNullOrWhiteSpace(key)) {
                 return;
             }
 
-            await this.TryFindInCacheAsync(entityQuery, cancellationToken, collectionCacheOptions, key);
+            await this.TryFindInCacheAsync(entityQuery, cancellationToken, entityQuery.AbsoluteExpirationRelativeToNow ?? collectionCacheOptions?.AbsoluteExpirationRelativeToNow, key);
         }
 
         public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
@@ -109,13 +112,13 @@
                 return;
             }
 
-            await this.TryFindInCacheAsync(keyQuery, cancellationToken, collectionCacheOptions, key);
+            await this.TryFindInCacheAsync(keyQuery, cancellationToken, keyQuery.AbsoluteExpirationRelativeToNow ?? collectionCacheOptions?.AbsoluteExpirationRelativeToNow, key);
         }
 
-        private async Task TryFindInCacheAsync<TEntity>(QueryBase<TEntity> keyQuery, CancellationToken cancellationToken, CollectionCacheOptions collectionCacheOptions, string key)
+        private async Task TryFindInCacheAsync<TEntity>(QueryBase<TEntity> keyQuery, CancellationToken cancellationToken, TimeSpan? absoluteExpirationRelativeToNow, string key)
             where TEntity : class {
             keyQuery.CacheQuery                      = true;
-            keyQuery.AbsoluteExpirationRelativeToNow = collectionCacheOptions.AbsoluteExpirationRelativeToNow;
+            keyQuery.AbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow;
             keyQuery.CacheKey                        = key;
 
             if (this.memoryCache != null) {
@@ -132,8 +135,8 @@
                     var cacheRow = this.cacheSerializer.Deserialize<object[][]>(cacheBuffer);
                     if (cacheRow != null) {
                         if (this.memoryCache != null) {
-                            if (collectionCacheOptions.AbsoluteExpirationRelativeToNow.HasValue) {
-                                this.memoryCache.Set(key, cacheRow, collectionCacheOptions.AbsoluteExpirationRelativeToNow.Value);
+                            if (absoluteExpirationRelativeToNow.HasValue) {
+                                this.memoryCache.Set(key, cacheRow, absoluteExpirationRelativeToNow.Value);
                             }
                             else {
                                 this.memoryCache.Set(key, cacheRow);

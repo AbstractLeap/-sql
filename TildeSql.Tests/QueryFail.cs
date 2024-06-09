@@ -19,8 +19,8 @@
             await insertSession.SaveChangesAsync();
 
             var session = sessionFactory.StartSession();
-            var blog = await session.Get<Blog>().Where($"json_value(document, '$.\"<Title>k__BackingField\"') like '{now.Ticks}%'").SingleAsync();
-            var blogAgain = await session.Get<Blog>().Where($"json_value(document, '$.\"<Title>k__BackingField\"') like '{now.Ticks}%'").SingleAsync();
+            var blog = await session.Get<Blog>().Where($"json_value(document, '$.title') like '{now.Ticks}%'").SingleAsync();
+            var blogAgain = await session.Get<Blog>().Where($"json_value(document, '$.title') like '{now.Ticks}%'").SingleAsync();
 
             Assert.Same(blog, blogAgain);
 

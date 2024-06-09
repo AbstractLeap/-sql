@@ -81,9 +81,9 @@
             return entityQueryBuilder;
         }
 
-        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null) {
+        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
-            entityQueryBuilder.Cache(absoluteExpirationRelativeToNow);
+            entityQueryBuilder.Cache(absoluteExpirationRelativeToNow, key);
             return entityQueryBuilder;
         }
 

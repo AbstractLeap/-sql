@@ -80,6 +80,43 @@
         }
 
         [Fact]
+        public async Task QueryCacheWorks() {
+            var profiler = new Profiler();
+            var schema = TestSchemaBuilder.Build();
+            var memoryCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var sf = TestSessionFactoryBuilder.Build(
+                schema,
+                sqlSetup: s => s.ConnectionFactoryFactory = new ProfilingDbConnectionFactoryFactory(
+                                   new ConnectionPerCommandSqlServerConnectionFactoryFactory(TestSessionFactoryBuilder.SqlServerConnectionString),
+                                   profiler),
+                configSetup: c => { c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5)); });
+
+            var session = sf.StartSession();
+            var blog = new Blog("Cached Query Item");
+            session.Add(blog);
+            await session.SaveChangesAsync();
+
+            // clear the cache
+            // then execute the same query against 1000 different sessions
+            // (so we don't hit the identity map)
+            // and ensure only 1 actual request hits the database
+            memoryCache.Clear();
+            profiler.IsActive = true;
+            var tasks = new List<ValueTask<Blog[]>>();
+            foreach (var i in Enumerable.Range(0, 1000)) {
+                var innerSession = sf.StartSession();
+                tasks.Add(innerSession.Get<Blog>().Where("json_value(document, '$.title') like @Title", new { Title = blog.Title }).Cache(TimeSpan.FromMinutes(5)).ToArrayAsync());
+            }
+
+            await Task.WhenAll(tasks.Select(v => v.AsTask()));
+
+            Assert.Equal(1, profiler.CommandsExecuted);
+            Assert.All(tasks, v => Assert.Equal(v.Result[0].BlogId, blog.BlogId));
+            var blogInstances = new HashSet<Blog>(tasks.SelectMany(v => v.Result), ReferenceEqualityComparer.Instance);
+            Assert.Equal(1000, blogInstances.Count);
+        }
+
+        [Fact]
         public async Task StampedeProtectionWorks() {
             var profiler = new Profiler();
             var schema = TestSchemaBuilder.Build();
