@@ -30,6 +30,8 @@
         
         private readonly CacheExecutor cacheExecutor;
 
+        private readonly CacheSetter cacheSetter;
+
         private readonly IdentityMapExecutor identityMapExecutor;
 
         private readonly ISerializer serializer;
@@ -65,6 +67,7 @@
             this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap, unitOfWork);
             if (memoryCache != null || distributedCache != null) {
                 this.cacheExecutor = new CacheExecutor(memoryCache, distributedCache, cacheSerializer, cacheOptions);
+                this.cacheSetter = new CacheSetter(memoryCache, distributedCache, cacheSerializer, cacheOptions);
                 this.cacheExecutorQueries = new();
             }
         }
@@ -278,7 +281,7 @@
                     if (executedQuery.CacheKey != null) {
                         // we flush the results in to the result cache for cache queries so that we can pop in the cache and release the stampede locks
                         var results = await this.persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
-                        await cacheExecutor.SetAsync(executedQuery, results);
+                        await cacheSetter.SetAsync(executedQuery, results);
                     }
                 }
             }
