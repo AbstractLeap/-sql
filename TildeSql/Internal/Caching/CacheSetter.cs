@@ -7,6 +7,7 @@
     using Microsoft.Extensions.Caching.Memory;
 
     using TildeSql.Queries;
+    using TildeSql.Schema;
 
     class CacheSetter : IAsyncQueryVisitor {
         private readonly IMemoryCache memoryCache;
@@ -26,6 +27,33 @@
             this.distributedCache = distributedCache;
             this.cacheSerializer  = cacheSerializer;
             this.cacheOptions     = cacheOptions;
+        }
+
+        public async ValueTask RemoveAsync<TEntity, TKey>(TEntity entity, Collection collection) {
+            if (!this.cacheOptions.TryGetCacheOptions(collection.CollectionName, out var cacheCollectionOptions)) {
+                return;
+            }
+
+            var key = collection.GetKey<TEntity, TKey>(entity);
+            var cacheKey = cacheCollectionOptions.CacheKeyProvider.GetEntityCacheKey<TEntity, TKey>(collection, key);
+            if (cacheKey != null) {
+                this.memoryCache?.Remove(cacheKey);
+                if (this.distributedCache != null) {
+                    await this.distributedCache.RemoveAsync(cacheKey);
+                }
+            }
+        }
+
+        public async ValueTask SetAsync<TEntity, TKey>(TEntity entity, Collection collection, DatabaseRow databaseRow) {
+            if (!this.cacheOptions.TryGetCacheOptions(collection.CollectionName, out var cacheCollectionOptions)) {
+                return;
+            }
+
+            var key = collection.GetKey<TEntity, TKey>(entity);
+            var cacheKey = cacheCollectionOptions.CacheKeyProvider.GetEntityCacheKey<TEntity, TKey>(collection, key);
+            if (cacheKey != null) {
+                await StoreInCacheAsync(cacheKey, [databaseRow.Values], cacheCollectionOptions.AbsoluteExpirationRelativeToNow);
+            }
         }
 
         public async ValueTask SetAsync(IQuery query, object[][] rows) {

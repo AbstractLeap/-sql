@@ -29,13 +29,20 @@
 
         private readonly DatabaseRowFactory databaseRowFactory;
 
-        public UpdateEngine(IUpdateExecutor persistenceUpdateExecutor, IMemoryCache memoryCache, IDistributedCache distributedCache, ISchema schema, ISerializer serializer) {
+        private readonly CacheSetter cacheSetter;
+
+        public UpdateEngine(IUpdateExecutor persistenceUpdateExecutor, IMemoryCache memoryCache, IDistributedCache distributedCache, ISchema schema, ISerializer serializer,
+                            ICacheSerializer cacheSerializer,
+                            CacheOptions cacheOptions) {
             this.persistenceUpdateExecutor = persistenceUpdateExecutor;
             this.memoryCache               = memoryCache;
             this.distributedCache          = distributedCache;
             this.schema                    = schema;
             this.serializer                = serializer;
             this.databaseRowFactory        = new DatabaseRowFactory(serializer);
+            if (this.memoryCache != null || this.distributedCache != null) {
+                this.cacheSetter = new CacheSetter(this.memoryCache, this.distributedCache, cacheSerializer, cacheOptions);
+            }
         }
 
         public async ValueTask ExecuteAsync(UnitOfWork unitOfWork, CancellationToken cancellationToken = default) {
@@ -47,8 +54,9 @@
             // we delete from cache now, as failure on the persistence is ok
             foreach (var operation in operations) {
                 if (operation.IsDeleteOperation()) {
-                    this.CallMethod(operation.GetType().GenericTypeArguments, nameof(DeleteFromMemoryCache), operation);
-                    await (ValueTask)this.CallMethod(operation.GetType().GenericTypeArguments, nameof(this.DeleteFromDistributedCacheAsync), operation, cancellationToken);
+                    if (this.cacheSetter != null) {
+                        await (ValueTask)cacheSetter.CallMethod(operation.GetType().GenericTypeArguments, nameof(CacheSetter.RemoveAsync), operation.GetEntity(), operation.Collection);
+                    }
                 }
             }
 
@@ -71,13 +79,9 @@
                             }
 
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
-                            this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
-                            await (ValueTask)this.CallMethod(
-                                operation.GetType().GenericTypeArguments,
-                                nameof(UpdateDistributedCacheAsync),
-                                operation.GetEntity(),
-                                newDatabaseRow,
-                                cancellationToken);
+                            if (this.cacheSetter != null) {
+                                await (ValueTask)cacheSetter.CallMethod([operation.GetType().GenericTypeArguments.Single(), operation.Collection.KeyType], nameof(CacheSetter.SetAsync), operation.GetEntity(), operation.Collection, newDatabaseRow);
+                            }
                         });
                 }
                 else if (operation.IsUpdateOperation()) {
@@ -87,13 +91,9 @@
                     postPersistDocumentUpdates.Add(
                         async () => {
                             unitOfWork.UpdateRow(operation.GetEntity().GetType(), operation.Collection, operation.GetEntity(), newDatabaseRow);
-                            this.CallMethod(operation.GetType().GenericTypeArguments, nameof(UpdateMemoryCache), operation.GetEntity(), newDatabaseRow);
-                            await (ValueTask)this.CallMethod(
-                                operation.GetType().GenericTypeArguments,
-                                nameof(UpdateDistributedCacheAsync),
-                                operation.GetEntity(),
-                                newDatabaseRow,
-                                cancellationToken);
+                            if (this.cacheSetter != null) {
+                                await (ValueTask)cacheSetter.CallMethod([operation.GetType().GenericTypeArguments.Single(), operation.Collection.KeyType], nameof(CacheSetter.SetAsync), operation.GetEntity(), operation.Collection, newDatabaseRow);
+                            }
                         });
                 }
                 else {
@@ -109,74 +109,6 @@
                 await postPersistDocumentUpdate();
             }
         }
-
-        #region DeleteCacheMethods
-
-        private ValueTask DeleteFromDistributedCacheAsync<TEntity>(DeleteOperation<TEntity> deleteOperation, CancellationToken cancellationToken) {
-            if (this.distributedCache == null) {
-                return ValueTask.CompletedTask;
-            }
-
-            return (ValueTask)this.CallMethod(
-                new[] { typeof(TEntity), deleteOperation.Collection.KeyType },
-                nameof(this.DeleteFromDistributedCacheAsync),
-                deleteOperation,
-                deleteOperation.Collection);
-        }
-
-        private async ValueTask DeleteFromDistributedCacheAsync<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection, CancellationToken cancellationToken) {
-            return;
-            //return this.distributedCache.RemoveAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity), cancellationToken);
-        }
-
-        private void DeleteFromMemoryCache<TEntity>(DeleteOperation<TEntity> deleteOperation) {
-            if (this.memoryCache == null) {
-                return;
-            }
-
-            this.CallMethod(new[] { typeof(TEntity), deleteOperation.Collection.KeyType }, nameof(DeleteFromMemoryCache), deleteOperation, deleteOperation.Collection);
-        }
-
-        private void DeleteFromMemoryCache<TEntity, TKey>(DeleteOperation<TEntity> deleteOperation, Collection collection) {
-            return;
-            //this.memoryCache.Remove(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, deleteOperation.Entity));
-        }
-
-        #endregion
-
-        #region UpdateCacheMethods
-
-        private void UpdateMemoryCache<TEntity>(TEntity entity, DatabaseRow row) {
-            if (this.memoryCache == null) {
-                return;
-            }
-
-            this.CallMethod(new[] { typeof(TEntity), row.Collection.KeyType }, nameof(UpdateMemoryCache), entity, row, row.Collection);
-        }
-
-        private void UpdateMemoryCache<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection) {
-            //this.memoryCache.Set(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values);
-        }
-
-        private ValueTask UpdateDistributedCacheAsync<TEntity>(TEntity entity, DatabaseRow row, CancellationToken cancellationToken) {
-            if (this.distributedCache == null) {
-                return ValueTask.CompletedTask;
-            }
-
-            return (ValueTask)this.CallMethod(
-                new[] { typeof(TEntity), row.Collection.KeyType },
-                nameof(UpdateDistributedCacheAsync),
-                entity,
-                row,
-                row.Collection,
-                cancellationToken);
-        }
-
-        private async ValueTask UpdateDistributedCacheAsync<TEntity, TKey>(TEntity entity, DatabaseRow row, Collection collection, CancellationToken cancellationToken) {
-            //return this.distributedCache.SetAsync(CacheKeyProvider.GetCacheKey<TEntity, TKey>(collection, entity), row.Values, cancellationToken);
-        }
-
-        #endregion
 
         public async ValueTask DisposeAsync() {
             if (this.persistenceUpdateExecutor is IAsyncDisposable disposable) {

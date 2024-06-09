@@ -55,7 +55,7 @@
                 distributedCache,
                 cacheSerializer,
                 cacheOptions);
-            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
+            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer, cacheSerializer, cacheOptions);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
