@@ -1,6 +1,7 @@
 ﻿namespace TildeSql.Configuration {
     using System;
 
+    using Microsoft.Extensions.Caching.Distributed;
     using Microsoft.Extensions.Caching.Memory;
 
     using TildeSql.Internal.Caching;
@@ -13,6 +14,11 @@
 
         public static Configuration UseMemoryCache(this Configuration configuration, IMemoryCache memoryCache) {
             configuration.MemoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+            return configuration;
+        }
+
+        public static Configuration UseDistributedCache(this Configuration configuration, IDistributedCache distributedCache) {
+            configuration.DistributedCache = distributedCache ?? throw new ArgumentNullException(nameof(distributedCache));
             return configuration;
         }
 

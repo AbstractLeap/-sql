@@ -70,7 +70,7 @@
         public async ValueTask VisitEntityQueryAsync<TEntity>(EntityQuery<TEntity> entityQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
             CollectionCacheOptions collectionCacheOptions = null;
-            if (entityQuery.CacheQuery is false) {
+            if (entityQuery.CacheQuery is false) { // caching disabled via query
                 return;
             }
 
