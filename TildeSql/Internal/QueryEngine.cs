@@ -15,7 +15,6 @@
     using TildeSql.Schema;
     using TildeSql.Serialization;
     using TildeSql.UnitOfWork;
-    using TildeSql.Utilities;
 
     class QueryEngine : IAsyncDisposable, IDisposable {
         private readonly AsyncLock mutex = new();
@@ -200,12 +199,7 @@
             }
 
             foreach (var (original, executed, remaining) in identityMapExecutionResult.PartiallyExecutedQueries) {
-                if (this.queryForwardMap.ContainsKey(original)) {
-                    this.queryForwardMap.Add(original, [executed, remaining]);
-                }
-                else {
-                    this.queryForwardMap[original] = [executed, remaining];
-                }
+                this.queryForwardMap[original] = [executed, remaining];
             }
 
             queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries.Union(identityMapExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
@@ -222,12 +216,7 @@
                 }
 
                 foreach (var (original, executed, remaining) in cacheExecutionResult.PartiallyExecutedQueries) {
-                    if (this.queryForwardMap.ContainsKey(original)) {
-                        this.queryForwardMap.Add(original, [executed, remaining]);
-                    }
-                    else {
-                        this.queryForwardMap[original] = [executed, remaining];
-                    }
+                    this.queryForwardMap[original] = [executed, remaining];
                 }
 
                 queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
@@ -259,6 +248,7 @@
 
                         if (queriesStillToExecute.Any()) {
                             await ExecuteAgainstPersistenceAsync();
+                            this.queriesToExecute.Clear();
                             return;
                         }
                     }
@@ -270,15 +260,14 @@
                 }
 
                 await ExecuteAgainstPersistenceAsync();
+                this.queriesToExecute.Clear();
             }
-
-            this.queriesToExecute.Clear();
 
             async Task ExecuteAgainstPersistenceAsync() {
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
                 foreach (var executedQuery in queriesStillToExecute) {
                     this.persistenceQueryExecutorQueries.Add(executedQuery);
-                    if (executedQuery.CacheKey != null) {
+                    if (this.cacheSetter != null && executedQuery.CacheKey != null) {
                         // we flush the results in to the result cache for cache queries so that we can pop in the cache and release the stampede locks
                         var results = await this.persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
                         await cacheSetter.SetAsync(executedQuery, results);
