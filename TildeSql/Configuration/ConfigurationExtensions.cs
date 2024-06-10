@@ -22,8 +22,8 @@
             return configuration;
         }
 
-        public static Configuration EnableCaching<TEntity>(this Configuration configuration, TimeSpan absoluteExpirationRelativeToNow)
-            => configuration.EnableCaching(configuration.Schema.GetDefaultCollection<TEntity>().CollectionName, absoluteExpirationRelativeToNow, new DefaultCacheKeyProvider(), false);
+        public static Configuration EnableCaching<TEntity>(this Configuration configuration, TimeSpan absoluteExpirationRelativeToNow, bool queryCachingEnabled = false)
+            => configuration.EnableCaching(configuration.Schema.GetDefaultCollection<TEntity>().CollectionName, absoluteExpirationRelativeToNow, new DefaultCacheKeyProvider(), queryCachingEnabled);
 
         public static Configuration EnableCaching(
             this Configuration configuration,
