@@ -48,9 +48,15 @@
 
             await Task.WhenAll(tasks.Select(v => v.AsTask()));
 
+            // we expect
+            // - a single call to the database (due to stampede protection)
+            // - each returned blog to be it's own instance (as different sessions)
+            // - there to be only 2 blogs (differing blog ids)
             Assert.Equal(1, profiler.CommandsExecuted);
-            var blogInstances = new HashSet<Blog>(tasks.SelectMany(v => v.Result), ReferenceEqualityComparer.Instance);
-            Assert.Equal(2000, blogInstances.Count);
+            var blogInstancesByReference = new HashSet<Blog>(tasks.SelectMany(v => v.Result), ReferenceEqualityComparer.Instance);
+            var blogInstancesByEquality = new HashSet<Blog>(tasks.SelectMany(v => v.Result));
+            Assert.Equal(2000, blogInstancesByReference.Count);
+            Assert.Equal(2, blogInstancesByEquality.Count);
         }
 
         [Fact]
