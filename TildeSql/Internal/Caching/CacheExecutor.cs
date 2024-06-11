@@ -142,6 +142,7 @@
             if (multipleKeyQuery.Keys.Length == 0) {
                 this.resultCache.Add(multipleKeyQuery, new List<object[]>(0));
                 this.executedQueries.Add(multipleKeyQuery);
+                return;
             }
 
             if (!this.cacheOptions.TryGetCacheOptions(multipleKeyQuery.Collection.CollectionName, out var collectionCacheOptions)) {

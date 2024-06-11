@@ -55,6 +55,7 @@
             if (multipleKeyQuery.Keys.Length == 0) {
                 this.resultCache.Add(multipleKeyQuery, new List<TEntity>(0));
                 this.executedQueries.Add(multipleKeyQuery);
+                return;
             }
 
             var result = new List<TEntity>(multipleKeyQuery.Keys.Length);
