@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+/// <remarks>
+///     https://stackoverflow.com/a/31194647/616522
+/// </remarks>
 public sealed class AsyncDuplicateLock {
     private sealed class RefCounted<T> {
         public RefCounted(T value) {
@@ -13,11 +16,11 @@ public sealed class AsyncDuplicateLock {
         }
 
         public int RefCount { get; set; }
+
         public T Value { get; private set; }
     }
 
-    private static readonly Dictionary<object, RefCounted<SemaphoreSlim>> SemaphoreSlims
-        = new Dictionary<object, RefCounted<SemaphoreSlim>>();
+    private static readonly Dictionary<object, RefCounted<SemaphoreSlim>> SemaphoreSlims = new Dictionary<object, RefCounted<SemaphoreSlim>>();
 
     private SemaphoreSlim GetOrCreate(object key) {
         RefCounted<SemaphoreSlim> item;
@@ -30,6 +33,7 @@ public sealed class AsyncDuplicateLock {
                 SemaphoreSlims[key] = item;
             }
         }
+
         return item.Value;
     }
 
@@ -54,6 +58,7 @@ public sealed class AsyncDuplicateLock {
                 if (item.RefCount == 0)
                     SemaphoreSlims.Remove(Key);
             }
+
             item.Value.Release();
         }
     }
