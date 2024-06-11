@@ -229,7 +229,7 @@
 
                 if (this.cacheExecutor != null) {
                     // stampede protection, we take a lock on all cacheable queries
-                    var cacheableQueries = queriesStillToExecute.Where(q => q.CacheKey != null).ToArray();
+                    var cacheableQueries = queriesStillToExecute.Where(q => q.CacheKey != null).OrderBy(q => q.CacheKey).ToArray();
                     var locks = new Dictionary<string, IDisposable>();
                     var locker = new AsyncDuplicateLock();
                     try {
