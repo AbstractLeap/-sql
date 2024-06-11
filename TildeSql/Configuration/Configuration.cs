@@ -1,6 +1,9 @@
 ﻿namespace TildeSql.Configuration {
     using System;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.Events;
     using TildeSql.Internal;
     using TildeSql.Internal.Caching;
@@ -16,13 +19,17 @@
 
         public ISerializer Serializer { get; set; } = new SystemJsonSerializer();
 
-        public Func<IQueryExecutor> QueryExecutorFactory { get; set; }
+        public Func<IPersistenceQueryExecutor> QueryExecutorFactory { get; set; }
 
         public Func<IUpdateExecutor> UpdateExecutorFactory { get; set; }
         
         public IMemoryCache MemoryCache { get; set; }
         
         public IDistributedCache DistributedCache { get; set; }
+
+        public ICacheSerializer CacheSerializer { get; set; }
+
+        public CacheOptions CacheOptions { get; set; }
 
         public ISaveChangesEventListener SaveChangesEventListener { get; set; }
 
@@ -34,6 +41,8 @@
                 this.UpdateExecutorFactory,
                 this.MemoryCache,
                 this.DistributedCache,
+                this.CacheSerializer,
+                this.CacheOptions,
                 this.SaveChangesEventListener);
         }
     }

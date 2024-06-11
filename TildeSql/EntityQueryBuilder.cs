@@ -1,4 +1,5 @@
 ﻿namespace TildeSql {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
 
@@ -52,6 +53,18 @@
 
         public IEntityQueryBuilder<TEntity> Limit(int limit) {
             this.query.Limit = limit;
+            return this;
+        }
+
+        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null) {
+            this.query.CacheQuery = true;
+            this.query.AbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow;
+            this.query.CacheKey = key;
+            return this;
+        }
+
+        public IEntityQueryBuilder<TEntity> NoCache() {
+            this.query.CacheQuery = false;
             return this;
         }
 

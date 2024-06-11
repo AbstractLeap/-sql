@@ -5,6 +5,9 @@
 
     using Fasterflect;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.Events;
     using TildeSql.IdentityMap;
     using TildeSql.Internal;
@@ -16,10 +19,6 @@
         private readonly ISchema schema;
 
         private readonly ISerializer serializer;
-
-        private readonly IMemoryCache memoryCache;
-
-        private readonly IDistributedCache distributedCache;
 
         private readonly ISaveChangesEventListener saveChangesEventListener;
 
@@ -34,15 +33,15 @@
         public Session(
             ISchema schema,
             ISerializer serializer,
-            IQueryExecutor queryExecutor,
+            IPersistenceQueryExecutor queryExecutor,
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
-            ISaveChangesEventListener saveChangesEventListener) {
+            ISaveChangesEventListener saveChangesEventListener,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions) {
             this.schema                   = schema;
             this.serializer               = serializer;
-            this.memoryCache              = memoryCache;
-            this.distributedCache         = distributedCache;
             this.saveChangesEventListener = saveChangesEventListener;
             this.identityMap              = new IdentityMap.IdentityMap();
             this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema);
@@ -52,9 +51,11 @@
                 this.unitOfWork,
                 queryExecutor,
                 serializer,
-                memoryCache != null ? new MemoryCacheExecutor(memoryCache) : null,
-                distributedCache != null ? new DistributedCacheExecutor(distributedCache) : null);
-            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer);
+                memoryCache,
+                distributedCache,
+                cacheSerializer,
+                cacheOptions);
+            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer, cacheSerializer, cacheOptions);
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()

@@ -3,6 +3,9 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    /// <remarks>
+    /// https://www.hanselman.com/blog/comparing-two-techniques-in-net-asynchronous-coordination-primitives
+    /// </remarks>
     internal sealed class AsyncLock {
         private readonly SemaphoreSlim semaphore = new(1, 1);
 
@@ -19,7 +22,7 @@
                        : wait.ContinueWith(
                            (_, state) => (IDisposable)state,
                            this.releaser.Result,
-                           CancellationToken.None,
+                           cancellationToken,
                            TaskContinuationOptions.ExecuteSynchronously,
                            TaskScheduler.Default);
         }

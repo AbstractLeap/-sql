@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageReference Include="MiniProfiler.Shared" Version="4.3.8" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="RT.Comb" Version="4.0.1" />
@@ -35,7 +36,6 @@
   <ItemGroup>
     <ProjectReference Include="..\TildeSql.Humanizer\TildeSql.Humanizer.csproj" />
     <ProjectReference Include="..\TildeSql.JsonNet\TildeSql.JsonNet.csproj" />
-    <ProjectReference Include="..\TildeSql.MemoryCache\TildeSql.MemoryCache.csproj" />
     <ProjectReference Include="..\TildeSql.SqlMigrations\TildeSql.SqlMigrations.csproj" />
     <ProjectReference Include="..\TildeSql.SqlServer\TildeSql.SqlServer.csproj" />
     <ProjectReference Include="..\TildeSql\TildeSql.csproj" />

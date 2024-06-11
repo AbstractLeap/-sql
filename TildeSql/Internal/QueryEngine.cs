@@ -5,6 +5,9 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.IdentityMap;
     using TildeSql.Internal.Caching;
     using TildeSql.Internal.Common;
@@ -12,7 +15,6 @@
     using TildeSql.Schema;
     using TildeSql.Serialization;
     using TildeSql.UnitOfWork;
-    using TildeSql.Utilities;
 
     class QueryEngine : IAsyncDisposable, IDisposable {
         private readonly AsyncLock mutex = new();
@@ -23,9 +25,11 @@
 
         private readonly UnitOfWork unitOfWork;
 
-        private readonly IQueryExecutor persistenceQueryExecutor;
+        private readonly IPersistenceQueryExecutor persistenceQueryExecutor;
         
-        private readonly ICacheExecutor[] cacheExecutors;
+        private readonly CacheExecutor cacheExecutor;
+
+        private readonly CacheSetter cacheSetter;
 
         private readonly IdentityMapExecutor identityMapExecutor;
 
@@ -38,7 +42,7 @@
 
         private readonly HashSet<IQuery> persistenceQueryExecutorQueries = new();
 
-        private readonly HashSet<IQuery>[] cacheExecutorQueries;
+        private readonly HashSet<IQuery> cacheExecutorQueries;
 
         private readonly HashSet<IQuery> identityMapQueries = new();
 
@@ -48,27 +52,22 @@
             ISchema schema,
             IdentityMap identityMap,
             UnitOfWork unitOfWork,
-            IQueryExecutor persistenceQueryExecutor,
+            IPersistenceQueryExecutor persistenceQueryExecutor,
             ISerializer serializer,
-            MemoryCacheExecutor memoryCacheExecutor,
-            DistributedCacheExecutor distributedCacheExecutor) {
+            IMemoryCache memoryCache,
+            IDistributedCache distributedCache,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions) {
             this.schema                   = schema;
             this.identityMap              = identityMap;
             this.unitOfWork               = unitOfWork;
             this.persistenceQueryExecutor = persistenceQueryExecutor;
             this.serializer               = serializer;
             this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap, unitOfWork);
-            this.cacheExecutors           = GetNonNullCacheExecutors().ToArray();
-            this.cacheExecutorQueries     = this.cacheExecutors.Select(_ => new HashSet<IQuery>()).ToArray();
-
-            IEnumerable<ICacheExecutor> GetNonNullCacheExecutors() {
-                if (memoryCacheExecutor != null) {
-                    yield return memoryCacheExecutor;
-                }
-
-                if (distributedCacheExecutor != null) {
-                    yield return distributedCacheExecutor;
-                }
+            if (memoryCache != null || distributedCache != null) {
+                this.cacheExecutor = new CacheExecutor(memoryCache, distributedCache, cacheSerializer, cacheOptions);
+                this.cacheSetter = new CacheSetter(memoryCache, distributedCache, cacheSerializer, cacheOptions);
+                this.cacheExecutorQueries = new();
             }
         }
 
@@ -80,7 +79,7 @@
             where T : class {
             if (!this.queryForwardMap.ContainsKey(query)
                 && !this.identityMapQueries.Contains(query)
-                && !this.cacheExecutorQueries.Any(e => e.Contains(query))
+                && !(this.cacheExecutorQueries?.Contains(query) ?? false)
                 && !this.persistenceQueryExecutorQueries.Contains(query)) {
                 var @lock = await this.mutex.LockAsync();
 
@@ -116,21 +115,18 @@
                 yield break;
             }
 
-            foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
-                var cacheExecutor = entry.Value;
-                if (this.cacheExecutorQueries[entry.Index].Contains(query)) {
-                    await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
-                        var entity = HydrateDocument(row);
-                        if (entity != null) {
-                            yield return entity;
-                        }
+            if (this.cacheExecutorQueries?.Contains(query) ?? false) {
+                await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                    var entity = HydrateDocument(row);
+                    if (entity != null) {
+                        yield return entity;
                     }
-
-                    yield break;
                 }
+
+                yield break;
             }
 
-            await foreach (var row in this.persistenceQueryExecutor.GetAsync<T>(query)) {
+            await foreach (var row in this.persistenceQueryExecutor.GetAsync(query)) {
                 var entity = HydrateDocument(row);
                 if (entity != null) {
                     yield return entity;
@@ -203,37 +199,27 @@
             }
 
             foreach (var (original, executed, remaining) in identityMapExecutionResult.PartiallyExecutedQueries) {
-                if (this.queryForwardMap.ContainsKey(original)) {
-                    this.queryForwardMap.Add(original, [executed, remaining]);
-                }
-                else {
-                    this.queryForwardMap[original] = [executed, remaining];
-                }
+                this.queryForwardMap[original] = [executed, remaining];
             }
 
             queriesStillToExecute = identityMapExecutionResult.NonExecutedQueries.Union(identityMapExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
 
-            if (queriesStillToExecute.Any()) {
-                foreach (var entry in this.cacheExecutors.AsSmartEnumerable()) {
-                    var cacheExecutionResult = await entry.Value.ExecuteAsync(queriesStillToExecute, cancellationToken);
-                    foreach (var executedQuery in cacheExecutionResult.ExecutedQueries) {
-                        this.cacheExecutorQueries[entry.Index].Add(executedQuery);
-                    }
+            if (queriesStillToExecute.Any() && this.cacheExecutor != null) {
+                await ExecuteAgainstCacheAsync().ToArrayAsync(cancellationToken);
+            }
 
-                    foreach (var (original, executed, remaining) in cacheExecutionResult.PartiallyExecutedQueries) {
-                        if (this.queryForwardMap.ContainsKey(original)) {
-                            this.queryForwardMap.Add(original, [executed, remaining]);
-                        }
-                        else {
-                            this.queryForwardMap[original] = [executed, remaining];
-                        }
-                    }
-
-                    queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
-                    if (!queriesStillToExecute.Any()) {
-                        break;
-                    }
+            async IAsyncEnumerable<IQuery> ExecuteAgainstCacheAsync() {
+                var cacheExecutionResult = await this.cacheExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
+                foreach (var executedQuery in cacheExecutionResult.ExecutedQueries) {
+                    this.cacheExecutorQueries.Add(executedQuery);
+                    yield return executedQuery;
                 }
+
+                foreach (var (original, executed, remaining) in cacheExecutionResult.PartiallyExecutedQueries) {
+                    this.queryForwardMap[original] = [executed, remaining];
+                }
+
+                queriesStillToExecute = cacheExecutionResult.NonExecutedQueries.Union(cacheExecutionResult.PartiallyExecutedQueries.Select(pq => pq.Remaining)).ToList();
             }
 
             if (queriesStillToExecute.Any()) {
@@ -241,13 +227,53 @@
                     throw new Exception("No persistence query mechanism has been configured");
                 }
 
+                if (this.cacheExecutor != null) {
+                    // stampede protection, we take a lock on all cacheable queries
+                    var cacheableQueries = queriesStillToExecute.Where(q => q.CacheKey != null).OrderBy(q => q.CacheKey).ToArray();
+                    var locks = new Dictionary<string, IDisposable>();
+                    var locker = new AsyncDuplicateLock();
+                    try {
+                        foreach (var cacheableQuery in cacheableQueries) {
+                            if (!locks.ContainsKey(cacheableQuery.CacheKey)) {
+                                locks.Add(cacheableQuery.CacheKey, await locker.LockAsync(cacheableQuery.CacheKey));
+                            }
+                        }
+
+                        // now that we have locks, another session may have populated the cache for these queries, so we check again
+                        // and if we find the query in the cache we release the lock
+                        await foreach (var query in ExecuteAgainstCacheAsync()) {
+                            locks[query.CacheKey].Dispose();
+                            locks.Remove(query.CacheKey);
+                        }
+
+                        if (queriesStillToExecute.Any()) {
+                            await ExecuteAgainstPersistenceAsync();
+                            this.queriesToExecute.Clear();
+                            return;
+                        }
+                    }
+                    finally {
+                        foreach (var keyLock in locks) {
+                            keyLock.Value.Dispose();
+                        }
+                    }
+                }
+
+                await ExecuteAgainstPersistenceAsync();
+                this.queriesToExecute.Clear();
+            }
+
+            async Task ExecuteAgainstPersistenceAsync() {
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
                 foreach (var executedQuery in queriesStillToExecute) {
                     this.persistenceQueryExecutorQueries.Add(executedQuery);
+                    if (this.cacheSetter != null && executedQuery.CacheKey != null) {
+                        // we flush the results in to the result cache for cache queries so that we can pop in the cache and release the stampede locks
+                        var results = await this.persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
+                        await cacheSetter.SetAsync(executedQuery, results);
+                    }
                 }
             }
-
-            this.queriesToExecute.Clear();
         }
 
         public async ValueTask DisposeAsync() {

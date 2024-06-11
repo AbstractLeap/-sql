@@ -1,6 +1,9 @@
 ﻿namespace TildeSql {
     using System;
 
+    using Microsoft.Extensions.Caching.Distributed;
+    using Microsoft.Extensions.Caching.Memory;
+
     using TildeSql.Events;
     using TildeSql.Internal;
     using TildeSql.Internal.Caching;
@@ -12,7 +15,7 @@
 
         private readonly ISerializer serializer;
 
-        private readonly Func<IQueryExecutor> queryExecutorFactory;
+        private readonly Func<IPersistenceQueryExecutor> queryExecutorFactory;
 
         private readonly Func<IUpdateExecutor> updateExecutorFactory;
 
@@ -20,15 +23,21 @@
 
         private readonly IDistributedCache distributedCache;
 
+        private readonly ICacheSerializer cacheSerializer;
+
+        private readonly CacheOptions cacheOptions;
+
         private readonly ISaveChangesEventListener saveChangesEventListener;
 
         public SessionFactory(
             ISchema schema,
             ISerializer serializer,
-            Func<IQueryExecutor> queryExecutorFactory,
+            Func<IPersistenceQueryExecutor> queryExecutorFactory,
             Func<IUpdateExecutor> updateExecutorFactory,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions,
             ISaveChangesEventListener saveChangesEventListener) {
             this.schema                   = schema;
             this.serializer               = serializer;
@@ -36,6 +45,8 @@
             this.updateExecutorFactory    = updateExecutorFactory;
             this.memoryCache              = memoryCache;
             this.distributedCache         = distributedCache;
+            this.cacheSerializer          = cacheSerializer;
+            this.cacheOptions             = cacheOptions;
             this.saveChangesEventListener = saveChangesEventListener;
         }
 
@@ -47,7 +58,9 @@
                 this.updateExecutorFactory(),
                 this.memoryCache,
                 this.distributedCache,
-                this.saveChangesEventListener);
+                this.saveChangesEventListener,
+                this.cacheSerializer,
+                this.cacheOptions);
         }
     }
 }

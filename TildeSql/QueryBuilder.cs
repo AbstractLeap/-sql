@@ -1,4 +1,5 @@
 ﻿namespace TildeSql {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -77,6 +78,18 @@
         public IEntityQueryBuilder<TEntity> Limit(int limit) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
             entityQueryBuilder.Limit(limit);
+            return entityQueryBuilder;
+        }
+
+        public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null) {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.Cache(absoluteExpirationRelativeToNow, key);
+            return entityQueryBuilder;
+        }
+
+        public IEntityQueryBuilder<TEntity> NoCache() {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.NoCache();
             return entityQueryBuilder;
         }
 

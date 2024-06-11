@@ -24,16 +24,16 @@
         [Fact]
         public async Task Works() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
             var entity = new Entity("Foo");
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
 
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
             var query = new KeyQuery<Entity, EntityId>(new EntityId(), collection);
             queryEngine.Add(query);
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -43,7 +43,7 @@
         [Fact]
         public async Task MultipleQueriesWorkOutOfOrder() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -55,9 +55,9 @@
             var query2 = new KeyQuery<Entity, EntityId>(entity2.Id, collection);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(query1)).Returns(new[] { row1 }.ToAsyncEnumerable());
-            queryExecutor.Setup(e => e.GetAsync<Entity>(query2)).Returns(new[] { row2 }.ToAsyncEnumerable());
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null);
+            queryExecutor.Setup(e => e.GetAsync(query1)).Returns(new[] { row1 }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(query2)).Returns(new[] { row2 }.ToAsyncEnumerable());
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query1);
             queryEngine.Add(query2);
 
@@ -70,15 +70,15 @@
         [Fact]
         public async Task FutureEntityQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
             var entity = new Entity("Foo");
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
-            var session = new Session(schema.Object, serializer, queryExecutor.Object, null, null, null, null);
+            queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
+            var session = new Session(schema.Object, serializer, queryExecutor.Object, null, null, null, null, null, null);
             var queryBuilder = new EntityQueryBuilder<Entity>(session, collection);
             var future = queryBuilder.Future();
             var results = await future.ToArrayAsync();
@@ -90,7 +90,7 @@
         [Fact]
         public async Task MultipleKeyQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -102,9 +102,11 @@
             var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(query)).Returns(new[] { row1, row2 }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(query)).Returns(new[] { row1, row2 }.ToAsyncEnumerable());
 
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null);
+            var rows = await queryExecutor.Object.GetAsync(query).ToArrayAsync();
+
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -115,7 +117,7 @@
         [Fact]
         public async Task MultipleKeysInCacheWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -125,7 +127,7 @@
             var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(query)).Returns(Array.Empty<object[]>().ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(query)).Returns(Array.Empty<object[]>().ToAsyncEnumerable());
 
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity1.Id, entity1);
@@ -133,7 +135,7 @@
             var unitOfWork = new UnitOfWork(serializer, schema.Object);
             unitOfWork.AddOrUpdate(collection, entity1, null, DocumentState.New);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.New);
-            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null);
+            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -144,7 +146,7 @@
         [Fact]
         public async Task MultipleKeysOnlyOneInCacheWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -155,13 +157,13 @@
             var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
 
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity2.Id, entity2);
             var unitOfWork = new UnitOfWork(serializer, schema.Object);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.New);
-            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null);
+            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -173,7 +175,7 @@
         [Fact]
         public async Task MultipleKeysDeletedQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
@@ -185,14 +187,14 @@
             var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
-            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
-            queryExecutor.Setup(e => e.GetAsync<Entity>(query)).Returns(new[] { row1, row2 }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
+            queryExecutor.Setup(e => e.GetAsync(query)).Returns(new[] { row1, row2 }.ToAsyncEnumerable());
 
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity2.Id, entity2);
             var unitOfWork = new UnitOfWork(serializer, schema.Object);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.Deleted);
-            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null);
+            var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -203,16 +205,16 @@
         [Fact]
         public async Task EmptyMultipleQueryWorks() {
             var schema = new Mock<ISchema>();
-            var queryExecutor = new Mock<IQueryExecutor>();
+            var queryExecutor = new Mock<IPersistenceQueryExecutor>();
             var serializer = new JsonNetFieldSerializer();
             var collection = new Collection("Entities", new[] { typeof(Entity).GetField("id", BindingFlags.NonPublic | BindingFlags.Instance) }, true, false);
             collection.AddClassType(typeof(Entity));
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Throws<InvalidOperationException>();
-            queryExecutor.Setup(e => e.GetAsync<Entity>(It.IsAny<IQuery>())).Throws<InvalidOperationException>();
+            queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Throws<InvalidOperationException>();
 
             var query = new MultipleKeyQuery<Entity, EntityId>(Array.Empty<EntityId>(), collection);
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
             Assert.Empty(result);

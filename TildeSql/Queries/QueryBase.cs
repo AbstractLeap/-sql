@@ -18,6 +18,12 @@
 
         public Collection Collection { get; }
 
+        public bool? CacheQuery { get; set; }
+
+        public TimeSpan? AbsoluteExpirationRelativeToNow { get; set; }
+
+        public string CacheKey { get; set; }
+
         public abstract void Accept(IQueryVisitor visitor);
 
         public abstract ValueTask AcceptAsync(IAsyncQueryVisitor visitor, CancellationToken cancellationToken = default);
