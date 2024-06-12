@@ -136,6 +136,7 @@
             await this.command.DisposeAsync();
             await this.connection.CloseAsync();
             await this.connection.DisposeAsync();
+            this.dataReader = null;
         }
 
         private async ValueTask<List<object[]>> ReadResultIntoListAsync() {

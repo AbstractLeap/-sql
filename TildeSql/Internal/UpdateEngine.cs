@@ -55,7 +55,7 @@
             foreach (var operation in operations) {
                 if (operation.IsDeleteOperation()) {
                     if (this.cacheSetter != null) {
-                        await (ValueTask)cacheSetter.CallMethod(operation.GetType().GenericTypeArguments, nameof(CacheSetter.RemoveAsync), operation.GetEntity(), operation.Collection);
+                        await (ValueTask)cacheSetter.CallMethod([operation.GetType().GenericTypeArguments.Single(), operation.Collection.KeyType], nameof(CacheSetter.RemoveAsync), operation.GetEntity(), operation.Collection);
                     }
                 }
             }
