@@ -173,6 +173,20 @@ namespace TildeSql.Tests {
         }
 
         [Fact]
+        public async Task AddRemoveInSession() {
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
+            await using var session = sessionFactory.StartSession();
+            var newBlog = new Blog("Gonna remove this");
+            session.Add(newBlog);
+            session.Delete(newBlog);
+            await session.SaveChangesAsync();
+
+            await using var session2 = sessionFactory.StartSession();
+            var blog = await session2.Get<Blog>().SingleAsync(newBlog.BlogId);
+            Assert.Null(blog);
+        }
+
+        [Fact]
         public async Task BatchedUpdates() {
             var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
             await using var insertSession = sessionFactory.StartSession();

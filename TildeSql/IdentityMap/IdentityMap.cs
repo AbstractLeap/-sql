@@ -30,5 +30,9 @@
                 this.map.Add(key, new HashSet<object> { entity });
             }
         }
+
+        public void Remove<TEntity, TKey>(TKey key) {
+            this.map.Remove(key);
+        }
     }
 }

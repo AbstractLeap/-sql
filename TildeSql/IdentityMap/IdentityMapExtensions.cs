@@ -21,5 +21,9 @@
         public static void Add<TEntity>(this IdentityMap identityMap, Type keyType, object key, TEntity entity) {
             identityMap.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IdentityMap.Add), key, entity);
         }
+
+        public static void Remove<TEntity>(this IdentityMap identityMap, Type keyType, object key) {
+            identityMap.CallMethod(new[] { typeof(TEntity), keyType }, nameof(IdentityMap.Remove), key);
+        }
     }
 }

@@ -47,6 +47,18 @@
             }
         }
 
+        public void Remove<TEntity>(Collection collection, TEntity entity) {
+            var document = FindDocument(collection, entity);
+            if (document == null) {
+                throw new Exception("The entity is not attached to the collection");
+            }
+
+            this.documentLookup.Remove(entity);
+            if (this.attachedEntities.TryGetValue(collection, out var documents)) {
+                documents.Remove(document);
+            }
+        }
+
         public void UpdateState<TEntity>(Collection collection, TEntity entity, DocumentState state) {
             var document = FindDocument(collection, entity);
             if (document == null) {

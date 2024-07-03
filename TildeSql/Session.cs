@@ -95,7 +95,16 @@
 
         private void Delete<TEntity>(TEntity entity, Collection collection)
             where TEntity : class {
-            this.unitOfWork.UpdateState(collection, entity, DocumentState.Deleted);
+            var state = this.unitOfWork.GetState(collection, entity);
+            if (state == DocumentState.New) {
+                this.unitOfWork.Remove(collection, entity);
+                var keyType = collection.KeyType;
+                var key = collection.CallMethod(new[] { typeof(TEntity), keyType }, nameof(Collection.GetKey), entity);
+                this.identityMap.Remove<TEntity>(keyType, key);
+            }
+            else {
+                this.unitOfWork.UpdateState(collection, entity, DocumentState.Deleted);
+            }
         }
 
         public void Add<TEntity>(TEntity entity)
