@@ -28,9 +28,13 @@
                                                               IsComputed      = c is ComputedColumn or GenericColumn { IsComputed: true } or GenericColumn { IsIdentity: true },
                                                               IsPersisted     = c is ComputedColumn { Persisted: true },
                                                               ComputedFormula = c is ComputedColumn computed ? computed.Formula : null,
-                                                              Size            = c is GenericColumn genericColumn ? genericColumn.Size : null,
-                                                              Precision       = c is GenericColumn genericColumn1 ? genericColumn1.Precision : null,
-                                                              IsNullable      = c is GenericColumn { IsNullable: true }
+                                                              Size = c switch {
+                                                                  DocumentTypeColumn => 255,
+                                                                  GenericColumn genericColumn => genericColumn.Size,
+                                                                  _ => null
+                                                              },
+                                                              Precision  = c is GenericColumn genericColumn1 ? genericColumn1.Precision : null,
+                                                              IsNullable = c is GenericColumn { IsNullable: true }
                                                           })
                                                       .ToList(),
                                            Indexes = t.Columns.OfType<ComputedColumn>()

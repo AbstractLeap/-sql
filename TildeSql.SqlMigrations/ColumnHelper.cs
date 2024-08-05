@@ -2,10 +2,11 @@
     using System;
     using System.Collections.Generic;
 
+    using TildeSql.Schema;
     using TildeSql.SqlMigrations.Model;
 
     public static class ColumnHelper {
-        private static Dictionary<Type, string>noSizeTypes = new Dictionary<Type, string> {
+        private static readonly Dictionary<Type, string> noSizeTypes = new Dictionary<Type, string> {
             { typeof(bool), "AsBoolean" },
             { typeof(byte), "AsByte" },
             { typeof(DateTime), "AsDateTime2" },
@@ -16,6 +17,7 @@
             { typeof(Int16), "AsInt16" },
             { typeof(Int32), "AsInt32" },
             { typeof(Int64), "AsInt64" },
+            { typeof(Json), "AsJson" }
         };
         
         public static string GenerateColumnType(this Column column) {
