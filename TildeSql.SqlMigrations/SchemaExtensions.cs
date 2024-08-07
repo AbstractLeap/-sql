@@ -22,7 +22,7 @@
                                            Columns = t.Columns.Select(
                                                           c => new Column {
                                                               Name            = c.Name,
-                                                              Type            = c.Type,
+                                                              Type            = c is DocumentColumn ? typeof(Json) : c.Type,
                                                               IsPrimaryKey    = c is KeyColumn,
                                                               IsIdentity      = (c is KeyColumn && t.IsKeyComputed) || c is GenericColumn { IsIdentity: true },
                                                               IsComputed      = c is ComputedColumn or GenericColumn { IsComputed: true } or GenericColumn { IsIdentity: true },
