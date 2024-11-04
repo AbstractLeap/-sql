@@ -1,12 +1,22 @@
 ﻿namespace TildeSql.Exceptions {
     using System;
-    using System.Runtime.Serialization;
 
     using TildeSql.Internal;
 
     [Serializable]
     public class OptimisticConcurrencyException : Exception {
-        public DatabaseRow DatabaseRow { get; }
+        private DatabaseRow databaseRow;
+
+        public DatabaseRow DatabaseRow {
+            get => this.databaseRow;
+            private set {
+                this.databaseRow = value;
+
+                base.Data[nameof(DatabaseRow.Collection.KeyType)] = value?.Collection?.KeyType;
+                base.Data[nameof(DatabaseRow.Collection)]         = value?.Collection;
+                base.Data[nameof(DatabaseRow.Values)]             = value?.Values;
+            }
+        }
 
         public OptimisticConcurrencyException(DatabaseRow databaseRow) {
             this.DatabaseRow = databaseRow;
@@ -21,8 +31,5 @@
             : base(message, inner) {
             this.DatabaseRow = databaseRow;
         }
-
-        protected OptimisticConcurrencyException(SerializationInfo info, StreamingContext context)
-            : base(info, context) { }
     }
 }
