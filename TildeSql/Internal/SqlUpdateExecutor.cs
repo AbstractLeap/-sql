@@ -91,11 +91,11 @@ namespace TildeSql.Internal {
                     }
 
                     for (var i = startUpdateIdx; i < updateIdx; i++) {
-                        await ReadOptimisticConcurrencyResultAsync(dbReader, updateList[i].OldDatabaseRow, exceptions);
+                        await ReadOptimisticConcurrencyUpdateResultAsync(dbReader, updateList[i].NewDatabaseRow, updateList[i].OldDatabaseRow, exceptions);
                     }
 
                     for (var i = startDeleteIdx; i < deleteIdx; i++) {
-                        await ReadOptimisticConcurrencyResultAsync(dbReader, deleteList[i], exceptions);
+                        await ReadOptimisticConcurrencyDeleteResultAsync(dbReader, deleteList[i], exceptions);
                     }
 
                     if (exceptions.Any()) {
@@ -107,14 +107,27 @@ namespace TildeSql.Internal {
             await transaction.CommitAsync(cancellationToken);
             await connection.CloseAsync();
 
-            async Task ReadOptimisticConcurrencyResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
+            async Task ReadOptimisticConcurrencyUpdateResultAsync(DbDataReader dbReader, DatabaseRow newDatabaseRow, DatabaseRow oldDatabaseRow, List<Exception> exceptions) {
                 if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
-                    exceptions.Add(new OptimisticConcurrencyException(databaseRow));
+                    exceptions.Add(new OptimisticUpdateException("Unable to read during update", newDatabaseRow, oldDatabaseRow));
                 }
 
                 var affectedRows = await dbReader.GetFieldValueAsync<int>(0, cancellationToken);
                 if (affectedRows == 0) {
-                    exceptions.Add(new OptimisticConcurrencyException(databaseRow));
+                    exceptions.Add(new OptimisticUpdateException("Zero rows affected by update", newDatabaseRow, oldDatabaseRow));
+                }
+
+                await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            async Task ReadOptimisticConcurrencyDeleteResultAsync(DbDataReader dbReader, DatabaseRow databaseRow, List<Exception> exceptions) {
+                if (!await dbReader.ReadAsync(cancellationToken).ConfigureAwait(false)) {
+                    exceptions.Add(new OptimisticDeleteException("Unable to read during deletion", databaseRow));
+                }
+
+                var affectedRows = await dbReader.GetFieldValueAsync<int>(0, cancellationToken);
+                if (affectedRows == 0) {
+                    exceptions.Add(new OptimisticDeleteException("Zero rows affected by deletion", databaseRow));
                 }
 
                 await dbReader.NextResultAsync(cancellationToken).ConfigureAwait(false);
