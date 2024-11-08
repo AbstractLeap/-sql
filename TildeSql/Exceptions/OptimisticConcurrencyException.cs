@@ -13,7 +13,7 @@
                 this.databaseRow = value;
 
                 base.Data[nameof(DatabaseRow.Collection.KeyType)] = value?.Collection?.KeyType;
-                base.Data[nameof(DatabaseRow.Collection)]         = value?.Collection;
+                base.Data[nameof(DatabaseRow.Collection)]         = value?.Collection?.CollectionName;
                 base.Data[nameof(DatabaseRow.Values)]             = value?.Values;
             }
         }
