@@ -20,7 +20,7 @@
             }
 
             var json = RowValueHelper.GetValue<string>(document.Collection, document.Row.Values, SpecialColumns.Document);
-            return !string.Equals(this.serializer.Serialize(document.GetEntity()), json);
+            return !JsonSolidusEscapeIgnoringStringComparator.StringEquals(json, this.serializer.Serialize(document.GetEntity()));
         }
     }
 }
