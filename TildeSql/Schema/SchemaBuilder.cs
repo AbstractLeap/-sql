@@ -27,10 +27,14 @@
         }
 
         public SchemaBuilder AddTypes(string collectionName, params Type[] types) {
-            return this.AddTypes(collectionName, false, types);
+            return this.AddTypesInner(collectionName, false, types);
         }
 
-        private SchemaBuilder AddTypes(string collectionName, bool isDefault, params Type[] types) {
+        public SchemaBuilder AddTypes(string collectionName, bool isDefault, params Type[] types) {
+            return this.AddTypesInner(collectionName, isDefault, types);
+        }
+
+        private SchemaBuilder AddTypesInner(string collectionName, bool isDefault, params Type[] types) {
             if (!this.addedNamedTypes.TryGetValue(collectionName, out var collectionTypes)) {
                 collectionTypes = (isDefault, new HashSet<Type>());
                 this.addedNamedTypes.Add(collectionName, collectionTypes);
@@ -43,7 +47,7 @@
         private void AddUnnamedTypesToNamed() {
             foreach (var type in this.addedTypes) {
                 var collectionName = this.GetConvention<ICollectionNamingSchemaConvention>().GetCollectionName(type);
-                this.AddTypes(collectionName, true, type);
+                this.AddTypesInner(collectionName, true, type);
             }
         }
 
