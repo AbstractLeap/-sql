@@ -8,6 +8,8 @@
     public static class MigratorExtensions {
         public static bool SupportsJson { get; set; } = false;
 
+        public static bool SupportsVectors { get; set; } = false;
+
         public static void ComputedColumn(
             this Migration up,
             string columnName,
@@ -24,6 +26,18 @@
             where TNext : IFluentSyntax {
             if (SupportsJson) {
                 column.AsCustom("json");
+            }
+            else {
+                column.AsString(Int32.MaxValue);
+            }
+
+            return (TNext)column;
+        }
+
+        public static TNext AsVector<TNext>(this IColumnTypeSyntax<TNext> column, int dimensions)
+            where TNext : IFluentSyntax {
+            if (SupportsVectors) {
+                column.AsCustom($"vector({dimensions})");
             }
             else {
                 column.AsString(Int32.MaxValue);
