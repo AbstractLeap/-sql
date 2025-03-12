@@ -3,5 +3,7 @@
 
     public interface ISaveChangesEventListener {
         ValueTask OnBeforeSaveChangesAsync(ISession session);
+
+        ValueTask OnAfterSaveChangesAsync();
     }
 }

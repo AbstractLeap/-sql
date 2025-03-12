@@ -1,5 +1,4 @@
 ﻿namespace TildeSql {
-    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -81,6 +80,10 @@
 
             // instantiate new unit of work
             this.unitOfWork.SetPersisted();
+
+            if (this.saveChangesEventListener != null) {
+                await this.saveChangesEventListener.OnAfterSaveChangesAsync();
+            }
         }
 
         public void Delete<TEntity>(TEntity entity)
