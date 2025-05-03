@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AsyncKeyedLock" Version="7.1.6" />
     <PackageReference Include="fasterflect" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
