@@ -25,7 +25,14 @@
         public void Write<TEntity>(EntityQuery<TEntity> query, Command command)
             where TEntity : class {
             var collection = query.Collection;
-            var builder = new StringBuilder("select ");
+            var builder = new StringBuilder();
+            if (query.TotalAccessor != null) {
+                builder.Append(";with t as (select ");
+            }
+            else {
+                builder.Append("select ");
+            }
+
             this.WriteColumns<TEntity>(builder, collection);
 
             builder.Append("from ");
@@ -93,6 +100,19 @@
                 builder.Append("(");
                 builder.Append(whereClause);
                 builder.Append(")");
+            }
+
+            if (query.TotalAccessor != null) {
+                builder.Append(
+                    """
+                    )
+                    , cteCount as (
+                     select count_big(1) as TotalCount
+                     from t
+                    )
+                    select * 
+                    from t, cteCount
+                    """);
             }
 
             if (!string.IsNullOrWhiteSpace(query.OrderByClause)) {

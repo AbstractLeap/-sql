@@ -3,10 +3,10 @@
     using System.Collections.Generic;
     using System.Threading;
 
-    using TildeSql.Utilities;
-
+    using TildeSql.Internal;
     using TildeSql.Queries;
     using TildeSql.Schema;
+    using TildeSql.Utilities;
 
     class EntityQueryBuilder<TEntity> : IEntityQueryBuilder<TEntity>
         where TEntity : class {
@@ -53,6 +53,13 @@
 
         public IEntityQueryBuilder<TEntity> Limit(int limit) {
             this.query.Limit = limit;
+            return this;
+        }
+
+        public IEntityQueryBuilder<TEntity> Limit(int limit, out ITotalAccessor totalAccessor) {
+            totalAccessor            = new TotalAccessor();
+            this.query.Limit         = limit;
+            this.query.TotalAccessor = totalAccessor;
             return this;
         }
 

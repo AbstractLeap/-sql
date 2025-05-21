@@ -115,6 +115,7 @@
                 yield break;
             }
 
+            var extractTotal = query is ITotalQuery { TotalAccessor: not null };
             if (this.cacheExecutorQueries?.Contains(query) ?? false) {
                 await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
                     var entity = HydrateDocument(row);
@@ -139,6 +140,12 @@
                 // need to hydrate the entity from the database row and add to the document
                 var collection = query.Collection;
                 var id = collection.KeyFactory.Create(row);
+
+                if (extractTotal) {
+                    var total = (long)row[^1];
+                    ((ITotalSetter)(((ITotalQuery)query).TotalAccessor)).SetTotal(total);
+                    extractTotal = false; // same for every row but we only need it once
+                }
 
                 // TODO invalidate old versions
                 // check ID map for instance

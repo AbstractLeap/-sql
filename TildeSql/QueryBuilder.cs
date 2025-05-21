@@ -81,6 +81,12 @@
             return entityQueryBuilder;
         }
 
+        public IEntityQueryBuilder<TEntity> Limit(int limit, out ITotalAccessor totalAccessor) {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.Limit(limit, out totalAccessor);
+            return entityQueryBuilder;
+        }
+
         public IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
             entityQueryBuilder.Cache(absoluteExpirationRelativeToNow, key);
