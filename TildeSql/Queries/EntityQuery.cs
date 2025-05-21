@@ -5,7 +5,7 @@
 
     using TildeSql.Schema;
 
-    public class EntityQuery<TEntity> : QueryBase<TEntity>, ITotalQuery
+    public class EntityQuery<TEntity> : QueryBase<TEntity>, ICountQuery
         where TEntity : class {
         public EntityQuery(Collection collection)
             : base(collection) { }
@@ -20,7 +20,7 @@
 
         public IDictionary<string, object> WhereClauseParameters { get; set; }
 
-        public ITotalAccessor TotalAccessor { get; set; }
+        public ICountAccessor CountAccessor { get; set; }
 
         public override void Accept(IQueryVisitor visitor) {
             visitor.VisitEntityQuery(this);

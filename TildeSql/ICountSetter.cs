@@ -1,5 +1,5 @@
 ﻿namespace TildeSql {
-    interface ITotalSetter {
+    interface ICountSetter {
         void SetTotal(long total);
     }
 }

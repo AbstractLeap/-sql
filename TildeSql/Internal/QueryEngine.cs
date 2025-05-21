@@ -115,7 +115,7 @@
                 yield break;
             }
 
-            var extractTotal = query is ITotalQuery { TotalAccessor: not null };
+            var extractTotal = query is ICountQuery { CountAccessor: not null };
             if (this.cacheExecutorQueries?.Contains(query) ?? false) {
                 await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
                     var entity = HydrateDocument(row);
@@ -143,7 +143,7 @@
 
                 if (extractTotal) {
                     var total = (long)row[^1];
-                    ((ITotalSetter)(((ITotalQuery)query).TotalAccessor)).SetTotal(total);
+                    ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(total);
                     extractTotal = false; // same for every row but we only need it once
                 }
 

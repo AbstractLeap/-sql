@@ -21,8 +21,9 @@
             await insertSession.SaveChangesAsync();
 
             var session = sessionFactory.StartSession();
-            var blogs = await session.Get<Blog>().Where("json_value(document, '$.title') like '%Title0'").OrderBy("BlogId").Limit(2, out var totalAccessor).ToArrayAsync();
-            Assert.Equal(4, totalAccessor.Total);
+            var blogs =
+                await session.Get<Blog>().Where("json_value(document, '$.title') like '%Title0'").OrderBy("BlogId").Limit(2).OutputCount(out var countAccessor).ToArrayAsync();
+            Assert.Equal(4, countAccessor.Count);
             Assert.Equal(2, blogs.Length);
         }
 
@@ -39,8 +40,8 @@
             await insertSession.SaveChangesAsync();
 
             var session = sessionFactory.StartSession();
-            var things = await session.Get<Paged>().OrderBy("Id").Limit(2, out var totalAccessor).ToArrayAsync();
-            Assert.Equal(9, totalAccessor.Total);
+            var things = await session.Get<Paged>().OrderBy("Id").Limit(2).OutputCount(out var countAccessor).ToArrayAsync();
+            Assert.Equal(9, countAccessor.Count);
             Assert.Equal(2, things.Length);
         }
     }

@@ -26,7 +26,7 @@
             where TEntity : class {
             var collection = query.Collection;
             var builder = new StringBuilder();
-            if (query.TotalAccessor != null) {
+            if (query.CountAccessor != null) {
                 builder.Append(";with t as (select ");
             }
             else {
@@ -102,7 +102,7 @@
                 builder.Append(")");
             }
 
-            if (query.TotalAccessor != null) {
+            if (query.CountAccessor != null) {
                 builder.Append(
                     """
                     )

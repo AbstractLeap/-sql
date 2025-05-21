@@ -56,10 +56,9 @@
             return this;
         }
 
-        public IEntityQueryBuilder<TEntity> Limit(int limit, out ITotalAccessor totalAccessor) {
-            totalAccessor            = new TotalAccessor();
-            this.query.Limit         = limit;
-            this.query.TotalAccessor = totalAccessor;
+        public IEntityQueryBuilder<TEntity> OutputCount(out ICountAccessor countAccessor) {
+            countAccessor            = new CountAccessor();
+            this.query.CountAccessor = countAccessor;
             return this;
         }
 

@@ -29,7 +29,7 @@
             cacheKey.Append("|");
             cacheKey.Append(entityQuery.Offset);
             cacheKey.Append("|");
-            cacheKey.Append(entityQuery.TotalAccessor != null ? "1" : "0");
+            cacheKey.Append(entityQuery.CountAccessor != null ? "1" : "0");
             cacheKey.Append("|");
             cacheKey.Append(entityQuery.EntityType);
             cacheKey.Append("|");

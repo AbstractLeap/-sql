@@ -81,9 +81,9 @@
             return entityQueryBuilder;
         }
 
-        public IEntityQueryBuilder<TEntity> Limit(int limit, out ITotalAccessor totalAccessor) {
+        public IEntityQueryBuilder<TEntity> OutputCount(out ICountAccessor countAccessor) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
-            entityQueryBuilder.Limit(limit, out totalAccessor);
+            entityQueryBuilder.OutputCount(out countAccessor);
             return entityQueryBuilder;
         }
 
