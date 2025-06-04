@@ -13,6 +13,8 @@
 
         IEntityQueryBuilder<TEntity> Limit(int limit);
 
+        IEntityQueryBuilder<TEntity> Limit(int limit, out ICountAccessor countAccessor);
+
         IEntityQueryBuilder<TEntity> Cache(TimeSpan? absoluteExpirationRelativeToNow = null, string key = null);
 
         IEntityQueryBuilder<TEntity> NoCache();
