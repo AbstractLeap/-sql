@@ -116,22 +116,33 @@
             }
 
             var extractTotal = query is ICountQuery { CountAccessor: not null };
+            var rowsRead = 0;
             if (this.cacheExecutorQueries?.Contains(query) ?? false) {
                 await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                    rowsRead++;
                     var entity = HydrateDocument(row);
                     if (entity != null) {
                         yield return entity;
                     }
                 }
 
+                if (extractTotal && rowsRead == 0) {
+                    ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(0);
+                }
+
                 yield break;
             }
 
             await foreach (var row in this.persistenceQueryExecutor.GetAsync(query)) {
+                rowsRead++;
                 var entity = HydrateDocument(row);
                 if (entity != null) {
                     yield return entity;
                 }
+            }
+
+            if (extractTotal && rowsRead == 0) {
+                ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(0);
             }
 
             yield break;

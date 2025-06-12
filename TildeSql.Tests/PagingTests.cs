@@ -43,5 +43,15 @@
             Assert.Equal(9, countAccessor.Count);
             Assert.Equal(2, things.Length);
         }
+
+        [Fact]
+        public async Task TotalNoRowsZero() {
+            var sessionFactory = TestSessionFactoryBuilder.Build(TestSchemaBuilder.Build());
+            var session = sessionFactory.StartSession();
+            var blogs =
+                await session.Get<Blog>().Where("json_value(document, '$.title') like 'NOT AN ACTUAL TITLE'").OrderBy("BlogId").Limit(2, out var countAccessor).ToArrayAsync();
+            Assert.Equal(0, countAccessor.Count);
+            Assert.Empty(blogs);
+        }
     }
 }
