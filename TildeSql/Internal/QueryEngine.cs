@@ -278,8 +278,9 @@
                 }
 
                 await ExecuteAgainstPersistenceAsync();
-                this.queriesToExecute.Clear();
             }
+
+            this.queriesToExecute.Clear();
 
             async Task ExecuteAgainstPersistenceAsync() {
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
