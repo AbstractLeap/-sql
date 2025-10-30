@@ -2,6 +2,7 @@ namespace TildeSql.JsonNet {
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
 
     using Newtonsoft.Json;
 
@@ -57,7 +58,9 @@ namespace TildeSql.JsonNet {
         }
 
         public override bool CanConvert(Type objectType) {
-            return objectType.IsGenericType && (objectType.GetGenericTypeDefinition() == typeof(IDictionary<,>) || objectType.GetGenericTypeDefinition() == typeof(Dictionary<,>));
+            return objectType.IsGenericType
+                   && (objectType.GetGenericTypeDefinition() == typeof(IDictionary<,>) || objectType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                   && objectType.GetGenericArguments().FirstOrDefault() != typeof(string);
         }
 
         private void AddObjectToDictionary(JsonReader reader, IDictionary result, JsonSerializer serializer, Type keyType, Type valueType) {
