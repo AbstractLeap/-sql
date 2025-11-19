@@ -7,6 +7,8 @@
         
         IEntityQueryBuilder<TEntity> Where(string whereClause, object parameters);
 
+        IEntityQueryBuilder<TEntity> With(string withClause);
+
         IEntityQueryBuilder<TEntity> OrderBy(string orderByClause);
 
         IEntityQueryBuilder<TEntity> Offset(int offset);

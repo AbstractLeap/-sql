@@ -63,6 +63,12 @@
             return entityQueryBuilder;
         }
 
+        public IEntityQueryBuilder<TEntity> With(string withClause) {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.With(withClause);
+            return entityQueryBuilder;
+        }
+
         public IEntityQueryBuilder<TEntity> OrderBy(string orderByClause) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
             entityQueryBuilder.OrderBy(orderByClause);

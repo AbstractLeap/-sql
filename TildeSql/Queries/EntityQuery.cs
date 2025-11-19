@@ -12,6 +12,8 @@
 
         public string WhereClause { get; set; }
 
+        public List<string> WithClauses { get; set; }
+
         public string OrderByClause { get; set; }
 
         public int? Limit { get; set; }

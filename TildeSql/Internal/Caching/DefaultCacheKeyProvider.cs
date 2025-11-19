@@ -23,6 +23,8 @@
             cacheKey.Append("|");
             cacheKey.Append(entityQuery.WhereClause);
             cacheKey.Append("|");
+            cacheKey.Append(string.Join("~", entityQuery.WithClauses ?? []));
+            cacheKey.Append("|");
             cacheKey.Append(entityQuery.OrderByClause);
             cacheKey.Append("|");
             cacheKey.Append(entityQuery.Limit);

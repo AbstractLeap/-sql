@@ -39,6 +39,14 @@
             this.sqlDialect.AppendTableName(builder, collection.GetTableName(), collection.GetSchemaName());
             builder.Append(" as t");
 
+            if (query.WithClauses?.Any() is true) {
+                foreach (var withClause in query.WithClauses) {
+                    builder.Append(" ");
+                    builder.Append(withClause);
+                    builder.AppendLine(" ");
+                }
+            }
+
             var whereAppended = false;
             if (collection.ContainsTypeHierarchy) {
                 if (typeof(TEntity) != collection.BaseEntityType) {

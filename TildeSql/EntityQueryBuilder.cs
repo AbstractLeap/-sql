@@ -40,6 +40,12 @@
             return this;
         }
 
+        public IEntityQueryBuilder<TEntity> With(string withClause) {
+            this.query.WithClauses ??= [];
+            this.query.WithClauses.Add(withClause);
+            return this;
+        }
+
         public IEntityQueryBuilder<TEntity> OrderBy(string orderByClause) {
             // TODO multiple invocations?
             this.query.OrderByClause = orderByClause;
