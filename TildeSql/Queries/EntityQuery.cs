@@ -12,7 +12,7 @@
 
         public string WhereClause { get; set; }
 
-        public List<string> WithClauses { get; set; }
+        public List<string> JoinClauses { get; set; }
 
         public string OrderByClause { get; set; }
 

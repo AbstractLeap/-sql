@@ -63,9 +63,9 @@
             return entityQueryBuilder;
         }
 
-        public IEntityQueryBuilder<TEntity> With(string withClause) {
+        public IEntityQueryBuilder<TEntity> Join(string joinClause) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
-            entityQueryBuilder.With(withClause);
+            entityQueryBuilder.Join(joinClause);
             return entityQueryBuilder;
         }
 

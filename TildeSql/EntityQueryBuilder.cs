@@ -40,9 +40,9 @@
             return this;
         }
 
-        public IEntityQueryBuilder<TEntity> With(string withClause) {
-            this.query.WithClauses ??= [];
-            this.query.WithClauses.Add(withClause);
+        public IEntityQueryBuilder<TEntity> Join(string joinClause) {
+            this.query.JoinClauses ??= [];
+            this.query.JoinClauses.Add(joinClause);
             return this;
         }
 

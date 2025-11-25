@@ -13,6 +13,7 @@
     using TildeSql.Tests.TestDomain.Identity;
     using TildeSql.Tests.TestDomain.InheritanceFail;
     using TildeSql.Tests.TestDomain.InheritancePlay;
+    using TildeSql.Tests.TestDomain.Join;
     using TildeSql.Tests.TestDomain.MultiFieldKeyType;
     using TildeSql.Tests.TestDomain.MultipleFutures;
     using TildeSql.Tests.TestDomain.MultiTableType;
@@ -25,6 +26,8 @@
             var schemaBuilder =
                 new SchemaBuilder().AddTypes(typeof(Blog))
                                    .AddTypes(typeof(Paged))
+                                   .AddTypes(typeof(Base))
+                                   .AddTypes(typeof(Join))
                                    .AddTypes("Entities", typeof(Entity<>))
                                    .AddTypes("EntityWithIdentities", typeof(EntityWithIdentity))
                                    .AddTypes("MeetingRequests", typeof(MeetingRequest), typeof(LessonRequest), typeof(IntroductionRequest))

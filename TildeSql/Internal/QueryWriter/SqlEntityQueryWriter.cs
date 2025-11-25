@@ -39,10 +39,10 @@
             this.sqlDialect.AppendTableName(builder, collection.GetTableName(), collection.GetSchemaName());
             builder.Append(" as t");
 
-            if (query.WithClauses?.Any() is true) {
-                foreach (var withClause in query.WithClauses) {
+            if (query.JoinClauses?.Any() is true) {
+                foreach (var joinClause in query.JoinClauses) {
                     builder.Append(" ");
-                    builder.Append(withClause);
+                    builder.Append(joinClause);
                     builder.AppendLine(" ");
                 }
             }

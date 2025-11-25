@@ -7,7 +7,7 @@
         
         IEntityQueryBuilder<TEntity> Where(string whereClause, object parameters);
 
-        IEntityQueryBuilder<TEntity> With(string withClause);
+        IEntityQueryBuilder<TEntity> Join(string joinClause);
 
         IEntityQueryBuilder<TEntity> OrderBy(string orderByClause);
 
