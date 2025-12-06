@@ -7,7 +7,6 @@ namespace TildeSql.Tests {
     using TildeSql.Tests.TestDomain.Blog;
 
     using Xunit;
-    using Xunit.Abstractions;
 
     public class SqlKeyQueryWriterTests {
         private readonly ITestOutputHelper outputHelper;

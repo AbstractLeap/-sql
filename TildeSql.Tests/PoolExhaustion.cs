@@ -8,7 +8,6 @@ namespace TildeSql.Tests {
     using TildeSql.Tests.TestDomain.Blog;
 
     using Xunit;
-    using Xunit.Abstractions;
 
     public class PoolExhaustion {
         private readonly ITestOutputHelper output;

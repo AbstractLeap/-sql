@@ -7,8 +7,6 @@
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Fasterflect;
-
     using TildeSql.Internal.QueryWriter;
     using TildeSql.Queries;
     using TildeSql.Schema;
@@ -58,13 +56,16 @@
             // TODO figure out connection/transaction lifecycle
             this.command = connection.CreateCommand();
             var queryCommand = new Command();
+            var queriesToExecute = 0;
             foreach (var nonCompletedQuery in queries) {
                 this.sqlQueryWriter.Write(nonCompletedQuery, queryCommand);
                 this.notReadQueries.Enqueue(nonCompletedQuery);
+                queriesToExecute++;
             }
 
             queryCommand.WriteToDbCommand(this.command);
-            this.dataReader = await this.command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            var commandBehaviour = queriesToExecute == 1 ? CommandBehavior.SequentialAccess | CommandBehavior.SingleResult : CommandBehavior.SequentialAccess;
+            this.dataReader = await this.command.ExecuteReaderAsync(commandBehaviour, cancellationToken).ConfigureAwait(false);
         }
 
         public async IAsyncEnumerable<object[]> GetAsync(IQuery query) {

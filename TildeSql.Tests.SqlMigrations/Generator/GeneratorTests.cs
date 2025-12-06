@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-
-namespace TildeSql.Tests.SqlMigrations.Generator
+﻿namespace TildeSql.Tests.SqlMigrations.Generator
 {
+    using System.Collections.Generic;
+
     using TildeSql.SqlMigrations;
     using TildeSql.SqlMigrations.Model;
+
+    using Xunit;
 
     public class GeneratorTests
     {

@@ -9,7 +9,6 @@
     using TildeSql.Tests.TestDomain.Blog;
 
     using Xunit;
-    using Xunit.Abstractions;
 
     public class SqlServerSqlQueryWriterTests {
         private readonly ITestOutputHelper outputHelper;

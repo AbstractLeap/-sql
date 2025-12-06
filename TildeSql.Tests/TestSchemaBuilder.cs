@@ -16,26 +16,29 @@
     using TildeSql.Tests.TestDomain.MultiFieldKeyType;
     using TildeSql.Tests.TestDomain.MultipleFutures;
     using TildeSql.Tests.TestDomain.MultiTableType;
+    using TildeSql.Tests.TestDomain.Paging;
     using TildeSql.Tests.TestDomain.TupleKeyType;
     using TildeSql.Tests.TestDomain.TypedSerialization;
 
     class TestSchemaBuilder {
         public static ISchema Build() {
-            var schemaBuilder = new SchemaBuilder().AddTypes(typeof(Blog))
-                                                   .AddTypes("Entities", typeof(Entity<>))
-                                                   .AddTypes("EntityWithIdentities", typeof(EntityWithIdentity))
-                                                   .AddTypes("MeetingRequests", typeof(MeetingRequest), typeof(LessonRequest), typeof(IntroductionRequest))
-                                                   .AddTypes(typeof(IAnimal), typeof(Animal), typeof(Dog), typeof(Terrier), typeof(Poodle), typeof(Cat))
-                                                   .AddTypes(typeof(MultiFieldIdEntity))
-                                                   .AddTypes(typeof(MultiNonPrimitiveIdFieldIdEntity))
-                                                   .AddTypes(typeof(Orange), typeof(Apple))
-                                                   .AddTypes(MultiTableType.NotApprovedCollectionName, typeof(Person))
-                                                   .AddTypes(MultiTableType.ApprovedCollectionName, typeof(Person))
-                                                   .AddTypes(MultiTableType.ArchivedCollectionName, typeof(Person))
-                                                   .AddTypes(typeof(TestDomain.PlayExtraColumns.Person))
-                                                   .AddTypes(typeof(TupleKeyTypeThing))
-                                                   .AddTypes(typeof(TupleWithPrimitiveKeyTing))
-                                                   .AddTypes(typeof(GenericContainer));
+            var schemaBuilder =
+                new SchemaBuilder().AddTypes(typeof(Blog))
+                                   .AddTypes(typeof(Paged))
+                                   .AddTypes("Entities", typeof(Entity<>))
+                                   .AddTypes("EntityWithIdentities", typeof(EntityWithIdentity))
+                                   .AddTypes("MeetingRequests", typeof(MeetingRequest), typeof(LessonRequest), typeof(IntroductionRequest))
+                                   .AddTypes(typeof(IAnimal), typeof(Animal), typeof(Dog), typeof(Terrier), typeof(Poodle), typeof(Cat))
+                                   .AddTypes(typeof(MultiFieldIdEntity))
+                                   .AddTypes(typeof(MultiNonPrimitiveIdFieldIdEntity))
+                                   .AddTypes(typeof(Orange), typeof(Apple))
+                                   .AddTypes(MultiTableType.NotApprovedCollectionName, typeof(Person))
+                                   .AddTypes(MultiTableType.ApprovedCollectionName, typeof(Person))
+                                   .AddTypes(MultiTableType.ArchivedCollectionName, typeof(Person))
+                                   .AddTypes(typeof(TestDomain.PlayExtraColumns.Person))
+                                   .AddTypes(typeof(TupleKeyTypeThing))
+                                   .AddTypes(typeof(TupleWithPrimitiveKeyTing))
+                                   .AddTypes(typeof(GenericContainer));
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>().AddComputedColumn<string>("Email", "$.email.address", true, true);
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>()
                          .AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));

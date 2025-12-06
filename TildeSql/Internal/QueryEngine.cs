@@ -111,22 +111,34 @@
                 yield break;
             }
 
+            var extractTotal = query is ICountQuery { CountAccessor: not null };
+            var rowsRead = 0;
             if (this.cacheExecutorQueries?.Contains(query) ?? false) {
                 await foreach (var row in cacheExecutor.GetAsync<T>(query)) {
+                    rowsRead++;
                     var entity = HydrateDocument(row);
                     if (entity != null) {
                         yield return entity;
                     }
                 }
 
+                if (extractTotal && rowsRead == 0) {
+                    ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(0);
+                }
+
                 yield break;
             }
 
             await foreach (var row in this.persistenceQueryExecutor.GetAsync(query)) {
+                rowsRead++;
                 var entity = HydrateDocument(row);
                 if (entity != null) {
                     yield return entity;
                 }
+            }
+
+            if (extractTotal && rowsRead == 0) {
+                ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(0);
             }
 
             yield break;
@@ -135,6 +147,12 @@
                 // need to hydrate the entity from the database row and add to the document
                 var collection = query.Collection;
                 var id = collection.KeyFactory.Create(row);
+
+                if (extractTotal) {
+                    var total = (long)row[^1];
+                    ((ICountSetter)(((ICountQuery)query).CountAccessor)).SetTotal(total);
+                    extractTotal = false; // same for every row but we only need it once
+                }
 
                 // TODO invalidate old versions
                 // check ID map for instance
@@ -256,8 +274,9 @@
                 }
 
                 await ExecuteAgainstPersistenceAsync();
-                this.queriesToExecute.Clear();
             }
+
+            this.queriesToExecute.Clear();
 
             async Task ExecuteAgainstPersistenceAsync() {
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
