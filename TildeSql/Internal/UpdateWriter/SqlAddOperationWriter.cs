@@ -74,7 +74,7 @@
             command.AddQuery(builder.ToString());
 
             void AppendValue(Column column, object[] databaseRowValues) {
-                var paramName = command.AddParameter(column.Name, databaseRowValues[databaseRow.Collection.GetColumnIndex(column.Name)]);
+                var paramName = command.AddParameter(column.Name, databaseRowValues[databaseRow.Collection.GetColumnIndex(column.Name)] ?? DBNull.Value);
                 this.sqlDialect.AddParameter(builder, paramName);
             }
         }

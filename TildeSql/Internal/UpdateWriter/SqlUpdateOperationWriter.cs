@@ -1,4 +1,5 @@
 ﻿namespace TildeSql.Internal.UpdateWriter {
+    using System;
     using System.Text;
 
     using TildeSql.Internal.Common;
@@ -32,7 +33,7 @@
                 var nonKeyColumn = entry.Value;
                 this.sqlDialect.AppendColumnName(builder, nonKeyColumn.Name);
                 builder.Append(" = ");
-                var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Collection.GetColumnIndex(nonKeyColumn.Name)];
+                var columnValue = update.NewDatabaseRow.Values[update.NewDatabaseRow.Collection.GetColumnIndex(nonKeyColumn.Name)] ?? DBNull.Value;
                 var paramName = command.AddParameter(nonKeyColumn.Name, columnValue);
                 this.sqlDialect.AddParameter(builder, paramName);
                 if (!entry.IsLast) {
