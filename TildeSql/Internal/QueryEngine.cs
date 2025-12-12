@@ -5,6 +5,8 @@
     using System.Threading;
     using System.Threading.Tasks;
 
+    using AsyncKeyedLock;
+
     using Microsoft.Extensions.Caching.Distributed;
     using Microsoft.Extensions.Caching.Memory;
 
@@ -17,7 +19,7 @@
     using TildeSql.UnitOfWork;
 
     class QueryEngine : IAsyncDisposable, IDisposable {
-        private readonly AsyncLock mutex = new();
+        private readonly AsyncNonKeyedLocker mutex = new();
 
         private readonly ISchema schema;
 
@@ -26,7 +28,7 @@
         private readonly UnitOfWork unitOfWork;
 
         private readonly IPersistenceQueryExecutor persistenceQueryExecutor;
-        
+
         private readonly CacheExecutor cacheExecutor;
 
         private readonly CacheSetter cacheSetter;
@@ -58,12 +60,12 @@
             IDistributedCache distributedCache,
             ICacheSerializer cacheSerializer,
             CacheOptions cacheOptions) {
-            this.schema                   = schema;
-            this.identityMap              = identityMap;
-            this.unitOfWork               = unitOfWork;
+            this.schema = schema;
+            this.identityMap = identityMap;
+            this.unitOfWork = unitOfWork;
             this.persistenceQueryExecutor = persistenceQueryExecutor;
-            this.serializer               = serializer;
-            this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap, unitOfWork);
+            this.serializer = serializer;
+            this.identityMapExecutor = new IdentityMapExecutor(this.identityMap, unitOfWork);
             if (memoryCache != null || distributedCache != null) {
                 this.cacheExecutor = new CacheExecutor(memoryCache, distributedCache, cacheSerializer, cacheOptions);
                 this.cacheSetter = new CacheSetter(memoryCache, distributedCache, cacheSerializer, cacheOptions);
@@ -81,20 +83,14 @@
                 && !this.identityMapQueries.Contains(query)
                 && !(this.cacheExecutorQueries?.Contains(query) ?? false)
                 && !this.persistenceQueryExecutorQueries.Contains(query)) {
-                var @lock = await this.mutex.LockAsync();
-
-                try {
-                    // query has not been executed, so let's flush existing queries and then add
-                    await this.FlushPersistenceAsync();
-                    if (!this.queriesToExecute.Contains(query)) {
-                        this.Add(query);
-                    }
-
-                    await this.ExecuteAsync();
+                using var _ = await this.mutex.LockAsync();
+                // query has not been executed, so let's flush existing queries and then add
+                await this.FlushPersistenceAsync();
+                if (!this.queriesToExecute.Contains(query)) {
+                    this.Add(query);
                 }
-                finally {
-                    @lock?.Dispose();
-                }
+
+                await this.ExecuteAsync();
             }
 
             if (this.queryForwardMap.TryGetValue(query, out var queries)) {
@@ -183,7 +179,7 @@
         }
 
         public async ValueTask EnsureCleanAsync(CancellationToken cancellationToken = default) {
-            using var @lock = await this.mutex.LockAsync(cancellationToken);
+            using var _ = await this.mutex.LockAsync(cancellationToken);
             await this.FlushPersistenceAsync(); // clear out any non-read queries
             await this.ExecuteAsync(cancellationToken); // execute any non-executed queries
             await this.FlushPersistenceAsync(); // ensure that they're also read
@@ -249,7 +245,7 @@
                     // stampede protection, we take a lock on all cacheable queries
                     var cacheableQueries = queriesStillToExecute.Where(q => q.CacheKey != null).OrderBy(q => q.CacheKey).ToArray();
                     var locks = new Dictionary<string, IDisposable>();
-                    var locker = new AsyncDuplicateLock();
+                    var locker = new AsyncKeyedLocker<string>(o => o.PoolSize = 0);
                     try {
                         foreach (var cacheableQuery in cacheableQueries) {
                             if (!locks.ContainsKey(cacheableQuery.CacheKey)) {
