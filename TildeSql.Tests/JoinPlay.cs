@@ -24,7 +24,8 @@ namespace TildeSql.Tests {
 
             var querySession1 = sf.StartSession();
             var allJoinedBases = await querySession1.Get<Base>()
-                                                    .InnerJoin("Joins j", "json_value(t.Document, '$.joinId.\"<Id>k__BackingField\"') = j.JoinId")
+                                                    .InnerJoin("Joins j")
+                                                    .On("json_value(t.Document, '$.joinId.\"<Id>k__BackingField\"') = j.JoinId")
                                                     .ToListAsync();
             Assert.Single(allJoinedBases);
             Assert.Equal("Bubbles", allJoinedBases[0].Title);
