@@ -12,8 +12,7 @@
     public static class SchemaExtensions {
         public static Database ToDatabaseModel(this ISchema schema) {
             // TODO finish this
-            return new Database {
-                Tables = schema.All()
+            return new Database (schema.All()
                                .Select(
                                    t => {
                                        return new Table {
@@ -41,9 +40,7 @@
                                                       .Select(c => new Index { Name = $"idx_{c.Name}", Columns = new List<string> { c.Name } })
                                                       .ToList()
                                        };
-                                   })
-                               .ToList()
-            };
+                                   }));
         }
     }
 }
