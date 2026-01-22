@@ -247,21 +247,24 @@
 
                 if (this.cacheExecutor != null) {
                     // stampede protection, we take a lock on all cacheable queries
-                    var cacheableQueries = queriesStillToExecute.Where(q => q.CacheKey != null).OrderBy(q => q.CacheKey).ToArray();
+                    // we order them in cache key order so as to avoid a deadlock (where one session grabs a lock before the other)
+                    var cacheableKeys = queriesStillToExecute.SelectMany(q => q.ResolvedCacheOptions()).OrderBy(t => t.cacheKey).ToArray();
                     var locks = new Dictionary<string, IDisposable>();
                     var locker = new AsyncDuplicateLock();
                     try {
-                        foreach (var cacheableQuery in cacheableQueries) {
-                            if (!locks.ContainsKey(cacheableQuery.CacheKey)) {
-                                locks.Add(cacheableQuery.CacheKey, await locker.LockAsync(cacheableQuery.CacheKey));
+                        foreach (var tuple in cacheableKeys) {
+                            if (!locks.ContainsKey(tuple.cacheKey)) {
+                                locks.Add(tuple.cacheKey, await locker.LockAsync(tuple.cacheKey));
                             }
                         }
 
                         // now that we have locks, another session may have populated the cache for these queries, so we check again
                         // and if we find the query in the cache we release the lock
                         await foreach (var query in ExecuteAgainstCacheAsync()) {
-                            locks[query.CacheKey].Dispose();
-                            locks.Remove(query.CacheKey);
+                            foreach (var tuple in query.ResolvedCacheOptions()) {
+                                locks[tuple.cacheKey].Dispose();
+                                locks.Remove(tuple.cacheKey);
+                            }                            
                         }
 
                         if (queriesStillToExecute.Any()) {
@@ -286,10 +289,10 @@
                 await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
                 foreach (var executedQuery in queriesStillToExecute) {
                     this.persistenceQueryExecutorQueries.Add(executedQuery);
-                    if (this.cacheSetter != null && executedQuery.CacheKey != null) {
+                    if (this.cacheSetter != null && executedQuery.IsCacheable) {
                         // we flush the results in to the result cache for cache queries so that we can pop in the cache and release the stampede locks
                         var results = await this.persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
-                        await cacheSetter.SetAsync(executedQuery, results);
+                        await this.cacheSetter.SetAsync(executedQuery, results);
                     }
                 }
             }

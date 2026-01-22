@@ -1,5 +1,6 @@
 ﻿namespace TildeSql.Internal.Caching {
     using System;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -81,12 +82,18 @@
 
         public async ValueTask VisitEntityQueryAsync<TEntity>(EntityQuery<TEntity> entityQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            await this.StoreInCacheAsync(entityQuery.CacheKey, this.rows, entityQuery.AbsoluteExpirationRelativeToNow);
+            var resolvedCacheOptions = entityQuery.ResolvedCacheOptions().SingleOrDefault();
+            if (resolvedCacheOptions != default) {
+                await this.StoreInCacheAsync(resolvedCacheOptions.cacheKey, this.rows, resolvedCacheOptions.absoluteExpirationRelativeToNow);
+            }            
         }
 
         public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            await this.StoreInCacheAsync(keyQuery.CacheKey, this.rows, keyQuery.AbsoluteExpirationRelativeToNow);
+            var resolvedCacheOptions = keyQuery.ResolvedCacheOptions().SingleOrDefault();
+            if (resolvedCacheOptions != default) {
+                await this.StoreInCacheAsync(resolvedCacheOptions.cacheKey, this.rows, resolvedCacheOptions.absoluteExpirationRelativeToNow);
+            }
         }
 
         public async ValueTask VisitMultipleKeyQueryAsync<TEntity, TKey>(MultipleKeyQuery<TEntity, TKey> multipleKeyQuery, CancellationToken cancellationToken = default)
@@ -95,6 +102,11 @@
                 return;
             }
 
+            if (!multipleKeyQuery.ResolvedCacheOptions().Any()) {
+                return;
+            }
+
+            // bit of a cheat here ... we don't use the resolved cache options as we know they can only be generated from the collectionCacheOptions (i.e. it's not possible to set explicit keys and caches on Multiple queries)
             foreach (var row in this.rows) {
                 var id = multipleKeyQuery.Collection.KeyFactory.Create(row);
                 var cacheKey = collectionCacheOptions.CacheKeyProvider.GetEntityCacheKey<TEntity, TKey>(multipleKeyQuery.Collection, (TKey)id);

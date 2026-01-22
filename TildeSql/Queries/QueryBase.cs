@@ -1,5 +1,7 @@
 ﻿namespace TildeSql.Queries {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -8,6 +10,14 @@
     public abstract class QueryBase<TEntity> : IQuery<TEntity>, IQuery, IEquatable<IQuery>
         where TEntity : class {
         private readonly Guid identifier;
+
+        private HashSet<(string, TimeSpan)> calculatedCacheKeys;
+
+        private string explicitCacheKey;
+
+        private TimeSpan? explicitAbsoluteExpirationRelativeToNow;
+
+        private bool? cacheEnabled;
 
         public QueryBase(Collection collection) {
             this.Collection = collection;
@@ -18,11 +28,34 @@
 
         public Collection Collection { get; }
 
-        public bool? CacheQuery { get; set; }
+        public void EnableCache(string cacheKey, TimeSpan? absoluteExpirationRelativeToNow) {
+            this.explicitCacheKey = cacheKey;
+            this.explicitAbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow;
+            this.cacheEnabled = true;
+        }
 
-        public TimeSpan? AbsoluteExpirationRelativeToNow { get; set; }
+        public void DisableCache() {
+            this.cacheEnabled = false;
+            this.explicitCacheKey = null;
+            this.explicitAbsoluteExpirationRelativeToNow = null;
+        }
 
-        public string CacheKey { get; set; }
+        public string ExplicitCacheKey => this.explicitCacheKey;
+
+        public TimeSpan? ExplicitAbsoluteExpirationRelativeToNow => this.explicitAbsoluteExpirationRelativeToNow;
+
+        public bool IsCacheDisabled => this.cacheEnabled is false;
+
+        public void AddResolvedCacheOptions(string cacheKey, TimeSpan expirationRelativeToNow) {
+            this.calculatedCacheKeys ??= new();
+            this.calculatedCacheKeys.Add((cacheKey, expirationRelativeToNow));
+        }
+
+        public bool IsCacheable => this.calculatedCacheKeys != null;
+
+        public IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions() {
+            return this.calculatedCacheKeys ?? [];
+        }
 
         public abstract void Accept(IQueryVisitor visitor);
 

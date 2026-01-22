@@ -69,49 +69,38 @@
 
         public async ValueTask VisitEntityQueryAsync<TEntity>(EntityQuery<TEntity> entityQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            CollectionCacheOptions collectionCacheOptions = null;
-            if (entityQuery.CacheQuery is false) { // caching disabled via query
-                return;
-            }
-
-            if (entityQuery.CacheKey == null || !entityQuery.AbsoluteExpirationRelativeToNow.HasValue) {
-                if (!this.cacheOptions.TryGetCacheOptions(entityQuery.Collection.CollectionName, out collectionCacheOptions)) {
-                    return;
-                }
-            }
-
-            var cacheKey = entityQuery.CacheKey ?? collectionCacheOptions.CacheKeyProvider.GetEntityQueryCacheKey<TEntity>(entityQuery.Collection, entityQuery);
-            if (string.IsNullOrWhiteSpace(cacheKey)) {
-                return;
-            }
-
-            await this.TryFindInCacheAsync(entityQuery, cancellationToken, entityQuery.AbsoluteExpirationRelativeToNow ?? collectionCacheOptions?.AbsoluteExpirationRelativeToNow, cacheKey);
+            await this.TryFindInCacheAsync(entityQuery, ckp => ckp.GetEntityQueryCacheKey(entityQuery.Collection, entityQuery), cancellationToken);
         }
 
         public async ValueTask VisitKeyQueryAsync<TEntity, TKey>(KeyQuery<TEntity, TKey> keyQuery, CancellationToken cancellationToken = default)
             where TEntity : class {
-            if (!this.cacheOptions.TryGetCacheOptions(keyQuery.Collection.CollectionName, out var collectionCacheOptions)) {
-                return;
-            }
-
-            var cacheKey = collectionCacheOptions.CacheKeyProvider.GetEntityCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key);
-            if (string.IsNullOrWhiteSpace(cacheKey)) {
-                return;
-            }
-
-            await this.TryFindInCacheAsync(keyQuery, cancellationToken, keyQuery.AbsoluteExpirationRelativeToNow ?? collectionCacheOptions?.AbsoluteExpirationRelativeToNow, cacheKey);
+            await this.TryFindInCacheAsync(keyQuery, ckp => ckp.GetEntityCacheKey<TEntity, TKey>(keyQuery.Collection, keyQuery.Key), cancellationToken);
         }
 
-        private async Task TryFindInCacheAsync<TEntity>(QueryBase<TEntity> keyQuery, CancellationToken cancellationToken, TimeSpan? absoluteExpirationRelativeToNow, string cacheKey)
+        private async Task TryFindInCacheAsync<TEntity>(QueryBase<TEntity> query, Func<ICacheKeyProvider, string> calculatedCacheKeyFunc, CancellationToken cancellationToken)
             where TEntity : class {
-            keyQuery.CacheQuery                      = true;
-            keyQuery.AbsoluteExpirationRelativeToNow = absoluteExpirationRelativeToNow;
-            keyQuery.CacheKey                        = cacheKey;
+            if (query.IsCacheDisabled) { // caching disabled via query
+                return;
+            }
 
+            CollectionCacheOptions collectionCacheOptions = null;
+            if (query.ExplicitCacheKey == null || !query.ExplicitAbsoluteExpirationRelativeToNow.HasValue) {
+                if (!this.cacheOptions.TryGetCacheOptions(query.Collection.CollectionName, out collectionCacheOptions)) {
+                    return;
+                }
+            }
+
+            var cacheKey = query.ExplicitCacheKey ?? calculatedCacheKeyFunc(collectionCacheOptions.CacheKeyProvider);
+            var absoluteExpirationRelativeToNow = query.ExplicitAbsoluteExpirationRelativeToNow ?? collectionCacheOptions?.AbsoluteExpirationRelativeToNow;
+            if (string.IsNullOrWhiteSpace(cacheKey) || !absoluteExpirationRelativeToNow.HasValue) {
+                return;
+            }
+
+            query.AddResolvedCacheOptions(cacheKey, absoluteExpirationRelativeToNow.Value);
             if (this.memoryCache != null) {
                 if (this.memoryCache.TryGetValue(cacheKey, out object[][] rows)) {
-                    this.resultCache.Add(keyQuery, rows);
-                    this.executedQueries.Add(keyQuery);
+                    this.resultCache.Add(query, rows);
+                    this.executedQueries.Add(query);
                     return;
                 }
             }
@@ -130,8 +119,8 @@
                             }
                         }
 
-                        this.resultCache.Add(keyQuery, cacheRow);
-                        this.executedQueries.Add(keyQuery);
+                        this.resultCache.Add(query, cacheRow);
+                        this.executedQueries.Add(query);
                     }
                 }
             }
@@ -145,45 +134,46 @@
                 return;
             }
 
-            if (!this.cacheOptions.TryGetCacheOptions(multipleKeyQuery.Collection.CollectionName, out var collectionCacheOptions)) {
+            if (multipleKeyQuery.IsCacheDisabled) return;
+            if (!this.cacheOptions.TryGetCacheOptions(multipleKeyQuery.Collection.CollectionName, out var collectionCacheOptions)) { // NOTE it doesn't make sense to support explicit caching keys for multikey queries
                 return;
             }
 
             var resultTasks = new List<ValueTask<(TKey key, string cacheKey, object[][] rows)>>();
-            foreach (var key in multipleKeyQuery.Keys) {
+            foreach (var key in multipleKeyQuery.Keys) {                
                 resultTasks.Add(TryGetKeyAsync(key));
             }
 
             var results = new List<object[]>(multipleKeyQuery.Keys.Length);
-            var matchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
-            var unmatchedKeys = new HashSet<TKey>(multipleKeyQuery.Keys.Length);
-            string firstUnmatchedKey = null;
+            var matchedKeys = new HashSet<(TKey key, string cacheKey)>(multipleKeyQuery.Keys.Length);
+            var unmatchedKeys = new HashSet<(TKey key, string cacheKey)>(multipleKeyQuery.Keys.Length);
             foreach (var resultTask in resultTasks) {
                 var (key, cacheKey, result) = await resultTask;
+                multipleKeyQuery.AddResolvedCacheOptions(cacheKey, collectionCacheOptions.AbsoluteExpirationRelativeToNow);
                 if (result == null || result.Length == 0) {
-                    unmatchedKeys.Add(key);
-                    firstUnmatchedKey ??= cacheKey;
+                    unmatchedKeys.Add((key, cacheKey));
                 }
                 else {
                     results.Add(result[0]);
-                    matchedKeys.Add(key);
+                    matchedKeys.Add((key, cacheKey));
                 }
             }
 
             if (matchedKeys.Count == 0) {
-                multipleKeyQuery.CacheQuery = true;
-                multipleKeyQuery.CacheKey = firstUnmatchedKey;
-                multipleKeyQuery.AbsoluteExpirationRelativeToNow = collectionCacheOptions.AbsoluteExpirationRelativeToNow;
                 return;
             }
 
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
-                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([.. matchedKeys], multipleKeyQuery.Collection);
-                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([.. unmatchedKeys], multipleKeyQuery.Collection) {
-                    CacheQuery = true,
-                    CacheKey = firstUnmatchedKey,
-                    AbsoluteExpirationRelativeToNow = collectionCacheOptions.AbsoluteExpirationRelativeToNow
-                };
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>(matchedKeys.Select(t => t.key).ToArray(), multipleKeyQuery.Collection);
+                foreach (var k in matchedKeys) {
+                    executedQuery.AddResolvedCacheOptions(k.cacheKey, collectionCacheOptions.AbsoluteExpirationRelativeToNow);
+                }
+
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>(unmatchedKeys.Select(t => t.key).ToArray(), multipleKeyQuery.Collection);
+                foreach(var k in unmatchedKeys) {
+                    remainingQuery.AddResolvedCacheOptions(k.cacheKey, collectionCacheOptions.AbsoluteExpirationRelativeToNow);
+                }
+
                 this.resultCache.Add(executedQuery, results);
                 this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
             }
@@ -210,12 +200,7 @@
                         var cacheRow = this.cacheSerializer.Deserialize<object[][]>(cacheBuffer);
                         if (cacheRow != null) {
                             if (this.memoryCache != null) {
-                                if (collectionCacheOptions.AbsoluteExpirationRelativeToNow.HasValue) {
-                                    this.memoryCache.Set(cacheKey, cacheRow, collectionCacheOptions.AbsoluteExpirationRelativeToNow.Value);
-                                }
-                                else {
-                                    this.memoryCache.Set(cacheKey, cacheRow);
-                                }
+                                 this.memoryCache.Set(cacheKey, cacheRow, collectionCacheOptions.AbsoluteExpirationRelativeToNow);
                             }
 
                             return (key, cacheKey, cacheRow);

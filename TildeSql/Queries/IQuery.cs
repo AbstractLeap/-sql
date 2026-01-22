@@ -1,5 +1,6 @@
 ﻿namespace TildeSql.Queries {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -10,9 +11,9 @@
         
         Collection Collection { get; }
 
-        TimeSpan? AbsoluteExpirationRelativeToNow { get; }
+        bool IsCacheable { get; }
 
-        string CacheKey { get; }
+        IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions();
 
         void Accept(IQueryVisitor visitor);
 
