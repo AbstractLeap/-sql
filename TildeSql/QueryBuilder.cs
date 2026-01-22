@@ -19,27 +19,43 @@
             this.collection   = collection;
         }
 
-        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, CancellationToken cancellationToken = default) {
+        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, bool disableCache = false, CancellationToken cancellationToken = default) {
             var query = new KeyQuery<TEntity, TKey>(key, this.collection);
+            if (disableCache) {
+                query.DisableCache();
+            }
+
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query).SingleOrDefaultAsync(cancellationToken);
         }
 
-        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key) {
+        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key, bool disableCache = false) {
             var query = new KeyQuery<TEntity, TKey>(key, this.collection);
+            if (disableCache) {
+                query.DisableCache();
+            }
+
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(query);
             return new FutureSingleResult<TEntity, TKey>(query, this.session);
         }
 
-        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys) {
+        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys, bool disableCache = false) {
             var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
+            if (disableCache) {
+                query.DisableCache();
+            }
+
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query);
         }
 
-        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys) {
+        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys, bool disableCache = false) {
             var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
+            if (disableCache) {
+                query.DisableCache();
+            }
+
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(query);
             return new FutureMultipleResult<TEntity, TKey>(query, this.session);

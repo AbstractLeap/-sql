@@ -19,6 +19,73 @@
 
     public class CacheTest {
         [Fact]
+        public async Task DisableCacheForSingleWorks() {
+            var profiler = new Profiler();
+            var schema = TestSchemaBuilder.Build();
+            var memoryCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var sf = TestSessionFactoryBuilder.Build(
+                schema,
+                sqlSetup: s => s.ConnectionFactoryFactory = new ProfilingDbConnectionFactoryFactory(
+                                   new ConnectionPerCommandSqlServerConnectionFactoryFactory(TestSessionFactoryBuilder.SqlServerConnectionString),
+                                   profiler),
+                configSetup: c => c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5)));
+
+            var session = sf.StartSession();
+            var blog = new Blog("I'm a blog'");
+            session.Add(blog);
+            await session.SaveChangesAsync();
+
+            memoryCache.Clear();
+            profiler.IsActive = true;
+
+            var session2 = sf.StartSession();
+            var blog2 = await session2.Get<Blog>().SingleAsync(blog.BlogId);
+            Assert.Equal(1, profiler.CommandsExecuted);
+
+            var session3 = sf.StartSession();
+            var blog3 = await session3.Get<Blog>().SingleAsync(blog.BlogId);
+            Assert.Equal(1, profiler.CommandsExecuted); // it was cached
+
+            var session4 = sf.StartSession();
+            var blog4 = await session4.Get<Blog>().SingleAsync(blog.BlogId, disableCache: true);
+            Assert.Equal(2, profiler.CommandsExecuted); // it was not cached
+        }
+        [Fact]
+        public async Task DisableCacheForMultipleWorks() {
+            var profiler = new Profiler();
+            var schema = TestSchemaBuilder.Build();
+            var memoryCache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+            var sf = TestSessionFactoryBuilder.Build(
+                schema,
+                sqlSetup: s => s.ConnectionFactoryFactory = new ProfilingDbConnectionFactoryFactory(
+                                   new ConnectionPerCommandSqlServerConnectionFactoryFactory(TestSessionFactoryBuilder.SqlServerConnectionString),
+                                   profiler),
+                configSetup: c => c.UseMemoryCache(memoryCache).EnableCaching<Blog>(TimeSpan.FromMinutes(5)));
+
+            var session = sf.StartSession();
+            var blog = new Blog("I'm a blog'");
+            session.Add(blog);
+            var blog2 = new Blog("I'm also a blog'");
+            session.Add(blog2);
+            await session.SaveChangesAsync();
+
+            memoryCache.Clear();
+            profiler.IsActive = true;
+
+            var session2 = sf.StartSession();
+            var blogs = await session2.Get<Blog>().MultipleAsync([blog.BlogId, blog2.BlogId] ).ToArrayAsync();
+            Assert.Equal(1, profiler.CommandsExecuted);
+
+            var session3 = sf.StartSession();
+            var blogs2 = await session3.Get<Blog>().MultipleAsync([blog.BlogId, blog2.BlogId]).ToArrayAsync();
+            Assert.Equal(1, profiler.CommandsExecuted); // it was cached
+
+            var session4 = sf.StartSession();
+            var blogs3 = await session4.Get<Blog>().MultipleAsync([blog.BlogId, blog2.BlogId], disableCache: true).ToArrayAsync();
+            Assert.Equal(2, profiler.CommandsExecuted); // it was not cached
+        }
+
+        [Fact]
         public async Task RemoveEntryGetsRemovedFromCache() {
             var profiler = new Profiler();
             var schema = TestSchemaBuilder.Build();
