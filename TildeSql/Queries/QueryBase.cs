@@ -40,13 +40,13 @@
             this.explicitAbsoluteExpirationRelativeToNow = null;
         }
 
-        public string ExplicitCacheKey => this.explicitCacheKey;
+        internal string ExplicitCacheKey => this.explicitCacheKey;
 
-        public TimeSpan? ExplicitAbsoluteExpirationRelativeToNow => this.explicitAbsoluteExpirationRelativeToNow;
+        internal TimeSpan? ExplicitAbsoluteExpirationRelativeToNow => this.explicitAbsoluteExpirationRelativeToNow;
 
-        public bool IsCacheDisabled => this.cacheEnabled is false;
+        internal bool IsCacheDisabled => this.cacheEnabled is false;
 
-        public void AddResolvedCacheOptions(string cacheKey, TimeSpan expirationRelativeToNow) {
+        internal void AddResolvedCacheOptions(string cacheKey, TimeSpan expirationRelativeToNow) {
             this.calculatedCacheKeys ??= new();
             this.calculatedCacheKeys.Add((cacheKey, expirationRelativeToNow));
         }
