@@ -17,6 +17,7 @@
     using TildeSql.Tests.TestDomain.MultipleFutures;
     using TildeSql.Tests.TestDomain.MultiTableType;
     using TildeSql.Tests.TestDomain.Paging;
+    using TildeSql.Tests.TestDomain.Tracking;
     using TildeSql.Tests.TestDomain.TupleKeyType;
     using TildeSql.Tests.TestDomain.TypedSerialization;
 
@@ -38,7 +39,8 @@
                                    .AddTypes(typeof(TestDomain.PlayExtraColumns.Person))
                                    .AddTypes(typeof(TupleKeyTypeThing))
                                    .AddTypes(typeof(TupleWithPrimitiveKeyTing))
-                                   .AddTypes(typeof(GenericContainer));
+                                   .AddTypes(typeof(GenericContainer))
+                                   .AddTypes(typeof(TrackThing));
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>().AddComputedColumn<string>("Email", "$.email.address", true, true);
             schemaBuilder.Setup<TestDomain.PlayExtraColumns.Person>()
                          .AddProjectionColumn("Fullname", person => (person.Name.GivenNames ?? string.Empty) + " " + (person.Name.Surname ?? string.Empty));

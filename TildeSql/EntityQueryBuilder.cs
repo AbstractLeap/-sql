@@ -73,6 +73,11 @@
             return this;
         }
 
+        public IEntityQueryBuilder<TEntity> NoTracking() {
+            this.query.DisableTracking();
+            return this;
+        }
+
         public IFutureEntityQueryResult<TEntity> Future() {
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(this.query);

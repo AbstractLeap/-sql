@@ -165,7 +165,10 @@
                         return null;
                     }
 
-                    this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), DocumentState.Persisted);
+                    if (!query.NotTracked) {
+                        this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), DocumentState.Persisted);
+                    }
+
                     return entityInstance;
                 }
 
@@ -176,8 +179,11 @@
                     throw new Exception($"Unable to cast object of type {typeName} to {typeof(T)}");
                 }
 
-                this.identityMap.Add(collection.KeyType, id, entity);
-                this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), DocumentState.Persisted);
+                if (!query.NotTracked) {
+                    this.identityMap.Add(collection.KeyType, id, entity);
+                    this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), DocumentState.Persisted);
+                }
+
                 return entity;
             }
         }

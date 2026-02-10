@@ -13,6 +13,8 @@
 
         bool IsCacheable { get; }
 
+        bool NotTracked { get; }
+
         IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions();
 
         void Accept(IQueryVisitor visitor);

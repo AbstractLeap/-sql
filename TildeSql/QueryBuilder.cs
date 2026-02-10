@@ -19,20 +19,28 @@
             this.collection   = collection;
         }
 
-        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, bool disableCache = false, CancellationToken cancellationToken = default) {
+        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, bool disableCache = false, bool disableTracking = false, CancellationToken cancellationToken = default) {
             var query = new KeyQuery<TEntity, TKey>(key, this.collection);
             if (disableCache) {
                 query.DisableCache();
+            }
+
+            if (disableTracking) {
+                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query).SingleOrDefaultAsync(cancellationToken);
         }
 
-        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key, bool disableCache = false) {
+        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key, bool disableCache = false, bool disableTracking = false) {
             var query = new KeyQuery<TEntity, TKey>(key, this.collection);
             if (disableCache) {
                 query.DisableCache();
+            }
+
+            if (disableTracking) {
+                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
@@ -40,20 +48,28 @@
             return new FutureSingleResult<TEntity, TKey>(query, this.session);
         }
 
-        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys, bool disableCache = false) {
+        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool disableTracking = false) {
             var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
             if (disableCache) {
                 query.DisableCache();
+            }
+
+            if (disableTracking) {
+                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query);
         }
 
-        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys, bool disableCache = false) {
+        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool disableTracking = false) {
             var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
             if (disableCache) {
                 query.DisableCache();
+            }
+
+            if (disableTracking) {
+                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
@@ -112,6 +128,12 @@
         public IEntityQueryBuilder<TEntity> NoCache() {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
             entityQueryBuilder.NoCache();
+            return entityQueryBuilder;
+        }
+
+        public IEntityQueryBuilder<TEntity> NoTracking() {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.NoTracking();
             return entityQueryBuilder;
         }
 
