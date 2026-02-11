@@ -16,7 +16,7 @@
         public void AddedEntityIsRetrievable() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -30,7 +30,7 @@
         public void UpdateStateDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(),null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -45,7 +45,7 @@
         public void UpdateRowDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -62,7 +62,7 @@
         public void SetPersistedDoes() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -78,7 +78,7 @@
         public void AddedEntityIsAddOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -92,7 +92,7 @@
         public void DeletedEntityIsDeleteOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -107,7 +107,7 @@
         public void PersistedEntityIsNoOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -120,7 +120,7 @@
         public void ChangedPersistedEntityIsUpdateOperation() {
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new Thing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<Thing, Guid>(collection, thing);
@@ -136,7 +136,7 @@
             var collection = new Collection("Things", new[] { typeof(Thing).GetProperty(nameof(Thing.Id)) }, true, false);
             collection.AddClassType(typeof(Thing));
             collection.AddClassType(typeof(ChildThing));
-            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema());
+            var unitOfWork = new UnitOfWork(new SystemJsonSerializer(), new Schema(), null);
             var thing = new ChildThing { Name = "Foo" };
             var databaseRowFactory = new DatabaseRowFactory(new SystemJsonSerializer());
             var row = databaseRowFactory.Create<ChildThing, Guid>(collection, thing);

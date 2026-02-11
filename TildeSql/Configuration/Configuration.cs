@@ -19,6 +19,8 @@
 
         public ISerializer Serializer { get; set; } = new SystemJsonSerializer();
 
+        public IChangeDetector ChangeDetector { get; set; }
+
         public Func<IPersistenceQueryExecutor> QueryExecutorFactory { get; set; }
 
         public Func<IUpdateExecutor> UpdateExecutorFactory { get; set; }
@@ -37,6 +39,7 @@
             return new SessionFactory(
                 this.Schema,
                 this.Serializer,
+                this.ChangeDetector,
                 this.QueryExecutorFactory,
                 this.UpdateExecutorFactory,
                 this.MemoryCache,

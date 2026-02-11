@@ -17,8 +17,8 @@
 
         private readonly ChangeTracker changeTracker;
 
-        public UnitOfWork(ISerializer serializer, ISchema schema) {
-            this.changeTracker = new ChangeTracker(serializer, schema);
+        public UnitOfWork(ISerializer serializer, ISchema schema, IChangeDetector changeDetector) {
+            this.changeTracker = new ChangeTracker(serializer, schema, changeDetector);
         }
 
         public void AddOrUpdate<TEntity>(Collection collection, TEntity entity, DatabaseRow row, DocumentState state) {

@@ -32,6 +32,7 @@
         public Session(
             ISchema schema,
             ISerializer serializer,
+            IChangeDetector changeDetector,
             IPersistenceQueryExecutor queryExecutor,
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
@@ -43,7 +44,7 @@
             this.serializer               = serializer;
             this.saveChangesEventListener = saveChangesEventListener;
             this.identityMap              = new IdentityMap.IdentityMap();
-            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema);
+            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema, changeDetector);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,

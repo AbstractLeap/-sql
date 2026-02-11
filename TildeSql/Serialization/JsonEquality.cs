@@ -1,4 +1,4 @@
-﻿namespace TildeSql {
+﻿namespace TildeSql.Serialization {
     using System;
     using System.Collections.Generic;
     using System.Text.Json;

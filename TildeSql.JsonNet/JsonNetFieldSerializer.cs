@@ -5,11 +5,12 @@ namespace TildeSql.JsonNet {
 
     public class JsonNetFieldSerializer : Serializer {
         public JsonNetFieldSerializer()
-            : base(
-                new JsonSerializerSettings {
-                    ContractResolver = new FieldsOnlyContractResolver(),
-                    TypeNameHandling = TypeNameHandling.Auto,
-                    Converters       = new List<JsonConverter> { new ComplexKeyDictionaryConverter() }
-                }) { }
+            : base(GetSettings()) { }
+
+        public static JsonSerializerSettings GetSettings() => new JsonSerializerSettings {
+            ContractResolver = new FieldsOnlyContractResolver(),
+            TypeNameHandling = TypeNameHandling.Auto,
+            Converters = new List<JsonConverter> { new ComplexKeyDictionaryConverter() }
+        };
     }
 }

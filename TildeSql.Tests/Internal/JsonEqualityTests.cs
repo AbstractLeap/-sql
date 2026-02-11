@@ -1,4 +1,6 @@
 ﻿namespace TildeSql.Tests.Internal {
+    using TildeSql.Serialization;
+
     using Xunit;
 
     public class JsonEqualityTests {

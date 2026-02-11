@@ -5,6 +5,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
 using TildeSql;
+using TildeSql.Serialization;
 
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev", "Median")]
