@@ -194,6 +194,137 @@
             Xunit.Assert.True(GetDetector().HasChanged(json, obj));
         }
 
+
+        // ---------------------------------------------------------------
+        // PRIMITIVES VIA SERIALIZE-AND-COMPARE
+        // ---------------------------------------------------------------
+
+        [Fact]
+        public void Guid_StringJson_Equals() {
+            var id = Guid.NewGuid();
+            var json = $@"{{ ""Id"": ""{id}"" }}";
+            var obj = new WithPrimitives { Id = id };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void Guid_InvalidString_Changed() {
+            var json = $@"{{ ""Id"": ""not-a-guid"" }}";
+            var obj = new WithPrimitives { Id = Guid.NewGuid() };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void DateTime_ExactMatch_NoNormalization_Equals() {
+            var dt = new DateTime(2024, 05, 01, 10, 30, 00, DateTimeKind.Utc);
+            var json = $@"{{ ""When"": ""{dt.ToString("O")}"" }}";
+            var obj = new WithPrimitives { When = dt };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void DateTime_DifferentStringForms_DoNotNormalize_Changed() {
+            // DT-2: no normalization. Unspecified "2024-05-01" should not equal "2024-05-01T00:00:00Z"
+            var dt = new DateTime(2024, 05, 01, 00, 00, 00, DateTimeKind.Utc);
+            var json = $@"{{ ""When"": ""2024-05-01"" }}";
+            var obj = new WithPrimitives { When = dt };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void DateTimeOffset_ExactString_Equals() {
+            var dto = new DateTimeOffset(2024, 05, 01, 10, 30, 0, TimeSpan.FromHours(1));
+            var json = $@"{{ ""WhenOffset"": ""{dto.ToString("O")}"" }}";
+            var obj = new WithPrimitives { WhenOffset = dto };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void TimeSpan_String_Equals() {
+            var ts = TimeSpan.FromHours(1);
+            var json = $@"{{ ""Duration"": ""{ts}"" }}"; // "01:00:00"
+            var obj = new WithPrimitives { Duration = ts };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void Uri_String_Equals() {
+            var uri = new Uri("https://example.com/path");
+            var json = $@"{{ ""Link"": ""https://example.com/path"" }}";
+            var obj = new WithPrimitives { Link = uri };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void ByteArray_Base64_Equals() {
+            var bytes = new byte[] { 1, 2, 3, 4 };
+            var b64 = Convert.ToBase64String(bytes);
+            var json = $@"{{ ""Data"": ""{b64}"" }}";
+            var obj = new WithPrimitives { Data = bytes };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void ByteArray_InvalidBase64_Changed() {
+            var bytes = new byte[] { 1, 2, 3, 4 };
+            var json = $@"{{ ""Data"": ""!!!not-base64!!!"" }}";
+            var obj = new WithPrimitives { Data = bytes };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void Enum_ByNumber_Equals_EN3() {
+            var json = $@"{{ ""State"": 2 }}";
+            var obj = new WithPrimitives { State = Status.Suspended };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NullableGuid_Null_EqualsMissing() {
+            var id = (Guid?)null;
+            var json = @"{ }";
+            var obj = new Person { NullableGuid = id };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NullableGuid_Value_DoesNotEqualNull() {
+            var id = Guid.NewGuid();
+            var json = @"{ ""NullableGuid"": null }";
+            var obj = new Person { NullableGuid = id };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NullableDateTime_Value_DoesNotEqualNull() {
+            var dt = new DateTime(2025, 01, 01, 00, 00, 00, DateTimeKind.Utc);
+            var json = @"{ ""NullableDate"": null }";
+            var obj = new Person { NullableDate = dt };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NullableDateTime_Null_EqualsMissing() {
+            var json = @"{ }";
+            var obj = new Person { NullableDate = null };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+
         // ---------------------------------------------------------------
         // ARRAY TESTS
         // ---------------------------------------------------------------

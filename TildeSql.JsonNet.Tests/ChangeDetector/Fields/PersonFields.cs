@@ -20,9 +20,16 @@
 
             private decimal? nullableDecimal;
 
-            // Public properties exist only to make test setup ergonomic.
-            // Serialization uses the private fields via the resolver above.
-            public string? Name {
+
+            private Guid? nullableGuid;
+            private DateTime? nullableDate;
+            private DateTimeOffset? nullableDateOffset;
+            private TimeSpan? nullableTimeSpan;
+
+
+        // Public properties exist only to make test setup ergonomic.
+        // Serialization uses the private fields via the resolver above.
+        public string? Name {
                 get => this.name;
                 set => this.name = value;
             }
@@ -61,5 +68,12 @@
                 get => this.nullableDecimal;
                 set => this.nullableDecimal = value;
             }
-        }
+
+
+            public Guid? NullableGuid { get => this.nullableGuid; set => this.nullableGuid = value; }
+            public DateTime? NullableDate { get => this.nullableDate; set => this.nullableDate = value; }
+            public DateTimeOffset? NullableDateOffset { get => this.nullableDateOffset; set => this.nullableDateOffset = value; }
+            public TimeSpan? NullableTimeSpan { get => this.nullableTimeSpan; set => this.nullableTimeSpan = value; }
+
+    }
 }

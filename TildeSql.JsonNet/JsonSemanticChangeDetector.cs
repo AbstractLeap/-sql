@@ -5,6 +5,7 @@
 
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
 
     /// <summary>
     /// Detects whether a JSON payload has semantically changed compared to a .NET object,
@@ -33,14 +34,15 @@
 
         public bool HasChanged(string json, object obj) {
             var serializer = JsonSerializer.Create(this.serializerSettings ?? new JsonSerializerSettings());
+            var resolver = serializer.ContractResolver;
 
-            JToken tokenA = JToken.Parse(json);
-            JToken tokenB = JToken.FromObject(obj, serializer);
+            JToken jsonToken = JToken.Parse(json);
+            JToken objToken = JToken.FromObject(obj, serializer);
 
             // We pass the root contract type into comparison
-            var contract = serializer.ContractResolver.ResolveContract(obj.GetType()) as JsonObjectContract;
+            var declaredContract = resolver.ResolveContract(obj.GetType());
 
-            return !JTokenSemanticEquals(tokenA, tokenB, contract, serializer.ContractResolver);
+            return !JTokenSemanticEquals(jsonToken, objToken, declaredContract, resolver, serializer);
         }
 
 
@@ -48,51 +50,67 @@
         // TOP LEVEL COMPARISON
         // ------------------------------------------------------------------------
         private static bool JTokenSemanticEquals(
-            JToken a,
-            JToken b,
+            JToken json,
+            JToken dotnet,
             JsonContract? declaredContract,
-            IContractResolver resolver) {
-            if (ReferenceEquals(a, b))
+            IContractResolver resolver, JsonSerializer serializer) {
+            if (ReferenceEquals(json, dotnet))
                 return true;
-            if (a is null || b is null)
+            if (json is null || dotnet is null)
                 return false;
 
-            // Normalize defaults using the declared CLR type (critical fix)
-            a = NormalizeDefault(a, declaredContract);
-            b = NormalizeDefault(b, declaredContract);
+            // Normalize defaults using the declared CLR type 
+            json = NormalizeDefault(json, declaredContract);
+            dotnet = NormalizeDefault(dotnet, declaredContract);
+            
+            // Both null like
+            if (IsNullLike(json) && IsNullLike(dotnet))
+                return true;
 
-            // Numeric types are semantically equal even across integer/float mismatch
-            if (IsNumeric(a) && IsNumeric(b))
-                return NumericEquals((JValue)a, (JValue)b);
+            if (declaredContract is JsonPrimitiveContract prim) {
+                // dotnet must be a JValue at this point; extract the CLR value
+                object? dotnetValue = (dotnet as JValue)?.Value;
 
-            if (a.Type != b.Type) {
-                // Only OK if both are null-like (null/missing/default)
-                return IsNullLike(a) && IsNullLike(b);
-            }
+                // If the dotnet side is null-like and JSON is null-like, already handled above.
+                if (dotnetValue is null)
+                    return false; // one side was not null-like; difference
 
-            switch (a.Type) {
-                case JTokenType.Object:
-                    return JObjectEquals((JObject)a, (JObject)b, declaredContract, resolver);
+                // Serialize the dotnet primitive as Json.NET would write it, parse into JToken
+                var expected = SerializeValueToToken(dotnetValue, serializer);
 
-                case JTokenType.Array:
-                    return JArrayEquals((JArray)a, (JArray)b, declaredContract, resolver);
+                // Apply the same default normalization to both
+                expected = NormalizeDefault(expected, declaredContract);
+                json     = NormalizeDefault(json, declaredContract);
 
-                case JTokenType.String:
-                    return String.Equals(
-                        (string?)((JValue)a).Value,
-                        (string?)((JValue)b).Value,
-                        StringComparison.Ordinal);
-
-                case JTokenType.Boolean:
-                    return (bool)((JValue)a).Value! == (bool)((JValue)b).Value!;
-
-                case JTokenType.Null:
-                case JTokenType.Undefined:
+                // Null-like equivalence (after normalization)
+                if (IsNullLike(expected) && IsNullLike(json))
                     return true;
 
-                default:
-                    return JToken.DeepEquals(a, b);
+                // Numeric semantics: if both are numeric, compare numerically
+                if (IsNumeric(expected) && IsNumeric(json))
+                    return NumericEquals((JValue)expected, (JValue)json);
+
+                // Otherwise, rely on structural equality
+                return JToken.DeepEquals(expected, json);
             }
+
+            // Numeric types are semantically equal even across integer/float mismatch
+            if (IsNumeric(json) && IsNumeric(dotnet))
+                return NumericEquals((JValue)json, (JValue)dotnet);
+
+            if (json.Type != dotnet.Type) {
+                // Only OK if both are null-like (null/missing/default)
+                return IsNullLike(json) && IsNullLike(dotnet);
+            }
+
+            return json.Type switch {
+                JTokenType.Object => JObjectEquals((JObject)json, (JObject)dotnet, declaredContract, resolver, serializer),
+                JTokenType.Array => JArrayEquals((JArray)json, (JArray)dotnet, declaredContract, resolver, serializer),
+                JTokenType.String => string.Equals((string)((JValue)json).Value, (string)((JValue)dotnet).Value, StringComparison.Ordinal),
+                JTokenType.Boolean => (bool)((JValue)json).Value! == (bool)((JValue)dotnet).Value!,
+                JTokenType.Null or JTokenType.Undefined => true,
+                _ => JToken.DeepEquals(json, dotnet)
+            };
         }
 
 
@@ -100,33 +118,33 @@
         // OBJECT COMPARISON
         // ------------------------------------------------------------------------
         private static bool JObjectEquals(
-            JObject a,
-            JObject b,
+            JObject json,
+            JObject dotnet,
             JsonContract? declaredContract,
-            IContractResolver resolver) {
+            IContractResolver resolver, JsonSerializer serializer) {
             var objContract = declaredContract as JsonObjectContract;
 
             var allKeys = new HashSet<string>(StringComparer.Ordinal);
 
-            foreach (var p in a.Properties()) allKeys.Add(p.Name);
-            foreach (var p in b.Properties()) allKeys.Add(p.Name);
+            foreach (var p in json.Properties()) allKeys.Add(p.Name);
+            foreach (var p in dotnet.Properties()) allKeys.Add(p.Name);
 
             foreach (var key in allKeys) {
-                bool hasA = a.TryGetValue(key, out var va);
-                bool hasB = b.TryGetValue(key, out var vb);
+                bool hasJson = json.TryGetValue(key, out var valueJson);
+                bool hasDotnet = dotnet.TryGetValue(key, out var valueDotnet);
 
                 // Look up the property contract so NormalizeDefault knows nullable vs non-nullable
                 var propDecl = objContract?.Properties.GetClosestMatchProperty(key);
                 var propType = propDecl?.PropertyType;
                 var propContract = propType is null ? null : resolver.ResolveContract(propType);
 
-                if (hasA && hasB) {
-                    if (!JTokenSemanticEquals(va!, vb!, propContract, resolver))
+                if (hasJson && hasDotnet) {
+                    if (!JTokenSemanticEquals(valueJson!, valueDotnet!, propContract, resolver, serializer))
                         return false;
                 }
                 else {
                     // missing vs null/default
-                    var present = hasA ? va! : vb!;
+                    var present = hasJson ? valueJson! : valueDotnet!;
                     present = NormalizeDefault(present, propContract);
 
                     if (!IsNullLike(present))
@@ -142,26 +160,44 @@
         // ARRAY COMPARISON (order matters)
         // ------------------------------------------------------------------------
         private static bool JArrayEquals(
-            JArray a,
-            JArray b,
+            JArray json,
+            JArray dotnet,
             JsonContract? declaredContract,
-            IContractResolver resolver) {
-            if (a.Count != b.Count)
+            IContractResolver resolver, JsonSerializer serializer) {
+            if (json.Count != dotnet.Count)
                 return false;
 
             JsonArrayContract? arrContract = declaredContract as JsonArrayContract;
 
-            for (int i = 0; i < a.Count; i++) {
+            for (int i = 0; i < json.Count; i++) {
                 var elementType = arrContract?.CollectionItemType;
                 var elementContract = elementType is null ? null : resolver.ResolveContract(elementType);
 
-                if (!JTokenSemanticEquals(a[i], b[i], elementContract, resolver))
+                if (!JTokenSemanticEquals(json[i], dotnet[i], elementContract, resolver, serializer))
                     return false;
             }
 
             return true;
         }
 
+
+        // =====================================================================
+        // PRIMITIVE HELPER
+        // =====================================================================
+
+        private static JToken SerializeValueToToken(object? value, JsonSerializer serializer) {
+            // Serialize using the same serializer (respects converters, contract resolver, naming, etc.)
+            using var sw = new System.IO.StringWriter(CultureInfo.InvariantCulture);
+            using (var writer = new JsonTextWriter(sw)) {
+                serializer.Serialize(writer, value);
+            }
+
+            // Parse back to a JToken so we can structurally compare
+            var json = sw.ToString();
+
+            // If the serializer wrote "null" it’s a JSON literal, parse will yield JValue Null.
+            return JToken.Parse(json);
+        }
 
         // ------------------------------------------------------------------------
         // NUMERIC SEMANTICS

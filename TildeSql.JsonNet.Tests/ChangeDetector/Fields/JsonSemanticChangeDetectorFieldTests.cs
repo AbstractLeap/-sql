@@ -1,4 +1,6 @@
 ﻿namespace TildeSql.JsonNet.Tests.ChangeDetector.Fields {
+    using TildeSql.JsonNet.Tests.ChangeDetector.Properties;
+
     using Xunit;
 
     public class JsonSemanticChangeDetectorFieldTests {
@@ -178,6 +180,18 @@
             Assert.False(GetDetector().HasChanged(json, obj));
         }
 
+        [Fact]
+        public void TestCase1() {
+            var json =
+                "{\"accountId\":{\"id\":\"687bfb86-7425-4f3e-a8fa-019a4e80c754\"},\"dbConnectionString\":\"Server=tcp:swiftlitest-sql-sandbox.database.windows.net,1433;database=swiftlitest-acct-testmode;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=37257ef1-7783-4e32-b39c-d5475ab486d1\",\"isSharedDatabase\":true}";
+            var obj = new AccountInfrastructure(
+                new AccountId(Guid.Parse("687bfb86-7425-4f3e-a8fa-019a4e80c754")),
+                "Server=tcp:swiftlitest-sql-sandbox.database.windows.net,1433;database=swiftlitest-acct-testmode;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=37257ef1-7783-4e32-b39c-d5475ab486d1",
+                true);
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
         // ---------------------------------------------------------------
         // NUMERIC SEMANTICS
         // ---------------------------------------------------------------
@@ -259,5 +273,29 @@
 
             Assert.True(GetDetector().HasChanged(json, obj));
         }
+
+        // ---------------------------------------------------------------
+        // PRIMITIVES (field-based)
+        // ---------------------------------------------------------------
+
+        [Fact]
+        public void Guid_StringJson_Equals() {
+            var id = Guid.NewGuid();
+            var json = $@"{{ ""nullableGuid"": ""{id}"" }}";
+            var obj = new PersonFields() { NullableGuid= id };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void DateTime_ExactString_Equals() {
+            var dt = new DateTime(2024, 05, 01, 10, 30, 00, DateTimeKind.Utc);
+            var json = $@"{{ ""nullableDate"": ""{dt.ToString("O")}"" }}";
+            var obj = new PersonFields() { NullableDate = dt };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+
     }
 }
