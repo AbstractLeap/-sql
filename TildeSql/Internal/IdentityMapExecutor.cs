@@ -34,19 +34,19 @@
             where TEntity : class {
             if (this.identityMap.TryGetValue(keyQuery.Key, out TEntity entity)) {
                 var state = this.unitOfWork.GetState(keyQuery.Collection, entity);
-                switch (state) {
-                    case DocumentState.NotAttached:
-                        return;
-                    case DocumentState.Deleted:
-                        // we need to say that we've handled it but that we return nothing
-                        this.resultCache.Add(keyQuery, new List<TEntity>());
-                        break;
-                    default:
-                        this.resultCache.Add(keyQuery, new List<TEntity> { entity });
-                        break;
-                }
+                if (state != null) { // null state indicates entity not in collection (it's in a different one)
+                    switch (state) {
+                        case DocumentState.Deleted:
+                            // we need to say that we've handled it but that we return nothing
+                            this.resultCache.Add(keyQuery, new List<TEntity>());
+                            break;
+                        default:
+                            this.resultCache.Add(keyQuery, new List<TEntity> { entity });
+                            break;
+                    }
 
-                this.executedQueries.Add(keyQuery);
+                    this.executedQueries.Add(keyQuery);
+                }
             }
         }
 
@@ -68,7 +68,7 @@
                 }
 
                 var state = this.unitOfWork.GetState(multipleKeyQuery.Collection, entity);
-                if (state is DocumentState.NotAttached) {
+                if (state == null) { // entity not in this collection
                     unmatchedKeys.Add(key);
                     continue;
                 }
@@ -85,8 +85,14 @@
             }
 
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
+                var disableTracking = multipleKeyQuery.NotTracked;
+                var disableCaching = multipleKeyQuery.IsCacheDisabled;
                 var executedQuery = new MultipleKeyQuery<TEntity, TKey>([..matchedKeys], multipleKeyQuery.Collection);
+                if (disableCaching) executedQuery.DisableCache();
+                if (disableTracking) executedQuery.DisableTracking();
                 var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                if (disableCaching) remainingQuery.DisableCache();
+                if (disableTracking) remainingQuery.DisableTracking();
                 this.resultCache.Add(executedQuery, result);
                 this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
             }

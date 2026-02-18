@@ -77,10 +77,10 @@
             document.Row = row;
         }
 
-        public DocumentState GetState<TEntity>(Collection collection, TEntity entity)
+        public DocumentState? GetState<TEntity>(Collection collection, TEntity entity)
             where TEntity : class {
             var document = FindDocument(collection, entity);
-            return document?.State ?? DocumentState.NotAttached;
+            return document?.State;
         }
 
         public void SetPersisted() {
