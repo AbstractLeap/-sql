@@ -19,6 +19,8 @@
 
         private bool? cacheEnabled;
 
+        private bool trackingDisabled;
+
         public QueryBase(Collection collection) {
             this.Collection = collection;
             this.identifier = Guid.NewGuid();
@@ -40,6 +42,10 @@
             this.explicitAbsoluteExpirationRelativeToNow = null;
         }
 
+        public void DisableTracking() {
+            this.trackingDisabled = true;
+        }
+
         internal string ExplicitCacheKey => this.explicitCacheKey;
 
         internal TimeSpan? ExplicitAbsoluteExpirationRelativeToNow => this.explicitAbsoluteExpirationRelativeToNow;
@@ -52,6 +58,8 @@
         }
 
         public bool IsCacheable => this.calculatedCacheKeys != null;
+
+        public bool NotTracked => this.trackingDisabled;
 
         public IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions() {
             return this.calculatedCacheKeys ?? [];

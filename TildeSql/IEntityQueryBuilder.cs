@@ -19,6 +19,8 @@
 
         IEntityQueryBuilder<TEntity> NoCache();
 
+        IEntityQueryBuilder<TEntity> NoTracking();
+
         IFutureEntityQueryResult<TEntity> Future();
     }
 }
