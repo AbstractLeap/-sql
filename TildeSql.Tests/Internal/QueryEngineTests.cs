@@ -33,7 +33,7 @@
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
 
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
             var query = new KeyQuery<Entity, EntityId>(new EntityId(), collection);
             queryEngine.Add(query);
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -57,7 +57,7 @@
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(query1)).Returns(new[] { row1 }.ToAsyncEnumerable());
             queryExecutor.Setup(e => e.GetAsync(query2)).Returns(new[] { row2 }.ToAsyncEnumerable());
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query1);
             queryEngine.Add(query2);
 
@@ -78,7 +78,7 @@
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
-            var session = new Session(schema.Object, serializer, queryExecutor.Object, null, null, null, null, null, null);
+            var session = new Session(schema.Object, serializer, null, queryExecutor.Object, null, null, null, null, null, null);
             var queryBuilder = new EntityQueryBuilder<Entity>(session, collection);
             var future = queryBuilder.Future();
             var results = await future.ToArrayAsync();
@@ -106,7 +106,7 @@
 
             var rows = await queryExecutor.Object.GetAsync(query).ToArrayAsync();
 
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
@@ -132,7 +132,7 @@
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity1.Id, entity1);
             identityMap.Add(typeof(EntityId), entity2.Id, entity2);
-            var unitOfWork = new UnitOfWork(serializer, schema.Object);
+            var unitOfWork = new UnitOfWork(serializer, schema.Object, null);
             unitOfWork.AddOrUpdate(collection, entity1, null, DocumentState.New);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.New);
             var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
@@ -161,7 +161,7 @@
 
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity2.Id, entity2);
-            var unitOfWork = new UnitOfWork(serializer, schema.Object);
+            var unitOfWork = new UnitOfWork(serializer, schema.Object, null);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.New);
             var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
@@ -192,7 +192,7 @@
 
             var identityMap = new IdentityMap();
             identityMap.Add(typeof(EntityId), entity2.Id, entity2);
-            var unitOfWork = new UnitOfWork(serializer, schema.Object);
+            var unitOfWork = new UnitOfWork(serializer, schema.Object, null);
             unitOfWork.AddOrUpdate(collection, entity2, null, DocumentState.Deleted);
             var queryEngine = new QueryEngine(schema.Object, identityMap, unitOfWork, queryExecutor.Object, serializer, null, null, null, null);
             queryEngine.Add(query);
@@ -214,7 +214,7 @@
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Throws<InvalidOperationException>();
 
             var query = new MultipleKeyQuery<Entity, EntityId>(Array.Empty<EntityId>(), collection);
-            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object), queryExecutor.Object, serializer, null, null, null, null);
+            var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
             Assert.Empty(result);

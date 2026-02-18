@@ -9,9 +9,12 @@
 
         private readonly ISchema schema;
 
-        public ChangeTracker(ISerializer serializer, ISchema schema) {
-            this.serializer = serializer;
-            this.schema     = schema;
+        private readonly IChangeDetector changeDetector;
+
+        public ChangeTracker(ISerializer serializer, ISchema schema, IChangeDetector changeDetector) {
+            this.serializer     = serializer;
+            this.schema         = schema;
+            this.changeDetector = changeDetector ?? new DefaultChangeDetector(serializer);
         }
 
         public bool HasEntityChanged(IDocument document) {
@@ -20,7 +23,7 @@
             }
 
             var json = RowValueHelper.GetValue<string>(document.Collection, document.Row.Values, SpecialColumns.Document);
-            return !JsonSolidusEscapeIgnoringStringComparator.StringEquals(json, this.serializer.Serialize(document.GetEntity()));
+            return this.changeDetector.HasChanged(json, document.GetEntity());
         }
     }
 }

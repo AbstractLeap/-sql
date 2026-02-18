@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.9.34728.123
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11408.102 d18.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TildeSql", "TildeSql\TildeSql.csproj", "{76D4B542-0091-49AD-8C9F-1B301D9F5546}"
 EndProject
@@ -26,6 +26,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4FFD80BC-E42A-4FDB-9966-0385D3AD8431}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TildeSql.Tests.SqlMigrations", "TildeSql.Tests.SqlMigrations\TildeSql.Tests.SqlMigrations.csproj", "{B480670F-D766-4C1B-B1EF-2D1362AB83B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TildeSql.Benchmarks", "TildeSql.Benchmarks\TildeSql.Benchmarks.csproj", "{8BD79F71-910D-6437-74E6-664BB0453D58}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TildeSql.JsonNet.Tests", "TildeSql.JsonNet.Tests\TildeSql.JsonNet.Tests.csproj", "{ED56F464-8960-4003-8F93-78D753B99D03}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +127,30 @@ Global
 		{B480670F-D766-4C1B-B1EF-2D1362AB83B4}.Release|x64.Build.0 = Release|Any CPU
 		{B480670F-D766-4C1B-B1EF-2D1362AB83B4}.Release|x86.ActiveCfg = Release|Any CPU
 		{B480670F-D766-4C1B-B1EF-2D1362AB83B4}.Release|x86.Build.0 = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|x64.Build.0 = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Debug|x86.Build.0 = Debug|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|x64.ActiveCfg = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|x64.Build.0 = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|x86.ActiveCfg = Release|Any CPU
+		{8BD79F71-910D-6437-74E6-664BB0453D58}.Release|x86.Build.0 = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|x64.Build.0 = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Debug|x86.Build.0 = Debug|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|x64.ActiveCfg = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|x64.Build.0 = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|x86.ActiveCfg = Release|Any CPU
+		{ED56F464-8960-4003-8F93-78D753B99D03}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,6 +164,8 @@ Global
 		{897E30DF-EDC0-4B8C-BA3E-484CFA13AB96} = {9184823F-88A6-45F4-A014-C5C780DA5F6D}
 		{74A72B99-4294-4079-9B02-8CF3081B0B76} = {C1216B92-545C-4BEA-804C-864FF6C74ABE}
 		{B480670F-D766-4C1B-B1EF-2D1362AB83B4} = {4FFD80BC-E42A-4FDB-9966-0385D3AD8431}
+		{8BD79F71-910D-6437-74E6-664BB0453D58} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{ED56F464-8960-4003-8F93-78D753B99D03} = {4FFD80BC-E42A-4FDB-9966-0385D3AD8431}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DAB658BC-B9D1-4982-A8CC-D10A651895D5}

@@ -15,6 +15,8 @@
 
         private readonly ISerializer serializer;
 
+        private readonly IChangeDetector changeDetector;
+
         private readonly Func<IPersistenceQueryExecutor> queryExecutorFactory;
 
         private readonly Func<IUpdateExecutor> updateExecutorFactory;
@@ -32,6 +34,7 @@
         public SessionFactory(
             ISchema schema,
             ISerializer serializer,
+            IChangeDetector changeDetector,
             Func<IPersistenceQueryExecutor> queryExecutorFactory,
             Func<IUpdateExecutor> updateExecutorFactory,
             IMemoryCache memoryCache,
@@ -41,6 +44,7 @@
             ISaveChangesEventListener saveChangesEventListener) {
             this.schema                   = schema;
             this.serializer               = serializer;
+            this.changeDetector           = changeDetector;
             this.queryExecutorFactory     = queryExecutorFactory;
             this.updateExecutorFactory    = updateExecutorFactory;
             this.memoryCache              = memoryCache;
@@ -54,6 +58,7 @@
             return new Session(
                 this.schema,
                 this.serializer,
+                this.changeDetector,
                 this.queryExecutorFactory(),
                 this.updateExecutorFactory(),
                 this.memoryCache,

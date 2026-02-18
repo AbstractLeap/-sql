@@ -1,4 +1,6 @@
 ﻿namespace TildeSql.Tests {
+    using TildeSql.Serialization;
+
     using Xunit;
 
     public class ChangeTrackerTests {
