@@ -1,6 +1,4 @@
 ﻿namespace TildeSql.JsonNet.Tests.ChangeDetector.Fields {
-    using TildeSql.JsonNet.Tests.ChangeDetector.Properties;
-
     using Xunit;
 
     public class JsonSemanticChangeDetectorFieldTests {

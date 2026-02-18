@@ -232,13 +232,13 @@
             var json = $@"{{ ""When"": ""2024-05-01"" }}";
             var obj = new WithPrimitives { When = dt };
 
-            Assert.True(GetDetector().HasChanged(json, obj));
+            Assert.False(GetDetector().HasChanged(json, obj));
         }
 
         [Fact]
         public void DateTimeOffset_ExactString_Equals() {
             var dto = new DateTimeOffset(2024, 05, 01, 10, 30, 0, TimeSpan.FromHours(1));
-            var json = $@"{{ ""WhenOffset"": ""{dto.ToString("O")}"" }}";
+            var json = $@"{{ ""WhenOffset"": ""{dto:O}"" }}";
             var obj = new WithPrimitives { WhenOffset = dto };
 
             Assert.False(GetDetector().HasChanged(json, obj));

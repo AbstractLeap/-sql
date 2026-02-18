@@ -1,5 +1,5 @@
 ﻿namespace TildeSql.Serialization {
-    internal static class JsonSolidusEscapeIgnoringStringComparator {
+    public static class JsonSolidusEscapeIgnoringStringComparator {
         public static bool StringEquals(string left, string right) {
             if (ReferenceEquals(left, right)) {
                 return true;
