@@ -21,7 +21,7 @@
 
         IEntityQueryBuilder<TEntity> NoTracking();
 
-        IEntityQueryBuilder<TEntity> Tracking();
+        IEntityQueryBuilder<TEntity> Tracking(bool enableTracking = true);
 
         IFutureEntityQueryResult<TEntity> Future();
     }

@@ -78,8 +78,14 @@
             return this;
         }
 
-        public IEntityQueryBuilder<TEntity> Tracking() {
-            this.query.EnableTracking();
+        public IEntityQueryBuilder<TEntity> Tracking(bool enableTracking = true) {
+            if (enableTracking) {
+                this.query.EnableTracking();
+            }
+            else {
+                this.query.DisableTracking();
+            }
+
             return this;
         }
 

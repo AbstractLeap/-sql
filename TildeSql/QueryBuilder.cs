@@ -121,9 +121,9 @@
             return entityQueryBuilder;
         }
 
-        public IEntityQueryBuilder<TEntity> Tracking() {
+        public IEntityQueryBuilder<TEntity> Tracking(bool enableTracking = true) {
             var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
-            entityQueryBuilder.NoTracking();
+            entityQueryBuilder.Tracking(enableTracking);
             return entityQueryBuilder;
         }
 
