@@ -49,5 +49,15 @@
             this.schemaBuilder.AddKeyMembers(typeof(TEntity), members.ToArray());
             return this.schemaBuilder;
         }
+
+        public SchemaBuilder TrackedByDefault() {
+            this.schemaBuilder.AddAction<TEntity>(collection => collection.TrackedByDefault = true, this.collectionName);
+            return this.schemaBuilder;
+        }
+
+        public SchemaBuilder NotTrackedByDefault() {
+            this.schemaBuilder.AddAction<TEntity>(collection => collection.TrackedByDefault = false, this.collectionName);
+            return this.schemaBuilder;
+        }
     }
 }
