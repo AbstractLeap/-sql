@@ -19,11 +19,12 @@
 
         private bool? cacheEnabled;
 
-        private bool trackingDisabled;
+        private bool trackingEnabled;
 
-        public QueryBase(Collection collection) {
-            this.Collection = collection;
-            this.identifier = Guid.NewGuid();
+        public QueryBase(Collection collection, bool trackingEnabled) {
+            this.trackingEnabled = trackingEnabled;
+            this.Collection      = collection;
+            this.identifier      = Guid.NewGuid();
         }
 
         public virtual Type EntityType => typeof(TEntity);
@@ -43,7 +44,11 @@
         }
 
         public void DisableTracking() {
-            this.trackingDisabled = true;
+            this.trackingEnabled = false;
+        }
+
+        public void EnableTracking() {
+            this.trackingEnabled = true;
         }
 
         internal string ExplicitCacheKey => this.explicitCacheKey;
@@ -59,7 +64,7 @@
 
         public bool IsCacheable => this.calculatedCacheKeys != null;
 
-        public bool NotTracked => this.trackingDisabled;
+        public bool Tracked => this.trackingEnabled;
 
         public IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions() {
             return this.calculatedCacheKeys ?? [];

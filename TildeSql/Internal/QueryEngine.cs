@@ -119,7 +119,7 @@
 
             void UpdatePersistence(T entity) {
                 var documentState = this.unitOfWork.GetState(query.Collection, entity);
-                if (documentState is DocumentState.NotAttached && !query.NotTracked) {
+                if (documentState is DocumentState.NotAttached && query.Tracked) {
                     this.unitOfWork.UpdateState(query.Collection, entity, DocumentState.Persisted);
                 }
             }
@@ -176,8 +176,8 @@
                     }
 
                     if (documentState is null) { // in identity map but not this collection
-                        this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), query.NotTracked ? DocumentState.NotAttached : DocumentState.Persisted);
-                    } else if (!query.NotTracked && documentState is DocumentState.NotAttached) {
+                        this.unitOfWork.AddOrUpdate(collection, entityInstance, new DatabaseRow(collection, row), query.Tracked ? DocumentState.Persisted : DocumentState.NotAttached);
+                    } else if (query.Tracked && documentState is DocumentState.NotAttached) {
                         this.unitOfWork.UpdateState(query.Collection, entityInstance, DocumentState.Persisted);
                     }
 
@@ -192,7 +192,7 @@
                 }
 
                 this.identityMap.Add(collection.KeyType, id, entity);
-                this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), query.NotTracked ? DocumentState.NotAttached : DocumentState.Persisted);
+                this.unitOfWork.AddOrUpdate(collection, entity, new DatabaseRow(collection, row), query.Tracked ? DocumentState.Persisted : DocumentState.NotAttached);
 
                 return entity;
             }

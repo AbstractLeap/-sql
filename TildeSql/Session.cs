@@ -29,6 +29,8 @@
 
         private readonly UpdateEngine updateEngine;
 
+        private bool disableTracking;
+
         public Session(
             ISchema schema,
             ISerializer serializer,
@@ -151,5 +153,15 @@
             this.queryEngine.Dispose();
             this.updateEngine.Dispose();
         }
+
+        public void DisableTracking() {
+            this.disableTracking = true;
+        }
+
+        public void EnableTracking() {
+            this.disableTracking = false;
+        }
+
+        public bool TrackingEnabled(bool? collectionTrackedByDefault) => !this.disableTracking && (collectionTrackedByDefault ?? true);
     }
 }

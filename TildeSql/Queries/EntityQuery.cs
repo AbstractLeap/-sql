@@ -7,8 +7,8 @@
 
     public class EntityQuery<TEntity> : QueryBase<TEntity>, ICountQuery
         where TEntity : class {
-        public EntityQuery(Collection collection)
-            : base(collection) { }
+        public EntityQuery(Collection collection, bool trackingEnabled)
+            : base(collection, trackingEnabled) { }
 
         public string WhereClause { get; set; }
 

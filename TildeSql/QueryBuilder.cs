@@ -19,28 +19,20 @@
             this.collection   = collection;
         }
 
-        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, bool disableCache = false, bool disableTracking = false, CancellationToken cancellationToken = default) {
-            var query = new KeyQuery<TEntity, TKey>(key, this.collection);
+        public ValueTask<TEntity> SingleAsync<TKey>(TKey key, bool disableCache = false, bool? enableTracking = null, CancellationToken cancellationToken = default) {
+            var query = new KeyQuery<TEntity, TKey>(key, this.collection, enableTracking ?? this.session.TrackingEnabled(this.collection.TrackedByDefault));
             if (disableCache) {
                 query.DisableCache();
-            }
-
-            if (disableTracking) {
-                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query).SingleOrDefaultAsync(cancellationToken);
         }
 
-        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key, bool disableCache = false, bool disableTracking = false) {
-            var query = new KeyQuery<TEntity, TKey>(key, this.collection);
+        public IFutureSingleResult<TEntity, TKey> SingleFuture<TKey>(TKey key, bool disableCache = false, bool? enableTracking = null) {
+            var query = new KeyQuery<TEntity, TKey>(key, this.collection, enableTracking ?? this.session.TrackingEnabled(this.collection.TrackedByDefault));
             if (disableCache) {
                 query.DisableCache();
-            }
-
-            if (disableTracking) {
-                query.DisableTracking();
             }
 
             var queryEngine = this.session.GetEngine();
@@ -48,37 +40,29 @@
             return new FutureSingleResult<TEntity, TKey>(query, this.session);
         }
 
-        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool disableTracking = false) {
-            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
+        public IAsyncEnumerable<TEntity> MultipleAsync<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool? enableTracking = null) {
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection, enableTracking ?? this.session.TrackingEnabled(this.collection.TrackedByDefault));
             if (disableCache) {
                 query.DisableCache();
             }
-
-            if (disableTracking) {
-                query.DisableTracking();
-            }
-
+            
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query);
         }
 
-        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool disableTracking = false) {
-            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection);
+        public IFutureMultipleResult<TEntity, TKey> MultipleFuture<TKey>(IEnumerable<TKey> keys, bool disableCache = false, bool? enableTracking = null) {
+            var query = new MultipleKeyQuery<TEntity, TKey>(keys as TKey[] ?? keys.ToArray(), this.collection, enableTracking ?? this.session.TrackingEnabled(this.collection.TrackedByDefault));
             if (disableCache) {
                 query.DisableCache();
             }
-
-            if (disableTracking) {
-                query.DisableTracking();
-            }
-
+            
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(query);
             return new FutureMultipleResult<TEntity, TKey>(query, this.session);
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {
-            var query = new EntityQuery<TEntity>(this.collection);
+            var query = new EntityQuery<TEntity>(this.collection, this.session.TrackingEnabled(this.collection.TrackedByDefault));
             var queryEngine = this.session.GetEngine();
             return queryEngine.GetResult<TEntity>(query).GetAsyncEnumerator(cancellationToken);
         }
@@ -137,8 +121,14 @@
             return entityQueryBuilder;
         }
 
+        public IEntityQueryBuilder<TEntity> Tracking() {
+            var entityQueryBuilder = new EntityQueryBuilder<TEntity>(this.session, this.collection);
+            entityQueryBuilder.NoTracking();
+            return entityQueryBuilder;
+        }
+
         public IFutureEntityQueryResult<TEntity> Future() {
-            var query = new EntityQuery<TEntity>(this.collection);
+            var query = new EntityQuery<TEntity>(this.collection, this.session.TrackingEnabled(this.collection.TrackedByDefault));
             var queryEngine = this.session.GetEngine();
             queryEngine.Add(query);
             return new FutureEntityQueryResult<TEntity>(query, this.session);

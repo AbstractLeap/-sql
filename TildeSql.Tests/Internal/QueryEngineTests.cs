@@ -34,7 +34,7 @@
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
 
             var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
-            var query = new KeyQuery<Entity, EntityId>(new EntityId(), collection);
+            var query = new KeyQuery<Entity, EntityId>(new EntityId(), collection, trackingEnabled:true);
             queryEngine.Add(query);
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();
             Assert.Equal(entity.Id, result[0].Id);
@@ -51,8 +51,8 @@
             var entity2 = new Entity("Bar");
             var row1 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity1).Values;
             var row2 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity2).Values;
-            var query1 = new KeyQuery<Entity, EntityId>(entity1.Id, collection);
-            var query2 = new KeyQuery<Entity, EntityId>(entity2.Id, collection);
+            var query1 = new KeyQuery<Entity, EntityId>(entity1.Id, collection, trackingEnabled: true);
+            var query2 = new KeyQuery<Entity, EntityId>(entity2.Id, collection, trackingEnabled: true);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(query1)).Returns(new[] { row1 }.ToAsyncEnumerable());
@@ -99,7 +99,7 @@
             var row1 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity1).Values;
             var row2 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity2).Values;
 
-            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
+            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection, trackingEnabled: true);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(query)).Returns(new[] { row1, row2 }.ToAsyncEnumerable());
@@ -124,7 +124,7 @@
             var entity1 = new Entity("Foo");
             var entity2 = new Entity("Bar");
 
-            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
+            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection, trackingEnabled: true);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(query)).Returns(Array.Empty<object[]>().ToAsyncEnumerable());
@@ -154,7 +154,7 @@
             var entity2 = new Entity("Bar");
             var row1 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity1).Values;
 
-            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
+            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection, trackingEnabled: true);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
@@ -184,7 +184,7 @@
             var row1 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity1).Values;
             var row2 = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity2).Values;
 
-            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection);
+            var query = new MultipleKeyQuery<Entity, EntityId>(new[] { entity1.Id, entity2.Id }, collection, trackingEnabled: true);
 
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<MultipleKeyQuery<Entity, EntityId>>())).Returns(new[] { row1 }.ToAsyncEnumerable());
@@ -213,7 +213,7 @@
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Throws<InvalidOperationException>();
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Throws<InvalidOperationException>();
 
-            var query = new MultipleKeyQuery<Entity, EntityId>(Array.Empty<EntityId>(), collection);
+            var query = new MultipleKeyQuery<Entity, EntityId>(Array.Empty<EntityId>(), collection, trackingEnabled: true);
             var queryEngine = new QueryEngine(schema.Object, new IdentityMap(), new UnitOfWork(serializer, schema.Object, null), queryExecutor.Object, serializer, null, null, null, null);
 
             var result = await queryEngine.GetResult<Entity>(query).ToArrayAsync();

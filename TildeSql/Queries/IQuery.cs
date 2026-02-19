@@ -13,7 +13,7 @@
 
         bool IsCacheable { get; }
 
-        bool NotTracked { get; }
+        bool Tracked { get; }
 
         IEnumerable<(string cacheKey, TimeSpan absoluteExpirationRelativeToNow)> ResolvedCacheOptions();
 

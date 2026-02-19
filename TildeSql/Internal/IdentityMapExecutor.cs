@@ -85,14 +85,11 @@
             }
 
             if (matchedKeys.Count != multipleKeyQuery.Keys.Length) {
-                var disableTracking = multipleKeyQuery.NotTracked;
                 var disableCaching = multipleKeyQuery.IsCacheDisabled;
-                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([..matchedKeys], multipleKeyQuery.Collection);
+                var executedQuery = new MultipleKeyQuery<TEntity, TKey>([..matchedKeys], multipleKeyQuery.Collection, multipleKeyQuery.Tracked);
                 if (disableCaching) executedQuery.DisableCache();
-                if (disableTracking) executedQuery.DisableTracking();
-                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection);
+                var remainingQuery = new MultipleKeyQuery<TEntity, TKey>([..unmatchedKeys], multipleKeyQuery.Collection, multipleKeyQuery.Tracked);
                 if (disableCaching) remainingQuery.DisableCache();
-                if (disableTracking) remainingQuery.DisableTracking();
                 this.resultCache.Add(executedQuery, result);
                 this.partiallyExecutedQueries.Add(multipleKeyQuery, (executedQuery, remainingQuery));
             }

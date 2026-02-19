@@ -68,6 +68,8 @@
 
         public bool ContainsTypeHierarchy { get; private set; }
 
+        public bool? TrackedByDefault { get; set; }
+
         public int GetColumnIndex(string columnName) {
             if (columnName == null) throw new ArgumentNullException(nameof(columnName));
             if (!this.columnIndices.TryGetValue(columnName.ToLowerInvariant(), out var index)) {

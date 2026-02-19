@@ -12,6 +12,10 @@
 
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
+        void DisableTracking();
+
+        void EnableTracking();
+
         void Delete<TEntity>(TEntity entity)
             where TEntity : class;
 

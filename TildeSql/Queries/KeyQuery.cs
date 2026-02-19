@@ -6,7 +6,7 @@
 
     public class KeyQuery<TEntity, TKey> : QueryBase<TEntity>
         where TEntity : class {
-        public KeyQuery(TKey key, Collection collection) : base(collection) {
+        public KeyQuery(TKey key, Collection collection, bool trackingEnabled) : base(collection, trackingEnabled) {
             this.Key = key;
         }
 

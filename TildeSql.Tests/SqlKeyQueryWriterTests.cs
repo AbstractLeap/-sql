@@ -20,7 +20,7 @@ namespace TildeSql.Tests {
             var schema = TestSchemaBuilder.Build();
             var keyQueryWriter = new SqlServerSqlKeyQueryWriter(schema);
             var command = new Command();
-            keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
+            keyQueryWriter.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>(), trackingEnabled: true), command);
             this.outputHelper.WriteLine(command.Queries.First());
             Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @BlogId", command.Queries.First());
         }

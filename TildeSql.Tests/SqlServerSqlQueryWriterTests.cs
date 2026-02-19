@@ -22,7 +22,7 @@
             var schema = TestSchemaBuilder.Build();
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
-            writer.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>()), command);
+            writer.Write(new KeyQuery<Blog, BlogId>(new BlogId(), schema.GetDefaultCollection<Blog>(), trackingEnabled: true), command);
             this.outputHelper.WriteLine(command.Queries.First());
             Assert.Equal("select t.[BlogId], t.[Document], t.[DocumentType], t.[Version] from [dbo].[Blogs] as t where t.[BlogId] = @BlogId", command.Queries.First());
         }
@@ -33,7 +33,7 @@
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(
-                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
+                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>(), trackingEnabled: true) {
                     WhereClause = "Foo in @Foo",
                     WhereClauseParameters = new Dictionary<string, object> { { "Foo", new[] { Guid.NewGuid(), Guid.NewGuid() } } }
                 },
@@ -51,7 +51,7 @@
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(
-                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
+                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>(), trackingEnabled: true) {
                     WhereClause = "Foo = @Foo",
                     WhereClauseParameters = new Dictionary<string, object> { { "Foo", "I am an enumerable string" } }
                 },
@@ -67,7 +67,7 @@
             var writer = new SqlServerSqlQueryWriter(schema);
             var command = new Command();
             writer.Write(
-                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
+                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>(), trackingEnabled: true) {
                     WhereClause = "Foo = @Foo and Food = @Food",
                     WhereClauseParameters = new Dictionary<string, object> {
                         { "Foo", "I am an enumerable string" } ,
@@ -77,7 +77,7 @@
                 },
                 command);
             writer.Write(
-                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>()) {
+                new EntityQuery<Blog>(schema.GetDefaultCollection<Blog>(), trackingEnabled: true) {
                     WhereClause = "Foo = @Foo and Food = @Food",
                     WhereClauseParameters = new Dictionary<string, object> {
                         { "Foo", "I am an enumerable string" } ,

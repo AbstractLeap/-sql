@@ -16,12 +16,13 @@
             insertSession.Add(thing);
             await insertSession.SaveChangesAsync();
 
+            // select thing, different session so not in identity map -> different instance
             var selectSession = sf.StartSession();
-            var thingAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, disableTracking: true);
+            var thingAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, enableTracking: false);
 
             Assert.NotSame(thing,  thingAgain);
 
-            thingAgain.Name = "bar";
+            thingAgain.Name = "bar"; // does not save
             await selectSession.SaveChangesAsync();
 
             var selectSession2 = sf.StartSession();
@@ -41,7 +42,7 @@
             await insertSession.SaveChangesAsync();
 
             var selectSession = sf.StartSession();
-            var thingAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, disableTracking: true);
+            var thingAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, enableTracking: false);
 
             Assert.NotSame(thing, thingAgain);
 
@@ -75,7 +76,7 @@
             Assert.NotSame(thing, thingAgain);
 
             // get tracked this time
-            var thingAgainAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, disableTracking: true);
+            var thingAgainAgain = await selectSession.Get<TrackThing>().SingleAsync(thing.Id, enableTracking: false);
             Assert.Same(thingAgain, thingAgainAgain); // from identity map
 
             thingAgainAgain.Name = "bar";
@@ -132,7 +133,7 @@
 
             var selectSession = sf.StartSession();
             var thing1 = await selectSession.Get<TrackThing>().SingleAsync(things[0].Id);
-            var firstTwoThings = await selectSession.Get<TrackThing>().MultipleAsync([things[0].Id, things[1].Id], disableTracking: true).ToArrayAsync();
+            var firstTwoThings = await selectSession.Get<TrackThing>().MultipleAsync([things[0].Id, things[1].Id], enableTracking: false).ToArrayAsync();
             foreach (var thing in firstTwoThings) {
                 thing.Name = "bat";
             }
@@ -140,7 +141,7 @@
             await selectSession.SaveChangesAsync(); // changes NOT saved
 
             var selectSession2 = sf.StartSession();
-            var firstTwoThingsAgain = await selectSession2.Get<TrackThing>().MultipleAsync([things[0].Id, things[1].Id], disableTracking: true).ToArrayAsync();
+            var firstTwoThingsAgain = await selectSession2.Get<TrackThing>().MultipleAsync([things[0].Id, things[1].Id], enableTracking: false).ToArrayAsync();
 
             var thing1Again = firstTwoThingsAgain.Single(t => t.Id == thing1.Id);
             Assert.Equal("bat", thing1Again.Name);

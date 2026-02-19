@@ -16,7 +16,7 @@
 
         public EntityQueryBuilder(Session session, Collection collection) {
             this.session = session;
-            this.query   = new EntityQuery<TEntity>(collection);
+            this.query   = new EntityQuery<TEntity>(collection, this.session.TrackingEnabled(collection.TrackedByDefault));
         }
 
         public IAsyncEnumerator<TEntity> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) {
@@ -75,6 +75,11 @@
 
         public IEntityQueryBuilder<TEntity> NoTracking() {
             this.query.DisableTracking();
+            return this;
+        }
+
+        public IEntityQueryBuilder<TEntity> Tracking() {
+            this.query.EnableTracking();
             return this;
         }
 
