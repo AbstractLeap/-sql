@@ -19,6 +19,14 @@
         }
 
         [Fact]
+        public void HasChanged_SimpleEqualityNot() {
+            var json = @"{ ""name"": ""Mark"", ""age"": 52 }";
+            var obj = new PersonFields { Name = "Mark", Age = 42 };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
         public void HasChanged_IgnoresPropertyOrder() {
             var json = @"{ ""age"": 42, ""name"": ""Mark"" }";
             var obj = new PersonFields { Name = "Mark", Age = 42 };
@@ -39,6 +47,21 @@
             };
 
             Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void HasChanged_NestedEqualityChanged() {
+            var json = @"{
+                ""name"": ""Mark"",
+                ""address"": { ""line1"": ""123 Road"", ""postcode"": ""AB1 3CD"" }
+            }";
+
+            var obj = new PersonFields {
+                Name    = "Mark",
+                Address = new AddressFields { Line1 = "123 Road", Postcode = "AB1 2CD" }
+            };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
         }
 
         // ---------------------------------------------------------------
@@ -181,10 +204,10 @@
         [Fact]
         public void TestCase1() {
             var json =
-                "{\"accountId\":{\"id\":\"687bfb86-7425-4f3e-a8fa-019a4e80c754\"},\"dbConnectionString\":\"Server=tcp:swiftlitest-sql-sandbox.database.windows.net,1433;database=swiftlitest-acct-testmode;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=37257ef1-7783-4e32-b39c-d5475ab486d1\",\"isSharedDatabase\":true}";
+                "{\"accountId\":{\"id\":\"67b4625f-c8e6-4a39-8775-0b29927aa01b\"},\"dbConnectionString\":\"Server=tcp:foo.database.windows.net,1433;database=bar;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=67b4625f-c8e6-4a39-8775-0b29927aa01b\",\"isSharedDatabase\":true}";
             var obj = new AccountInfrastructure(
-                new AccountId(Guid.Parse("687bfb86-7425-4f3e-a8fa-019a4e80c754")),
-                "Server=tcp:swiftlitest-sql-sandbox.database.windows.net,1433;database=swiftlitest-acct-testmode;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=37257ef1-7783-4e32-b39c-d5475ab486d1",
+                new AccountId(Guid.Parse("67b4625f-c8e6-4a39-8775-0b29927aa01b")),
+                "Server=tcp:foo.database.windows.net,1433;database=bar;Authentication=Active Directory Managed Identity;Trusted_Connection=False;Encrypt=True;MultipleActiveResultSets=True;User ID=67b4625f-c8e6-4a39-8775-0b29927aa01b",
                 true);
 
             Assert.False(GetDetector().HasChanged(json, obj));
@@ -286,6 +309,15 @@
         }
 
         [Fact]
+        public void Guid_StringJson_NotEqual() {
+            var id = Guid.NewGuid();
+            var json = $@"{{ ""nullableGuid"": ""{id}"" }}";
+            var obj = new PersonFields() { NullableGuid = Guid.NewGuid() };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
         public void DateTime_ExactString_Equals() {
             var dt = new DateTime(2024, 05, 01, 10, 30, 00, DateTimeKind.Utc);
             var json = $@"{{ ""nullableDate"": ""{dt.ToString("O")}"" }}";
@@ -294,6 +326,80 @@
             Assert.False(GetDetector().HasChanged(json, obj));
         }
 
+        // ---------------------------------------------------------------
+        // POLYMORPHISM 
+        // ---------------------------------------------------------------
 
+        [Fact]
+        public void DogEqual() {
+            var json = $@"{{ ""barksPerMinute"": null }}";
+            var obj = new Dog() {  };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void DogNotEqual() {
+            var json = $@"{{ ""barksPerMinute"": null }}";
+            var obj = new Dog() { BarksPerMinute = 2 };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void AnimalDogEqual() {
+            var json = $@"{{ ""name"":""Bob"", ""barksPerMinute"": null }}";
+            var obj = new Dog() { Name = "Bob" };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void AnimalDogNotEqual() {
+            var json = $@"{{ ""name"": ""Bob"", ""barksPerMinute"": null }}";
+            var obj = new Dog() { Name = "Bob",  BarksPerMinute = 2 };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NestedAnimalDogEqual() {
+            var json = """
+                { "animal": {"name":"Bob", "barksPerMinute": null }}
+                """;
+            var obj = new HasAnimal { Animal = new Dog() { Name = "Bob" }};
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NestedAnimalDogNotEqual() {
+            var json = """
+                { "animal":{ "name": "Bob", "barksPerMinute": null }}
+                """;
+            var obj = new HasAnimal { Animal =  new Dog() { Name = "Bob", BarksPerMinute = 2 } };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NestedAnimalsDogEqual() {
+            var json = """
+                       { "animals": [{"name":"Bob", "barksPerMinute": null }]}
+                       """;
+            var obj = new HasAnimals { Animals = [new Dog() { Name = "Bob" }] };
+
+            Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NestedAnimalsDogNotEqual() {
+            var json = """
+                       { "animals":[{ "name": "Bob", "barksPerMinute": null }]}
+                       """;
+            var obj = new HasAnimals { Animals = [new Dog() { Name = "Bob", BarksPerMinute = 2 }] };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
     }
 }
