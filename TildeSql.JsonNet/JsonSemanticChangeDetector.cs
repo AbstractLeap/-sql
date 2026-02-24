@@ -77,6 +77,10 @@
             if (IsNullLike(json) && dotnetValue == null)
                 return true;
 
+            // set a dotnet prop to null
+            if (dotnetValue == null && !IsNullLike(json))
+                return false;
+
             // Converter-aware short-circuit: skip property-level converters; allow type/serializer-level
             var convInfo = FindApplicableConverter(parentProperty, runtimeContract, coreType, serializer);
             if (convInfo is not null)
