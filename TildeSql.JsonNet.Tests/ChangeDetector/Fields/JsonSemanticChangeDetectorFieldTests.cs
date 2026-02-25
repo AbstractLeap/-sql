@@ -50,6 +50,20 @@
         }
 
         [Fact]
+        public void HasChanged_NestedEqualityNull() {
+            var json = @"{
+                ""name"": ""Mark"",
+                ""address"": { ""line1"": ""123 Road"", ""postcode"": ""AB1 2CD"" }
+            }";
+
+            var obj = new PersonFields {
+                Name    = "Mark"
+            };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
         public void HasChanged_NestedEqualityChanged() {
             var json = @"{
                 ""name"": ""Mark"",
@@ -74,6 +88,14 @@
             var obj = new PersonFields { Name = null };
 
             Assert.False(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NullValue_NotEqualsNonEmpty() {
+            var json = @"{ ""name"": ""Mark"" }";
+            var obj = new PersonFields { Name = null };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
         }
 
         [Fact]
@@ -253,6 +275,22 @@
             Assert.True(GetDetector().HasChanged(json, obj));
         }
 
+        [Fact]
+        public void Arrays_Null_NotEqual() {
+            var json = @"{ ""values"": [1,3,2] }";
+            var obj = new WrapperFields { Values = null };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void Arrays_Empty_NotEqual() {
+            var json = @"{ ""values"": [1,3,2] }";
+            var obj = new WrapperFields { Values = [] };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
         // ---------------------------------------------------------------
         // CONTRACT / RESOLVER-BASED HANDLING
         // ---------------------------------------------------------------
@@ -398,6 +436,16 @@
                        { "animals":[{ "name": "Bob", "barksPerMinute": null }]}
                        """;
             var obj = new HasAnimals { Animals = [new Dog() { Name = "Bob", BarksPerMinute = 2 }] };
+
+            Assert.True(GetDetector().HasChanged(json, obj));
+        }
+
+        [Fact]
+        public void NestedAnimalsNullDogNotEqual() {
+            var json = """
+                       { "animal":{ "name": "Bob", "barksPerMinute": null }}
+                       """;
+            var obj = new HasAnimal { Animal = null };
 
             Assert.True(GetDetector().HasChanged(json, obj));
         }
