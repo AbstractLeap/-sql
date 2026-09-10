@@ -1,12 +1,10 @@
 ﻿namespace TildeSql.Tests {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Reflection;
     using System.Runtime.CompilerServices;
-
-    using Basic.Reference.Assemblies;
+    using System.Runtime.Loader;
 
     using FluentMigrator;
     using FluentMigrator.Builders.Create;
@@ -46,22 +44,32 @@
             var diff = new Differ().Diff(new Database(), schema.ToDatabaseModel());
             var migrationCode = new Generator().CreateCode(diff, "TildeSql.Tests.Migration", "Tests");
             var syntaxTree = CSharpSyntaxTree.ParseText(migrationCode);
-            var references = new List<MetadataReference> {
+            var runtimeReferences = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty)
+               .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+               .Select(path => MetadataReference.CreateFromFile(path));
+            var references = runtimeReferences.Concat(new[] {
                 MetadataReference.CreateFromFile(typeof(Migration).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(ICreateExpressionRoot).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(MigratorExtensions).Assembly.Location)
-            };
+            });
 
             var compilation = CSharpCompilation.Create(
                 "TildeSql.Tests.Migration.dll",
                 new[] { syntaxTree },
-                references.Union(ReferenceAssemblies.Net80),
+                references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
             Assembly assembly;
             using (var ms = new MemoryStream()) {
                 var result = compilation.Emit(ms);
+                if (!result.Success) {
+                    var errors = string.Join(
+                        Environment.NewLine,
+                        result.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+                    throw new InvalidOperationException($"Dynamic migration compilation failed:{Environment.NewLine}{errors}");
+                }
+
                 ms.Seek(0, SeekOrigin.Begin);
-                assembly = Assembly.Load(ms.ToArray());
+                assembly = AssemblyLoadContext.Default.LoadFromStream(ms);
             }
 
             var serviceProvider = CreateServices(TestSessionFactoryBuilder.SqlServerConnectionString, assembly);

@@ -1,38 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>12</LangVersion>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="Basic.Reference.Assemblies" Version="1.7.2" />
-    <PackageReference Include="FluentMigrator" Version="5.2.0" />
-    <PackageReference Include="FluentMigrator.Runner" Version="5.2.0" />
-    <PackageReference Include="FluentMigrator.Runner.SqlServer" Version="5.2.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageReference Include="MiniProfiler.Shared" Version="4.3.8" />
-    <PackageReference Include="Moq" Version="4.20.70" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="RT.Comb" Version="4.0.1" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
+    <PackageReference Include="Basic.Reference.Assemblies" />
+    <PackageReference Include="FluentMigrator" />
+    <PackageReference Include="FluentMigrator.Runner" />
+    <PackageReference Include="FluentMigrator.Runner.SqlServer" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="MiniProfiler.Shared" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="RT.Comb" />
+    <PackageReference Include="System.Linq.Async" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
+    <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3" Version="3.0.1" />
+    <PackageReference Include="xunit.v3" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\TildeSql.Humanizer\TildeSql.Humanizer.csproj" />
     <ProjectReference Include="..\TildeSql.JsonNet\TildeSql.JsonNet.csproj" />
@@ -40,5 +36,4 @@
     <ProjectReference Include="..\TildeSql.SqlServer\TildeSql.SqlServer.csproj" />
     <ProjectReference Include="..\TildeSql\TildeSql.csproj" />
   </ItemGroup>
-
 </Project>

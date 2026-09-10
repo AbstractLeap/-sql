@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
-  	<LangVersion>12</LangVersion>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>12</LangVersion>
     <PackageId>TildeSql.SqlMigrations</PackageId>
     <Version>0.2.0</Version>
     <Description>TildeSql.SqlMigrations provides a migrations framework for ~Sql</Description>
@@ -11,13 +10,10 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="FluentMigrator" Version="5.2.0" />
+    <PackageReference Include="FluentMigrator" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\TildeSql\TildeSql.csproj" />
   </ItemGroup>
-
 </Project>
