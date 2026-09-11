@@ -10,6 +10,7 @@
 
     using Moq;
 
+    using TildeSql.Configuration;
     using TildeSql.IdentityMap;
     using TildeSql.Internal;
     using TildeSql.JsonNet;
@@ -78,7 +79,7 @@
             var row = new DatabaseRowFactory(serializer).Create<Entity, EntityId>(collection, entity).Values;
             queryExecutor.Setup(e => e.ExecuteAsync(It.IsAny<IEnumerable<IQuery>>(), It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
             queryExecutor.Setup(e => e.GetAsync(It.IsAny<IQuery>())).Returns(new[] { row }.ToAsyncEnumerable());
-            var session = new Session(schema.Object, serializer, null, queryExecutor.Object, null, null, null, null, null, null);
+            var session = new Session(schema.Object, serializer, null, new QueryExecutorFactory(() => queryExecutor.Object), null, null, null, null, null, null);
             var queryBuilder = new EntityQueryBuilder<Entity>(session, collection);
             var future = queryBuilder.Future();
             var results = await future.ToArrayAsync();

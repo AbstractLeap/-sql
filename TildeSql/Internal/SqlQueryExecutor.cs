@@ -168,10 +168,6 @@
                 await this.connection.DisposeAsync().ConfigureAwait(false);
             }
 
-            if (this.connectionFactory is IAsyncDisposable disposableConnectionFactory) {
-                await disposableConnectionFactory.DisposeAsync();
-            }
-
             this.isDisposed = true;
         }
 
@@ -192,9 +188,7 @@
                 this.connection.Dispose();
             }
 
-            if (this.connectionFactory is IDisposable disposableConnectionFactory) {
-                disposableConnectionFactory.Dispose();
-            }
+            // The session owns the connection factory because multiple batch executors can share it.
         }
     }
 }

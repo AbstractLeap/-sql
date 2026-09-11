@@ -7,6 +7,7 @@
     using Microsoft.Extensions.Caching.Distributed;
     using Microsoft.Extensions.Caching.Memory;
 
+    using TildeSql.Configuration;
     using TildeSql.Events;
     using TildeSql.IdentityMap;
     using TildeSql.Internal;
@@ -27,6 +28,8 @@
 
         private readonly QueryEngine queryEngine;
 
+        private readonly IQueryExecutorFactory queryExecutorFactory;
+
         private readonly UpdateEngine updateEngine;
 
         private bool disableTracking;
@@ -35,7 +38,7 @@
             ISchema schema,
             ISerializer serializer,
             IChangeDetector changeDetector,
-            IPersistenceQueryExecutor queryExecutor,
+            IQueryExecutorFactory queryExecutorFactory,
             IUpdateExecutor updateExecutor,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
@@ -45,13 +48,14 @@
             this.schema                   = schema;
             this.serializer               = serializer;
             this.saveChangesEventListener = saveChangesEventListener;
+            this.queryExecutorFactory     = queryExecutorFactory;
             this.identityMap              = new IdentityMap.IdentityMap();
             this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema, changeDetector);
             this.queryEngine = new QueryEngine(
                 schema,
                 this.identityMap,
                 this.unitOfWork,
-                queryExecutor,
+                queryExecutorFactory.CreateExecutor,
                 serializer,
                 memoryCache,
                 distributedCache,
@@ -147,11 +151,13 @@
         public async ValueTask DisposeAsync() {
             await this.queryEngine.DisposeAsync();
             await this.updateEngine.DisposeAsync();
+            await this.queryExecutorFactory.DisposeAsync();
         }
 
         public void Dispose() {
             this.queryEngine.Dispose();
             this.updateEngine.Dispose();
+            this.queryExecutorFactory.Dispose();
         }
 
         public void DisableTracking() {
