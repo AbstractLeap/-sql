@@ -4,6 +4,7 @@
     using Microsoft.Extensions.Caching.Distributed;
     using Microsoft.Extensions.Caching.Memory;
 
+    using TildeSql.Configuration;
     using TildeSql.Events;
     using TildeSql.Internal;
     using TildeSql.Internal.Caching;
@@ -17,7 +18,7 @@
 
         private readonly IChangeDetector changeDetector;
 
-        private readonly Func<IPersistenceQueryExecutor> queryExecutorFactory;
+        private readonly Func<QueryExecutorFactory> queryExecutorFactory;
 
         private readonly Func<IUpdateExecutor> updateExecutorFactory;
 
@@ -35,7 +36,7 @@
             ISchema schema,
             ISerializer serializer,
             IChangeDetector changeDetector,
-            Func<IPersistenceQueryExecutor> queryExecutorFactory,
+            Func<QueryExecutorFactory> queryExecutorFactory,
             Func<IUpdateExecutor> updateExecutorFactory,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
@@ -55,11 +56,12 @@
         }
 
         public ISession StartSession() {
+            var queryExecutorFactory = this.queryExecutorFactory();
             return new Session(
                 this.schema,
                 this.serializer,
                 this.changeDetector,
-                this.queryExecutorFactory(),
+                queryExecutorFactory,
                 this.updateExecutorFactory(),
                 this.memoryCache,
                 this.distributedCache,

@@ -25,7 +25,7 @@
 
         private readonly UnitOfWork unitOfWork;
 
-        private readonly IPersistenceQueryExecutor persistenceQueryExecutor;
+        private readonly Func<IPersistenceQueryExecutor> persistenceQueryExecutorFactory;
         
         private readonly CacheExecutor cacheExecutor;
 
@@ -42,6 +42,10 @@
 
         private readonly HashSet<IQuery> persistenceQueryExecutorQueries = new();
 
+        private readonly Dictionary<IQuery, IPersistenceQueryExecutor> persistenceQueryExecutors = new();
+
+        private readonly List<IPersistenceQueryExecutor> persistenceExecutors = new();
+
         private readonly HashSet<IQuery> cacheExecutorQueries;
 
         private readonly HashSet<IQuery> identityMapQueries = new();
@@ -52,7 +56,7 @@
             ISchema schema,
             IdentityMap identityMap,
             UnitOfWork unitOfWork,
-            IPersistenceQueryExecutor persistenceQueryExecutor,
+            Func<IPersistenceQueryExecutor> persistenceQueryExecutorFactory,
             ISerializer serializer,
             IMemoryCache memoryCache,
             IDistributedCache distributedCache,
@@ -61,7 +65,7 @@
             this.schema                   = schema;
             this.identityMap              = identityMap;
             this.unitOfWork               = unitOfWork;
-            this.persistenceQueryExecutor = persistenceQueryExecutor;
+            this.persistenceQueryExecutorFactory = persistenceQueryExecutorFactory;
             this.serializer               = serializer;
             this.identityMapExecutor      = new IdentityMapExecutor(this.identityMap, unitOfWork);
             if (memoryCache != null || distributedCache != null) {
@@ -69,6 +73,19 @@
                 this.cacheSetter = new CacheSetter(memoryCache, distributedCache, cacheSerializer, cacheOptions);
                 this.cacheExecutorQueries = new();
             }
+        }
+
+        public QueryEngine(
+            ISchema schema,
+            IdentityMap identityMap,
+            UnitOfWork unitOfWork,
+            IPersistenceQueryExecutor persistenceQueryExecutor,
+            ISerializer serializer,
+            IMemoryCache memoryCache,
+            IDistributedCache distributedCache,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions)
+            : this(schema, identityMap, unitOfWork, () => persistenceQueryExecutor, serializer, memoryCache, distributedCache, cacheSerializer, cacheOptions) {
         }
 
         public void Add(IQuery query) {
@@ -142,7 +159,7 @@
                 yield break;
             }
 
-            await foreach (var row in this.persistenceQueryExecutor.GetAsync(query)) {
+            await foreach (var row in this.persistenceQueryExecutors[query].GetAsync(query)) {
                 rowsRead++;
                 var entity = HydrateDocument(row);
                 if (entity != null) {
@@ -211,9 +228,7 @@
         /// </summary>
         /// <returns></returns>
         private async ValueTask FlushPersistenceAsync() {
-            if (this.persistenceQueryExecutor != null) {
-                await this.persistenceQueryExecutor.FlushAsync();
-            }
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -257,7 +272,7 @@
             }
 
             if (queriesStillToExecute.Any()) {
-                if (this.persistenceQueryExecutor == null) {
+                if (this.persistenceQueryExecutorFactory == null) {
                     throw new Exception("No persistence query mechanism has been configured");
                 }
 
@@ -304,27 +319,49 @@
             this.queriesToExecute.Clear();
 
             async Task ExecuteAgainstPersistenceAsync() {
-                await this.persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
-                foreach (var executedQuery in queriesStillToExecute) {
-                    this.persistenceQueryExecutorQueries.Add(executedQuery);
-                    if (this.cacheSetter != null && executedQuery.IsCacheable) {
-                        // we flush the results in to the result cache for cache queries so that we can pop in the cache and release the stampede locks
-                        var results = await this.persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
-                        await this.cacheSetter.SetAsync(executedQuery, results);
+                var persistenceQueryExecutor = this.persistenceQueryExecutorFactory();
+                this.persistenceExecutors.Add(persistenceQueryExecutor);
+                var executorUsedByQuery = false;
+                try {
+                    await persistenceQueryExecutor.ExecuteAsync(queriesStillToExecute, cancellationToken);
+                    foreach (var executedQuery in queriesStillToExecute) {
+                        this.persistenceQueryExecutors[executedQuery] = persistenceQueryExecutor;
+                        executorUsedByQuery = true;
+                        this.persistenceQueryExecutorQueries.Add(executedQuery);
+                        if (this.cacheSetter != null && executedQuery.IsCacheable) {
+                            // consume cacheable results so they can be populated without retaining them here
+                            var results = await persistenceQueryExecutor.GetAsync(executedQuery).ToArrayAsync(cancellationToken);
+                            await this.cacheSetter.SetAsync(executedQuery, results);
+                        }
+                    }
+                }
+                finally {
+                    if (!executorUsedByQuery) {
+                        this.persistenceExecutors.Remove(persistenceQueryExecutor);
+                        if (persistenceQueryExecutor is IAsyncDisposable asyncDisposable) {
+                            await asyncDisposable.DisposeAsync();
+                        }
+                        else if (persistenceQueryExecutor is IDisposable disposable) {
+                            disposable.Dispose();
+                        }
                     }
                 }
             }
         }
 
         public async ValueTask DisposeAsync() {
-            if (this.persistenceQueryExecutor is IAsyncDisposable disposable) {
-                await disposable.DisposeAsync();
+            foreach (var persistenceExecutor in this.persistenceExecutors) {
+                if (persistenceExecutor is IAsyncDisposable disposable) {
+                    await disposable.DisposeAsync();
+                }
             }
         }
 
         public void Dispose() {
-            if (this.persistenceQueryExecutor is IDisposable disposable) {
-                disposable.Dispose();
+            foreach (var persistenceExecutor in this.persistenceExecutors) {
+                if (persistenceExecutor is IDisposable disposable) {
+                    disposable.Dispose();
+                }
             }
         }
     }

@@ -21,7 +21,11 @@
 
         public IChangeDetector ChangeDetector { get; set; }
 
-        public Func<IPersistenceQueryExecutor> QueryExecutorFactory { get; set; }
+        /// <summary>
+        ///     Creates session-scoped query executor factories. The outer factory runs once per session and the returned
+        ///     factory creates a fresh executor for each query batch.
+        /// </summary>
+        public Func<QueryExecutorFactory> QueryExecutorFactory { get; set; }
 
         public Func<IUpdateExecutor> UpdateExecutorFactory { get; set; }
         

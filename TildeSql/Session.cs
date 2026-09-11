@@ -1,4 +1,5 @@
 ﻿namespace TildeSql {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@
     using Microsoft.Extensions.Caching.Memory;
 
     using TildeSql.Events;
+    using TildeSql.Configuration;
     using TildeSql.IdentityMap;
     using TildeSql.Internal;
     using TildeSql.Internal.Caching;
@@ -27,9 +29,65 @@
 
         private readonly QueryEngine queryEngine;
 
+        private readonly QueryExecutorFactory queryExecutorFactory;
+
         private readonly UpdateEngine updateEngine;
 
         private bool disableTracking;
+
+        public Session(
+            ISchema schema,
+            ISerializer serializer,
+            IChangeDetector changeDetector,
+            QueryExecutorFactory queryExecutorFactory,
+            IUpdateExecutor updateExecutor,
+            IMemoryCache memoryCache,
+            IDistributedCache distributedCache,
+            ISaveChangesEventListener saveChangesEventListener,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions) {
+            this.schema                   = schema;
+            this.serializer               = serializer;
+            this.saveChangesEventListener = saveChangesEventListener;
+            this.queryExecutorFactory     = queryExecutorFactory;
+            this.identityMap              = new IdentityMap.IdentityMap();
+            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema, changeDetector);
+            this.queryEngine = new QueryEngine(
+                schema,
+                this.identityMap,
+                this.unitOfWork,
+                queryExecutorFactory.CreateExecutor,
+                serializer,
+                memoryCache,
+                distributedCache,
+                cacheSerializer,
+                cacheOptions);
+            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer, cacheSerializer, cacheOptions);
+        }
+
+        public Session(
+            ISchema schema,
+            ISerializer serializer,
+            IChangeDetector changeDetector,
+            Func<IPersistenceQueryExecutor> queryExecutorFactory,
+            IUpdateExecutor updateExecutor,
+            IMemoryCache memoryCache,
+            IDistributedCache distributedCache,
+            ISaveChangesEventListener saveChangesEventListener,
+            ICacheSerializer cacheSerializer,
+            CacheOptions cacheOptions)
+            : this(
+                schema,
+                serializer,
+                changeDetector,
+                new QueryExecutorFactory { CreateExecutor = queryExecutorFactory },
+                updateExecutor,
+                memoryCache,
+                distributedCache,
+                saveChangesEventListener,
+                cacheSerializer,
+                cacheOptions) {
+        }
 
         public Session(
             ISchema schema,
@@ -41,23 +99,18 @@
             IDistributedCache distributedCache,
             ISaveChangesEventListener saveChangesEventListener,
             ICacheSerializer cacheSerializer,
-            CacheOptions cacheOptions) {
-            this.schema                   = schema;
-            this.serializer               = serializer;
-            this.saveChangesEventListener = saveChangesEventListener;
-            this.identityMap              = new IdentityMap.IdentityMap();
-            this.unitOfWork               = new UnitOfWork.UnitOfWork(serializer, schema, changeDetector);
-            this.queryEngine = new QueryEngine(
+            CacheOptions cacheOptions)
+            : this(
                 schema,
-                this.identityMap,
-                this.unitOfWork,
-                queryExecutor,
                 serializer,
+                changeDetector,
+                new QueryExecutorFactory { CreateExecutor = () => queryExecutor },
+                updateExecutor,
                 memoryCache,
                 distributedCache,
+                saveChangesEventListener,
                 cacheSerializer,
-                cacheOptions);
-            this.updateEngine = new UpdateEngine(updateExecutor, memoryCache, distributedCache, schema, serializer, cacheSerializer, cacheOptions);
+                cacheOptions) {
         }
 
         public IQueryBuilder<TEntity> Get<TEntity>()
@@ -147,11 +200,13 @@
         public async ValueTask DisposeAsync() {
             await this.queryEngine.DisposeAsync();
             await this.updateEngine.DisposeAsync();
+            await this.queryExecutorFactory.DisposeAsync();
         }
 
         public void Dispose() {
             this.queryEngine.Dispose();
             this.updateEngine.Dispose();
+            this.queryExecutorFactory.Dispose();
         }
 
         public void DisableTracking() {
